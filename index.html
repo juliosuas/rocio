@@ -744,6 +744,382 @@ img { display: block; max-width: 100%; }
 /* ═══════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   SEASONAL BANNER
+   ═══════════════════════════════════════════ */
+.seasonal-banner {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  color: #fff;
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: 0 4px 16px rgba(143,188,143,0.3);
+  animation: bannerSlide 0.5s var(--bounce);
+}
+@keyframes bannerSlide {
+  0% { transform: translateY(-20px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.seasonal-banner .sb-emoji { font-size: 32px; }
+.seasonal-banner .sb-text { flex: 1; }
+.seasonal-banner .sb-title { font-size: 14px; font-weight: 700; }
+.seasonal-banner .sb-desc { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+
+/* ═══════════════════════════════════════════
+   DIFFICULTY LEAVES
+   ═══════════════════════════════════════════ */
+.difficulty-leaves { display: flex; gap: 2px; margin-bottom: 6px; }
+.difficulty-leaf { font-size: 12px; opacity: 0.25; transition: opacity 0.2s; }
+.difficulty-leaf.filled { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   ENHANCED DETAIL MODAL (MAGAZINE STYLE)
+   ═══════════════════════════════════════════ */
+.detail-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(143,188,143,0.15);
+}
+.detail-section:last-child { border-bottom: none; }
+.detail-section-title {
+  font-size: 16px; font-weight: 800;
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--primary-dark);
+}
+.detail-section-title .ds-icon { font-size: 20px; }
+.detail-text { font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+.detail-text strong { color: var(--text); }
+.detail-list { list-style: none; padding: 0; }
+.detail-list li {
+  font-size: 13px; line-height: 1.6; color: var(--text-secondary);
+  padding: 6px 0 6px 24px;
+  position: relative;
+}
+.detail-list li::before {
+  content: '🌿';
+  position: absolute; left: 0; top: 6px; font-size: 12px;
+}
+.detail-tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.detail-tag {
+  font-size: 11px; padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+}
+.detail-tag.safe { background: rgba(123,198,123,0.15); color: #4a9e4a; }
+.detail-tag.toxic { background: rgba(232,112,112,0.15); color: #c04a4a; }
+.detail-tag.caution { background: rgba(240,192,64,0.15); color: #b89030; }
+
+.detail-steps { counter-reset: step; list-style: none; padding: 0; }
+.detail-steps li {
+  counter-increment: step;
+  font-size: 13px; line-height: 1.6; color: var(--text-secondary);
+  padding: 8px 0 8px 36px; position: relative;
+}
+.detail-steps li::before {
+  content: counter(step);
+  position: absolute; left: 0; top: 8px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--primary); color: #fff;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.share-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  background: rgba(143,188,143,0.1);
+  color: var(--primary-dark);
+  margin-top: 12px;
+  transition: transform 0.15s var(--bounce);
+}
+.share-btn:active { transform: scale(0.95); }
+
+/* ═══════════════════════════════════════════
+   DOCTOR PAGE
+   ═══════════════════════════════════════════ */
+.doctor-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform 0.15s var(--bounce), background var(--transition);
+  display: flex; gap: 14px; align-items: center;
+}
+.doctor-card:active { transform: scale(0.98); }
+.doctor-card .dc-emoji { font-size: 36px; flex-shrink: 0; }
+.doctor-card .dc-info { flex: 1; }
+.doctor-card .dc-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.doctor-card .dc-desc { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+.doctor-card .dc-arrow { font-size: 18px; color: var(--text-muted); }
+
+.doctor-detail {
+  display: none;
+  animation: pageIn 0.35s ease-out;
+}
+.doctor-detail.active { display: block; }
+
+.doctor-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 16px;
+  padding: 8px 0;
+}
+
+.remedy-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+  transition: background var(--transition);
+}
+.remedy-card .rc-header {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 10px;
+}
+.remedy-card .rc-emoji { font-size: 28px; }
+.remedy-card .rc-title { font-size: 15px; font-weight: 700; }
+.remedy-card .rc-subtitle { font-size: 11px; color: var(--text-muted); }
+.remedy-card .rc-body { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.remedy-card .rc-section {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(143,188,143,0.1);
+}
+.remedy-card .rc-section-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--primary-dark); margin-bottom: 6px;
+}
+
+.emergency-card {
+  background: linear-gradient(135deg, rgba(232,112,112,0.1), rgba(240,192,64,0.1));
+  border: 1px solid rgba(232,112,112,0.2);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 16px;
+}
+.emergency-card .ec-title {
+  font-size: 16px; font-weight: 800; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.emergency-card .ec-body { font-size: 13px; line-height: 1.7; color: var(--text-secondary); }
+
+/* Tabs within doctor */
+.doctor-tabs {
+  display: flex; gap: 6px; margin-bottom: 16px;
+  overflow-x: auto; scrollbar-width: none;
+}
+.doctor-tabs::-webkit-scrollbar { display: none; }
+.doctor-tab {
+  flex-shrink: 0;
+  padding: 8px 14px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  background: var(--bg-card); box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  transition: all 0.2s var(--bounce);
+}
+.doctor-tab.active {
+  background: var(--primary); color: #fff;
+}
+
+/* ═══════════════════════════════════════════
+   MOON PHASE
+   ═══════════════════════════════════════════ */
+.moon-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  text-align: center;
+  transition: background var(--transition);
+}
+.moon-phase-icon { font-size: 48px; margin-bottom: 8px; }
+.moon-phase-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.moon-phase-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+.moon-recs {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 8px; margin-top: 14px; text-align: left;
+}
+.moon-rec {
+  background: rgba(143,188,143,0.08);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: 12px;
+}
+.moon-rec .mr-icon { font-size: 16px; margin-bottom: 4px; }
+.moon-rec .mr-label { font-weight: 600; font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
+.moon-rec .mr-value { margin-top: 2px; color: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════
+   WATERING CALCULATOR
+   ═══════════════════════════════════════════ */
+.calc-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  transition: background var(--transition);
+}
+.calc-section h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.calc-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+.calc-label { font-size: 13px; font-weight: 600; min-width: 90px; }
+.calc-input {
+  flex: 1; padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(143,188,143,0.08);
+  font-size: 14px;
+  border: 1px solid transparent;
+  transition: border-color var(--transition);
+}
+.calc-input:focus { border-color: var(--primary); }
+.calc-select {
+  flex: 1; padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(143,188,143,0.08);
+  font-size: 14px;
+  border: 1px solid transparent;
+  -webkit-appearance: none;
+  color: var(--text);
+}
+
+.water-gauge {
+  width: 80px; height: 120px;
+  border: 3px solid var(--primary);
+  border-radius: 0 0 40px 40px;
+  position: relative;
+  margin: 16px auto;
+  overflow: hidden;
+  background: rgba(143,188,143,0.05);
+}
+.water-gauge-fill {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(180deg, rgba(100,180,255,0.6), rgba(70,150,220,0.8));
+  border-radius: 0 0 37px 37px;
+  transition: height 0.8s var(--bounce);
+}
+.water-gauge-label {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 800; color: var(--text);
+  z-index: 1;
+}
+
+.calc-result {
+  background: linear-gradient(135deg, rgba(100,180,255,0.1), rgba(143,188,143,0.1));
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  text-align: center;
+  margin-top: 12px;
+}
+.calc-result .cr-amount { font-size: 24px; font-weight: 800; color: var(--primary-dark); }
+.calc-result .cr-freq { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+.calc-result .cr-time { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════
+   COMPOSTING
+   ═══════════════════════════════════════════ */
+.compost-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 14px;
+}
+.compost-col {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+}
+.compost-col h4 {
+  font-size: 13px; font-weight: 700; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 6px;
+}
+.compost-col ul { list-style: none; padding: 0; }
+.compost-col li { font-size: 12px; color: var(--text-secondary); padding: 3px 0; }
+
+/* ═══════════════════════════════════════════
+   RIPPLE EFFECT
+   ═══════════════════════════════════════════ */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(143,188,143,0.3);
+  transform: scale(0);
+  animation: rippleAnim 0.6s ease-out;
+  pointer-events: none;
+}
+@keyframes rippleAnim {
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   PLANTA DEL DÍA
+   ═══════════════════════════════════════════ */
+.plant-of-day {
+  background: linear-gradient(135deg, var(--bg-card), rgba(232,160,191,0.08));
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+  display: flex; gap: 14px; align-items: center;
+  cursor: pointer;
+  transition: transform 0.15s var(--bounce);
+  overflow: hidden; position: relative;
+}
+.plant-of-day:active { transform: scale(0.98); }
+.plant-of-day .pod-emoji {
+  font-size: 48px;
+  animation: gentleBounce 3s ease-in-out infinite;
+}
+.plant-of-day .pod-info { flex: 1; }
+.plant-of-day .pod-badge {
+  font-size: 9px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; color: var(--accent-dark);
+  margin-bottom: 4px;
+}
+.plant-of-day .pod-name { font-size: 18px; font-weight: 800; }
+.plant-of-day .pod-fact { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
+
+/* ═══════════════════════════════════════════
+   OFFLINE BANNER
+   ═══════════════════════════════════════════ */
+.offline-banner {
+  position: fixed; top: calc(var(--header-height) + var(--safe-top));
+  left: 0; right: 0;
+  background: var(--overdue);
+  color: #fff; text-align: center;
+  padding: 6px; font-size: 12px; font-weight: 600;
+  z-index: 150;
+  transform: translateY(-100%);
+  transition: transform 0.3s ease;
+}
+.offline-banner.show { transform: translateY(0); }
+
+/* ═══════════════════════════════════════════
+   COLLAPSIBLE SECTIONS
+   ═══════════════════════════════════════════ */
+.collapsible-header {
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer; padding: 12px 0;
+}
+.collapsible-header .ch-arrow {
+  transition: transform 0.3s ease;
+  font-size: 14px;
+}
+.collapsible-header.open .ch-arrow { transform: rotate(180deg); }
+.collapsible-body {
+  max-height: 0; overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.collapsible-body.open { max-height: 2000px; }
+
 @media (min-width: 600px) {
   .page { padding: 24px 24px 0; max-width: 600px; margin: 0 auto; }
   .card-grid { grid-template-columns: repeat(3, 1fr); }
@@ -771,6 +1147,9 @@ img { display: block; max-width: 100%; }
 <!-- WATER DROPS CONTAINER -->
 <div class="water-drops" id="waterDrops"></div>
 
+<!-- OFFLINE BANNER -->
+<div class="offline-banner" id="offlineBanner">📡 Sin conexión — Todo funciona offline</div>
+
 <!-- MAIN CONTENT -->
 <main class="page-container">
 
@@ -783,6 +1162,9 @@ img { display: block; max-width: 100%; }
       <span class="search-icon">🔍</span>
       <input type="text" id="searchInput" placeholder="Buscar flores...">
     </div>
+
+    <div class="seasonal-banner" id="seasonalBanner"></div>
+    <div class="plant-of-day" id="plantOfDay"></div>
 
     <div class="filter-row" id="filterRow">
       <button class="filter-chip active" data-filter="all">Todas</button>
@@ -827,6 +1209,8 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="cal-week" id="calWeek"></div>
 
+    <div class="moon-section" id="moonSection"></div>
+
     <div class="today-tasks">
       <h3>📋 Tareas de hoy</h3>
       <div id="todayTasks"></div>
@@ -835,6 +1219,59 @@ img { display: block; max-width: 100%; }
         <h3>¡Todo al día!</h3>
         <p>No hay tareas pendientes por hoy. Tus plantas están felices.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- ════════ DOCTOR ════════ -->
+  <section class="page" id="pageDoctor">
+    <h1 class="page-title">Doctor de Plantas 🏥</h1>
+    <p class="page-subtitle">Diagnóstico, remedios caseros y primeros auxilios</p>
+
+    <div class="doctor-tabs" id="doctorTabs">
+      <button class="doctor-tab active" data-dtab="symptoms">🔍 Síntomas</button>
+      <button class="doctor-tab" data-dtab="pests">🐛 Plagas</button>
+      <button class="doctor-tab" data-dtab="remedies">🧪 Remedios</button>
+      <button class="doctor-tab" data-dtab="compost">♻️ Composta</button>
+      <button class="doctor-tab" data-dtab="calculator">💧 Calculadora</button>
+    </div>
+
+    <!-- EMERGENCY -->
+    <div class="emergency-card">
+      <div class="ec-title">🚨 ¿Tu planta se está muriendo?</div>
+      <div class="ec-body">
+        <strong>Primeros auxilios:</strong><br>
+        1. Retírala del sol directo inmediatamente<br>
+        2. Revisa raíces — si son marrones/blandas = exceso de agua → deja secar 3 días<br>
+        3. Si la tierra está seca y dura → sumerge la maceta en agua 15 min<br>
+        4. Corta hojas totalmente secas o podridas<br>
+        5. Mueve a lugar con luz indirecta y buena ventilación<br>
+        6. NO fertilices una planta estresada — espera 2 semanas
+      </div>
+    </div>
+
+    <!-- SYMPTOMS TAB -->
+    <div class="doctor-tab-content" id="dtab-symptoms">
+      <div id="symptomsList"></div>
+    </div>
+
+    <!-- PESTS TAB -->
+    <div class="doctor-tab-content" id="dtab-pests" style="display:none">
+      <div id="pestsList"></div>
+    </div>
+
+    <!-- REMEDIES TAB -->
+    <div class="doctor-tab-content" id="dtab-remedies" style="display:none">
+      <div id="remediesList"></div>
+    </div>
+
+    <!-- COMPOST TAB -->
+    <div class="doctor-tab-content" id="dtab-compost" style="display:none">
+      <div id="compostContent"></div>
+    </div>
+
+    <!-- CALCULATOR TAB -->
+    <div class="doctor-tab-content" id="dtab-calculator" style="display:none">
+      <div id="calculatorContent"></div>
     </div>
   </section>
 
@@ -882,6 +1319,10 @@ img { display: block; max-width: 100%; }
   <button class="nav-item" data-page="pageCalendar">
     <span class="nav-icon">📅</span>
     <span>Calendario</span>
+  </button>
+  <button class="nav-item" data-page="pageDoctor">
+    <span class="nav-icon">🏥</span>
+    <span>Doctor</span>
   </button>
   <button class="nav-item" data-page="pageTips">
     <span class="nav-icon">💡</span>
@@ -944,109 +1385,506 @@ const FLOWERS = [
   {
     id:'rosa', emoji:'🌹', name:'Rosa', scientific:'Rosa spp.',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:3, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
+    waterDays:3, waterMl:300, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Las rosas existen desde hace más de 35 millones de años. Son las flores más vendidas del mundo.'
+    fact:'Las rosas existen desde hace más de 35 millones de años. Son las flores más vendidas del mundo.',
+    toxic:'Espinas pueden lastimar, pétalos no tóxicos. Segura para mascotas.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 10-10-10 cada 3 semanas en temporada de crecimiento. Fertilizante para rosas ideal.',
+    pruning:'Poda fuerte en febrero: corta a 1/3 de altura. Corta en diagonal 5mm arriba de yema externa. Elimina flores marchitas todo el verano.',
+    propagation:'Esquejes semi-leñosos en verano (15cm), acodo aéreo, o injerto en patrón resistente.',
+    companions:'Lavanda (repele pulgones), ajo, salvia, geranios, claveles.',
+    diseases:[
+      {name:'Oídio (polvo blanco)', symptom:'Polvo blanco en hojas', treatment:'Fungicida a base de azufre. Remedio casero: 1 cda bicarbonato + 1L agua + gota de jabón.'},
+      {name:'Mancha negra', symptom:'Manchas negras circulares en hojas', treatment:'Elimina hojas afectadas. Fungicida cúprico cada 10 días. Evita mojar follaje al regar.'},
+      {name:'Roya', symptom:'Pústulas anaranjadas bajo las hojas', treatment:'Retira hojas enfermas. Aplica fungicida sistémico. Mejora ventilación.'}
+    ],
+    plantingSteps:['Elige ubicación con 6+ horas de sol directo','Cava hoyo 40×40cm, mezcla tierra con composta','Remoja raíces 1 hora antes de plantar','Planta con injerto 5cm sobre nivel del suelo','Riega abundantemente y aplica acolchado','Primeras 2 semanas: riego diario ligero']
   },
   {
     id:'tulipan', emoji:'🌷', name:'Tulipán', scientific:'Tulipa spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:5, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
+    waterDays:5, waterMl:150, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
     seasons:['spring'], seasonLabel:'Primavera',
-    fact:'En el siglo XVII, los tulipanes llegaron a valer más que las casas en Holanda durante la "Tulipomanía".'
+    fact:'En el siglo XVII, los tulipanes llegaron a valer más que las casas en Holanda durante la "Tulipomanía".',
+    toxic:'Bulbos tóxicos para perros y gatos. Pueden causar vómito e irritación.',
+    toxicLevel:'toxic',
+    fertilizer:'NPK 9-9-6 al plantar y cuando emerge el brote. No fertilizar en floración.',
+    pruning:'No cortar hojas hasta que amarilleen por completo (alimentan el bulbo). Cortar solo tallo floral marchito.',
+    propagation:'Bulbillos laterales que se separan en otoño. Plantar a 15cm de profundidad.',
+    companions:'Narcisos, muscari, pensamientos, no plantar junto a coníferas.',
+    diseases:[
+      {name:'Fuego del tulipán (Botrytis)', symptom:'Manchas marrones en hojas y flores', treatment:'Eliminar partes afectadas. Fungicida sistémico. Espaciar bulbos.'},
+      {name:'Podredumbre del bulbo', symptom:'Bulbo blando y con mal olor', treatment:'Descartar bulbos afectados. No plantar en mismo sitio por 3 años. Mejorar drenaje.'}
+    ],
+    plantingSteps:['Plantar bulbos en octubre-noviembre (necesitan frío)','Cavar hoyos de 15cm profundidad','Colocar bulbo con punta hacia arriba','Espaciar 10cm entre bulbos','Cubrir con tierra y regar bien','Florecerán en primavera (marzo-abril)']
   },
   {
     id:'orquidea', emoji:'🪻', name:'Orquídea', scientific:'Orchidaceae',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:7, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo',
+    waterDays:7, waterMl:100, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo sphagnum',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
-    fact:'Existen más de 25,000 especies de orquídeas. Algunas pueden vivir hasta 100 años.'
+    fact:'Existen más de 25,000 especies de orquídeas. Algunas pueden vivir hasta 100 años.',
+    toxic:'No tóxica para mascotas. Segura en hogares con gatos y perros.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 20-20-20 diluido al 50%, cada 2 semanas en crecimiento. Suspender en reposo.',
+    pruning:'Cortar vara floral por encima del 2° nudo cuando todas las flores caigan. Nunca cortar hojas verdes.',
+    propagation:'División de pseudobulbos, keikis (hijuelos en la vara), o siembra in vitro.',
+    companions:'Bromelias, helechos, musgos (en arreglos epífitos).',
+    diseases:[
+      {name:'Pudrición de raíces', symptom:'Raíces marrones y blandas, hojas flácidas', treatment:'Sacar de maceta, cortar raíces podridas con tijera esterilizada, aplicar canela en polvo, trasplantar en sustrato nuevo.'},
+      {name:'Manchas bacterianas', symptom:'Manchas acuosas oscuras en hojas', treatment:'Cortar parte afectada con margen sano. Aplicar canela. Aislar planta.'},
+      {name:'Cochinilla', symptom:'Bolitas blancas algodonosas en axilas de hojas', treatment:'Limpiar con algodón y alcohol isopropílico. Aceite de neem semanal.'}
+    ],
+    plantingSteps:['Usar maceta transparente con agujeros de drenaje','Sustrato: corteza de pino gruesa + carbón + perlita','NO usar tierra normal (mata las raíces)','Colocar en luz brillante indirecta (nunca sol directo)','Regar sumergiendo maceta 10 min en agua, escurrir bien','Temperatura nocturna 5°C menor que diurna estimula floración']
   },
   {
     id:'girasol', emoji:'🌻', name:'Girasol', scientific:'Helianthus annuus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, tempMin:20, tempMax:35, soil:'Franco, fértil',
+    waterDays:4, waterMl:400, tempMin:20, tempMax:35, soil:'Franco, fértil',
     seasons:['summer'], seasonLabel:'Verano',
-    fact:'Los girasoles jóvenes siguen al sol durante el día, un fenómeno llamado heliotropismo.'
+    fact:'Los girasoles jóvenes siguen al sol durante el día, un fenómeno llamado heliotropismo.',
+    toxic:'No tóxico. Semillas comestibles y nutritivas para humanos y aves.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 5-10-10 al trasplantar. Evitar exceso de nitrógeno (mucho follaje, poca flor).',
+    pruning:'No requiere poda. Cortar cabeza cuando pétalos caigan para cosechar semillas.',
+    propagation:'Solo por semillas. Siembra directa en abril-mayo. Germina en 7-10 días.',
+    companions:'Calabazas, pepinos, maíz, frijol. Atrae polinizadores beneficiosos.',
+    diseases:[
+      {name:'Mildiu velloso', symptom:'Manchas amarillas en hojas, pelusa gris debajo', treatment:'Fungicida cúprico. Eliminar hojas afectadas. No mojar follaje.'},
+      {name:'Roya del girasol', symptom:'Pústulas marrones-rojizas en hojas', treatment:'Arrancar hojas infectadas. Rotación de cultivos.'}
+    ],
+    plantingSteps:['Sembrar después de última helada (abril-mayo)','Plantar semillas a 2.5cm de profundidad','Espaciar 30-45cm entre plantas','Lugar con 6-8 horas de sol directo','Regar bien al plantar, luego cada 3-4 días','Puede necesitar tutor si supera 1.5m de altura']
   },
   {
     id:'lavanda', emoji:'💜', name:'Lavanda', scientific:'Lavandula angustifolia',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:7, tempMin:12, tempMax:30, soil:'Arenoso, alcalino',
+    waterDays:7, waterMl:150, tempMin:12, tempMax:30, soil:'Arenoso, alcalino, pH 6.5-7.5',
     seasons:['summer'], seasonLabel:'Verano',
-    fact:'La lavanda se ha usado por más de 2,500 años. Los romanos la usaban para perfumar sus baños.'
+    fact:'La lavanda se ha usado por más de 2,500 años. Los romanos la usaban para perfumar sus baños.',
+    toxic:'No tóxica para humanos. Puede causar náuseas en gatos si ingieren mucha cantidad.',
+    toxicLevel:'caution',
+    fertilizer:'Mínimo fertilizante. Una aplicación ligera de composta en primavera es suficiente.',
+    pruning:'Podar 1/3 después de floración. Nunca cortar hasta madera vieja (no rebrota). Forma redondeada.',
+    propagation:'Esquejes de 10cm en verano, semillas (germinación lenta 2-4 semanas), división en primavera.',
+    companions:'Rosas, tomillo, romero, salvia. Repele pulgones y mosquitos.',
+    diseases:[
+      {name:'Pudrición de raíz', symptom:'Planta marchita pese a riego, base oscura', treatment:'Mejorar drenaje urgente. Añadir grava al sustrato. Reducir riego drásticamente.'},
+      {name:'Cenicilla', symptom:'Polvo blanquecino en hojas', treatment:'Mejorar ventilación. Bicarbonato de sodio 1cda/L agua.'}
+    ],
+    plantingSteps:['Elegir sitio soleado con excelente drenaje','Mezclar tierra con arena y grava (30%)','Plantar con 40-60cm de separación','NO abonar en exceso (prefiere suelo pobre)','Regar solo cuando tierra esté muy seca','Cosechar flores cuando se abran los primeros botones']
   },
   {
     id:'gardenia', emoji:'🤍', name:'Gardenia', scientific:'Gardenia jasminoides',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:3, tempMin:16, tempMax:24, soil:'Ácido, rico en humus',
+    waterDays:3, waterMl:250, tempMin:16, tempMax:24, soil:'Ácido pH 5-6, rico en humus',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Las gardenias son símbolo de pureza y dulzura. Su perfume es uno de los más usados en perfumería.'
+    fact:'Las gardenias son símbolo de pureza y dulzura. Su perfume es uno de los más usados en perfumería.',
+    toxic:'No tóxica para humanos ni mascotas. Segura.',
+    toxicLevel:'safe',
+    fertilizer:'Fertilizante para plantas ácidas NPK 30-10-10 cada 2 semanas primavera-verano. Quelato de hierro si amarillean.',
+    pruning:'Podar justo después de floración. Eliminar ramas cruzadas y flores marchitas.',
+    propagation:'Esquejes de punta en verano (usar hormona enraizante). Enraíza en 4-8 semanas.',
+    companions:'Azaleas, camelias, helechos, hortensias (todas prefieren suelo ácido).',
+    diseases:[
+      {name:'Clorosis férrica', symptom:'Hojas amarillas con venas verdes', treatment:'Quelato de hierro en riego. Acidificar suelo con azufre o vinagre diluido.'},
+      {name:'Cochinilla algodonosa', symptom:'Masas blancas en tallos y hojas', treatment:'Alcohol isopropílico con algodón. Aceite de neem cada 7 días.'},
+      {name:'Caída de botones', symptom:'Botones florales caen antes de abrir', treatment:'Mantener humedad estable. No mover la planta. Temperatura constante 18-24°C.'}
+    ],
+    plantingSteps:['Usar sustrato ácido (turba + perlita + corteza)','Maceta con excelente drenaje','Ubicar en luz brillante sin sol directo del mediodía','Mantener humedad ambiental alta (bandeja con piedras y agua)','Regar con agua de lluvia o filtrada (sin cal)','No mover durante la floración']
   },
   {
     id:'jazmin', emoji:'🌼', name:'Jazmín', scientific:'Jasminum officinale',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    waterDays:4, waterMl:300, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'El jazmín libera su fragancia más intensa por la noche para atraer polinizadores nocturnos.'
+    fact:'El jazmín libera su fragancia más intensa por la noche para atraer polinizadores nocturnos.',
+    toxic:'Jasminum officinale no es tóxico. ⚠️ El "jazmín estrella" (Trachelospermum) sí puede irritar.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 7-9-5 cada 2 semanas en crecimiento. Potasio extra para más flores.',
+    pruning:'Podar después de floración para dar forma. Puede podarse fuerte y rebrota bien.',
+    propagation:'Esquejes semi-leñosos en verano, acodo en primavera.',
+    companions:'Rosas, madreselva, clemátide. Ideal para pérgolas y enrejados.',
+    diseases:[
+      {name:'Mosca blanca', symptom:'Pequeñas moscas blancas bajo las hojas, melaza pegajosa', treatment:'Trampas amarillas pegajosas. Jabón potásico semanal. Aceite de neem.'},
+      {name:'Araña roja', symptom:'Hojas punteadas, telarañas finas', treatment:'Aumentar humedad ambiental. Acaricida o aceite de neem cada 5 días.'}
+    ],
+    plantingSteps:['Plantar en primavera junto a soporte/enrejado','Hoyo 2x el tamaño del cepellón','Mezclar tierra con composta madura','Regar abundantemente tras plantar','Guiar tallos hacia el soporte','Acolchar base con corteza para retener humedad']
   },
   {
     id:'hortensia', emoji:'💠', name:'Hortensia', scientific:'Hydrangea macrophylla',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:3, tempMin:12, tempMax:25, soil:'Ácido, húmedo',
+    waterDays:3, waterMl:400, tempMin:12, tempMax:25, soil:'Ácido pH 5.5, húmedo',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'El color de las hortensias cambia según la acidez del suelo: ácido = azul, alcalino = rosa.'
+    fact:'El color de las hortensias cambia según la acidez del suelo: ácido = azul, alcalino = rosa.',
+    toxic:'Todas las partes son tóxicas si se ingieren. Mantener lejos de mascotas y niños.',
+    toxicLevel:'toxic',
+    fertilizer:'NPK 10-10-10 en primavera. Para azul: sulfato de aluminio. Para rosa: cal dolomítica.',
+    pruning:'Podar en febrero solo tallos que florecieron (florece en madera vieja). Eliminar flores secas.',
+    propagation:'Esquejes de punta en junio-julio. Enraízan fácil en sustrato húmedo con calor de fondo.',
+    companions:'Hostas, helechos, astilbes, azaleas. Todas aman sombra parcial.',
+    diseases:[
+      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Fungicida azufrado. Mejorar ventilación entre plantas.'},
+      {name:'Mancha foliar (Cercospora)', symptom:'Manchas púrpura-marrones en hojas', treatment:'Eliminar hojas caídas. Fungicida cúprico preventivo.'},
+      {name:'Clorosis', symptom:'Hojas amarillentas', treatment:'Acidificar suelo. Aplicar quelato de hierro.'}
+    ],
+    plantingSteps:['Ubicar en semi-sombra (sol de mañana ideal)','Suelo ácido rico en materia orgánica','Plantar al nivel del cepellón, no más profundo','Regar abundantemente — necesitan mucha agua','Acolchar con corteza de pino (acidifica)','Para flores azules: añadir sulfato de aluminio al riego']
   },
   {
     id:'lirio', emoji:'🪷', name:'Lirio', scientific:'Lilium spp.',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:5, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
+    waterDays:5, waterMl:250, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Los lirios han sido símbolo de pureza desde la antigua Grecia. Representan renacimiento.'
+    fact:'Los lirios han sido símbolo de pureza desde la antigua Grecia. Representan renacimiento.',
+    toxic:'MUY tóxico para gatos (puede causar fallo renal). Seguro para perros y humanos.',
+    toxicLevel:'toxic',
+    fertilizer:'NPK 5-10-10 al emerger y al formar botones. Potasio fortalece tallos.',
+    pruning:'Cortar flores marchitas pero dejar tallo y hojas hasta que amarilleen.',
+    propagation:'Separar escamas del bulbo en otoño, bulbillos, o semillas (tarda 2-3 años en florecer).',
+    companions:'Peonías, hostas, lavanda, artemisa.',
+    diseases:[
+      {name:'Botrytis (moho gris)', symptom:'Manchas ovaladas marrones en hojas y botones', treatment:'Retirar partes afectadas. Fungicida cada 10 días. No mojar follaje.'},
+      {name:'Virus del mosaico', symptom:'Hojas con patrones irregulares claros/oscuros', treatment:'No tiene cura. Eliminar planta para proteger las demás.'}
+    ],
+    plantingSteps:['Plantar bulbos en otoño a 15-20cm de profundidad','Ubicar con sol en copa y sombra en raíces','Tierra con buen drenaje — poner grava debajo del bulbo','Espaciar 20-30cm entre bulbos','Regar al plantar, luego moderadamente','Tallos altos pueden necesitar tutor']
   },
   {
     id:'margarita', emoji:'🌼', name:'Margarita', scientific:'Bellis perennis',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
+    waterDays:4, waterMl:200, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Una margarita no es una sola flor, sino cientos de pequeñas flores agrupadas.'
+    fact:'Una margarita no es una sola flor, sino cientos de pequeñas flores agrupadas.',
+    toxic:'No tóxica. Pétalos comestibles para ensaladas.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 10-10-10 mensual en crecimiento. Muy poco exigente.',
+    pruning:'Deadheading continuo para estimular floración. Cortar a ras del suelo en otoño.',
+    propagation:'Semillas en primavera (superficie, necesitan luz), división de mata en otoño.',
+    companions:'Lavanda, caléndula, cosmos, zinnias.',
+    diseases:[
+      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Bicarbonato 1cda/L agua. Buena ventilación.'},
+      {name:'Pulgones', symptom:'Insectos verdes/negros en brotes tiernos', treatment:'Chorro de agua a presión. Jabón potásico. Mariquitas (depredador natural).'}
+    ],
+    plantingSteps:['Sembrar semillas en superficie (necesitan luz)','Mantener húmedo hasta germinar (7-14 días)','Trasplantar cuando tengan 4 hojas verdaderas','Sol pleno o semi-sombra','Espaciar 15-20cm','Florece el primer año si se siembra temprano']
   },
   {
     id:'clavel', emoji:'🌺', name:'Clavel', scientific:'Dianthus caryophyllus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, tempMin:12, tempMax:24, soil:'Franco, bien drenado',
+    waterDays:4, waterMl:200, tempMin:12, tempMax:24, soil:'Franco, ligeramente alcalino',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Los claveles pueden durar hasta 3 semanas en un florero. Son las flores de corte más duraderas.'
+    fact:'Los claveles pueden durar hasta 3 semanas en un florero. Son las flores de corte más duraderas.',
+    toxic:'No tóxico para humanos. Puede causar dermatitis leve en mascotas si lo mastican mucho.',
+    toxicLevel:'caution',
+    fertilizer:'NPK 20-10-20 cada 2 semanas. Alto en potasio para flores fuertes.',
+    pruning:'Pinzar puntas para plantas más compactas. Cortar flores marchitas. Podar 1/3 en otoño.',
+    propagation:'Esquejes de tallo en primavera (cortar entre nudos), semillas, división.',
+    companions:'Rosas, lavanda, salvia, tomillo.',
+    diseases:[
+      {name:'Roya del clavel', symptom:'Pústulas marrones en hojas', treatment:'Fungicida. Eliminar hojas afectadas. Evitar mojar follaje.'},
+      {name:'Fusarium', symptom:'Marchitamiento unilateral, tallo oscuro por dentro', treatment:'No tiene cura. Eliminar planta. Desinfectar sustrato.'}
+    ],
+    plantingSteps:['Sembrar semillas en febrero-marzo en interior','Trasplantar cuando pasen heladas','Sol pleno mínimo 5 horas','Suelo bien drenado (añadir arena si es arcilloso)','Espaciar 20-25cm','Pinzar primera yema para planta más ramificada']
   },
   {
     id:'violeta', emoji:'💜', name:'Violeta', scientific:'Viola odorata',
     difficulty:1, sunlight:'shade', sunlightLabel:'Sombra',
-    waterDays:3, tempMin:8, tempMax:20, soil:'Rico en materia orgánica',
+    waterDays:3, waterMl:150, tempMin:8, tempMax:20, soil:'Rico en materia orgánica, pH 6-7',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
-    fact:'Las violetas eran las flores favoritas de Napoleón. Las usaba como símbolo secreto de lealtad.'
+    fact:'Las violetas eran las flores favoritas de Napoleón. Las usaba como símbolo secreto de lealtad.',
+    toxic:'No tóxica. Flores y hojas comestibles. Usada en repostería y ensaladas.',
+    toxicLevel:'safe',
+    fertilizer:'Composta o humus de lombriz en primavera. NPK 10-10-10 diluido mensual.',
+    pruning:'Quitar hojas marchitas. Cortar estolones para controlar expansión.',
+    propagation:'Estolones (como fresas), división de mata en otoño, semillas (necesitan estratificación fría).',
+    companions:'Hostas, helechos, prímulas, impatiens. Perfectas bajo árboles.',
+    diseases:[
+      {name:'Araña roja', symptom:'Hojas punteadas, telarañas finas', treatment:'Aumentar humedad. Pulverizar con agua. Aceite de neem.'},
+      {name:'Pudrición de corona', symptom:'Centro de la planta se pudre', treatment:'Mejorar drenaje. No regar sobre la corona. Retirar partes podridas.'}
+    ],
+    plantingSteps:['Elegir lugar sombreado o semi-sombreado','Enriquecer suelo con composta','Plantar a 15cm de separación','Regar regularmente — le gusta humedad constante','Cubrir con mantillo orgánico','Se expande sola por estolones — controlar si necesario']
   },
   {
     id:'geranio', emoji:'🌺', name:'Geranio', scientific:'Pelargonium spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:5, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    waterDays:5, waterMl:250, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Los geranios repelen mosquitos naturalmente. Son perfectos para balcones y ventanas.'
+    fact:'Los geranios repelen mosquitos naturalmente. Son perfectos para balcones y ventanas.',
+    toxic:'Tóxico para perros y gatos (vómito, dermatitis). Seguro para humanos.',
+    toxicLevel:'toxic',
+    fertilizer:'NPK 15-15-15 cada 2 semanas. Potasio extra para más flores.',
+    pruning:'Pinzar puntas regularmente para planta compacta. Poda fuerte en febrero a 10cm.',
+    propagation:'Esquejes de tallo fácilísimos (cortar 10cm, dejar secar 24h, plantar). Semillas en enero.',
+    companions:'Petunias, verbenas, lobelia, lavanda.',
+    diseases:[
+      {name:'Podredumbre del tallo', symptom:'Base del tallo oscura y blanda', treatment:'Cortar parte sana y hacer esqueje nuevo. Reducir riego.'},
+      {name:'Roya', symptom:'Círculos amarillos con pústulas café debajo', treatment:'Eliminar hojas afectadas. Fungicida cúprico. Buena ventilación.'},
+      {name:'Mosca blanca', symptom:'Pequeños insectos blancos voladores', treatment:'Trampas amarillas. Jabón potásico semanal.'}
+    ],
+    plantingSteps:['Plantar después de heladas en maceta o jardín','Sol directo mínimo 5 horas','Sustrato: tierra + perlita + composta','Maceta con buen drenaje (odia encharcamiento)','Regar cuando tierra esté seca al tacto','Proteger de heladas en invierno (meter al interior)']
   },
   {
     id:'petunia', emoji:'🌸', name:'Petunia', scientific:'Petunia × hybrida',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:2, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    waterDays:2, waterMl:200, tempMin:15, tempMax:30, soil:'Franco, bien drenado, fértil',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Las petunias están emparentadas con los tomates y el tabaco. Todas son de la familia Solanaceae.'
+    fact:'Las petunias están emparentadas con los tomates y el tabaco. Todas son de la familia Solanaceae.',
+    toxic:'No tóxica para mascotas ni humanos.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 10-30-20 cada semana (alta demanda de fósforo). Fertilizante líquido ideal.',
+    pruning:'Cortar a la mitad cuando se vea "largucha" — rebrota vigorosamente en 1-2 semanas.',
+    propagation:'Semillas muy finas (no cubrir, necesitan luz), esquejes de punta en verano.',
+    companions:'Verbenas, lobelias, alyssum, geranios.',
+    diseases:[
+      {name:'Botrytis', symptom:'Flores y hojas con moho gris', treatment:'Eliminar flores marchitas. Mejorar ventilación. Fungicida si persiste.'},
+      {name:'Virus del mosaico del tabaco', symptom:'Hojas deformadas con mosaico', treatment:'No tiene cura. Eliminar planta. No fumar cerca (se transmite por tabaco).'}
+    ],
+    plantingSteps:['Sembrar semillas en superficie en febrero-marzo (interior)','Necesitan luz para germinar — no cubrir','Trasplantar a maceta o jardín tras heladas','Sol pleno todo el día','Regar frecuentemente — macetas se secan rápido','Fertilizar semanalmente para floración continua']
   },
   {
     id:'cempasuchil', emoji:'🏵️', name:'Cempasúchil', scientific:'Tagetes erecta',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:3, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
+    waterDays:3, waterMl:300, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
     seasons:['summer','fall'], seasonLabel:'Verano - Otoño',
-    fact:'El cempasúchil es esencial en el Día de Muertos. Se cree que su aroma guía a los difuntos de vuelta.'
+    fact:'El cempasúchil es esencial en el Día de Muertos. Se cree que su aroma guía a los difuntos de vuelta.',
+    toxic:'No tóxico. Usado en medicina tradicional y como colorante alimentario.',
+    toxicLevel:'safe',
+    fertilizer:'NPK 10-10-10 al trasplantar. Composta mensual. No necesita mucho.',
+    pruning:'Pinzar primeras flores para planta más ramificada. Eliminar flores marchitas para que siga produciendo.',
+    propagation:'Semillas muy fáciles. Germina en 5-7 días. Siembra directa en mayo-junio.',
+    companions:'Tomates (repele nematodos y mosca blanca), chiles, calabazas, frijol.',
+    diseases:[
+      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Buena ventilación. Bicarbonato de sodio. Evitar riego nocturno.'},
+      {name:'Pudrición de raíz', symptom:'Planta marchita, base oscura', treatment:'Reducir riego. Mejorar drenaje. Trasplantar a sustrato seco.'},
+      {name:'Araña roja', symptom:'Punteado amarillento en hojas', treatment:'Pulverizar follaje con agua. Aceite de neem.'}
+    ],
+    plantingSteps:['Sembrar semillas en mayo-junio directo en tierra','Cubrir con 1cm de tierra','Germina en 5-7 días','Sol pleno todo el día','Espaciar 30-40cm','Para Día de Muertos: sembrar julio-agosto']
   }
 ];
+
+/* ═══════════════════════════════════════════
+   PLANT DOCTOR DATA
+   ═══════════════════════════════════════════ */
+const SYMPTOMS = [
+  {
+    id:'yellow-leaves', emoji:'💛', title:'Hojas amarillas',
+    desc:'Las hojas se vuelven amarillas gradual o repentinamente',
+    causes:[
+      {cause:'Exceso de riego', detail:'La causa #1. Las raíces se ahogan y no absorben nutrientes.', solution:'Deja secar la tierra completamente antes de volver a regar. Revisa drenaje. Si las raíces están marrones, trasplanta con sustrato nuevo.'},
+      {cause:'Falta de luz', detail:'La planta no puede hacer fotosíntesis suficiente.', solution:'Acerca a una ventana luminosa. Rota la maceta 1/4 cada semana.'},
+      {cause:'Deficiencia de nitrógeno', detail:'Hojas viejas (abajo) amarillean primero.', solution:'Fertiliza con NPK alto en N (ej: 20-10-10). Humus de lombriz es excelente.'},
+      {cause:'Deficiencia de hierro (clorosis)', detail:'Hojas nuevas amarillas con VENAS VERDES.', solution:'Quelato de hierro en riego. Acidificar suelo si es alcalino.'},
+      {cause:'Edad natural', detail:'Las hojas viejas de abajo se caen — es normal.', solution:'Si solo son 1-2 hojas de abajo, no te preocupes. Retíralas.'}
+    ]
+  },
+  {
+    id:'spots', emoji:'🟤', title:'Manchas en hojas',
+    desc:'Manchas marrones, negras o de otro color en el follaje',
+    causes:[
+      {cause:'Hongos (Cercospora, Septoria)', detail:'Manchas circulares con borde definido, a veces con halo amarillo.', solution:'Elimina hojas afectadas. Fungicida cúprico cada 7-10 días. No mojes el follaje al regar.'},
+      {cause:'Bacterias', detail:'Manchas acuosas, oscuras, de borde irregular. Mal olor.', solution:'Corta parte enferma con 2cm de margen sano. Esteriliza tijeras. Reduce humedad.'},
+      {cause:'Quemadura solar', detail:'Manchas secas, blancas o marrones. Solo en lado expuesto al sol.', solution:'Mueve a lugar con luz indirecta o sol de mañana. Las hojas quemadas no se recuperan.'},
+      {cause:'Exceso de fertilizante', detail:'Puntas y bordes marrones. "Quemadura química".', solution:'Lava el sustrato con agua abundante. No fertilices por 1 mes.'}
+    ]
+  },
+  {
+    id:'wilting', emoji:'😵', title:'Planta caída / marchita',
+    desc:'Tallos y hojas caídos, planta sin turgencia',
+    causes:[
+      {cause:'Falta de agua', detail:'Tierra seca, maceta ligera. Hojas se sienten secas y crujientes.', solution:'Sumerge la maceta completa en agua 20 minutos. Deja escurrir. Retoma riego regular.'},
+      {cause:'EXCESO de agua', detail:'Tierra húmeda, maceta pesada. Hojas se sienten blandas y húmedas.', solution:'Saca de maceta. Revisa raíces (sanas=blancas, podridas=marrones/blandas). Corta lo podrido, deja secar 2-3 días. Trasplanta en sustrato fresco.'},
+      {cause:'Raíces comprimidas', detail:'Raíces salen por el drenaje. Planta dejó de crecer.', solution:'Trasplanta a maceta 3-4cm más grande. Afloja raíces con cuidado.'},
+      {cause:'Golpe de calor', detail:'Planta en sol intenso por muchas horas. Hojas quemadas.', solution:'Mueve a sombra inmediatamente. Riega. Corta hojas quemadas. Recupera en 1-2 semanas.'}
+    ]
+  },
+  {
+    id:'no-bloom', emoji:'😢', title:'No florece',
+    desc:'La planta crece pero no produce flores',
+    causes:[
+      {cause:'Poca luz', detail:'La mayoría de plantas necesitan 6+ horas de luz para florecer.', solution:'Mueve a ubicación más luminosa. Sol directo de mañana es ideal.'},
+      {cause:'Exceso de nitrógeno', detail:'Mucho fertilizante con N produce follaje verde pero pocas flores.', solution:'Cambia a fertilizante alto en fósforo (P) y potasio (K), ej: NPK 5-10-10.'},
+      {cause:'Maceta muy grande', detail:'La planta invierte energía en raíces en vez de flores.', solution:'Usa maceta solo 2-3cm más grande que el cepellón.'},
+      {cause:'Necesita reposo invernal', detail:'Algunas plantas requieren un periodo frío para inducir floración.', solution:'En invierno, reduce riego y temperatura. Simula estaciones naturales.'},
+      {cause:'Poda en mal momento', detail:'Cortaste los tallos donde se formarían las flores.', solution:'Investiga cuándo florece tu planta (madera vieja vs. nueva) y poda después de la floración.'}
+    ]
+  },
+  {
+    id:'pests', emoji:'🐛', title:'Plagas comunes',
+    desc:'Insectos que atacan tus plantas',
+    causes:[
+      {cause:'Pulgones (áfidos)', detail:'Insectos pequeños verdes/negros en brotes y hojas nuevas. Dejan melaza pegajosa.', solution:'Chorro de agua fuerte. Jabón potásico 2% semanal. Soltar mariquitas. Spray de ajo.'},
+      {cause:'Mosca blanca', detail:'Moscas diminutas blancas que vuelan al agitar la planta. Debajo de hojas.', solution:'Trampas amarillas pegajosas. Jabón potásico. Aceite de neem cada 5 días.'},
+      {cause:'Cochinilla algodonosa', detail:'Bolitas blancas como algodón en axilas de hojas y tallos.', solution:'Limpiar con algodón + alcohol isopropílico. Aceite de neem. Insecticida sistémico si es grave.'},
+      {cause:'Araña roja', detail:'Punteado amarillo fino en hojas. Telarañas muy finas. Ambiente seco.', solution:'Aumentar humedad (pulverizar follaje). Acaricida o aceite de neem. Ducha a la planta.'},
+      {cause:'Trips', detail:'Insectos diminutos alargados. Hojas con aspecto plateado/bronceado.', solution:'Trampas azules pegajosas. Jabón potásico + aceite de neem. Aceite de nim sistémico.'}
+    ]
+  }
+];
+
+const REMEDIES = [
+  {
+    id:'garlic-spray', emoji:'🧄', title:'Spray de Ajo Anti-Plagas',
+    subtitle:'Repelente natural para pulgones, mosca blanca y más',
+    ingredients:['5 dientes de ajo grandes','1 litro de agua','1 cucharadita de jabón líquido biodegradable','Botella spray'],
+    preparation:'Licúa los ajos con 250ml de agua. Deja reposar 24 horas tapado. Cuela y mezcla con el resto del agua y el jabón.',
+    application:'Pulveriza sobre hojas (ambos lados) al atardecer. Repite cada 3-5 días. Efectivo contra pulgones, mosca blanca y orugas.'
+  },
+  {
+    id:'cinnamon', emoji:'🫙', title:'Canela Anti-Hongos',
+    subtitle:'Fungicida y cicatrizante natural',
+    ingredients:['Canela en polvo (de la cocina)'],
+    preparation:'No requiere preparación. Usar directamente en polvo.',
+    application:'Espolvorea canela sobre cortes de poda (cicatriza). Pon sobre sustrato para prevenir hongos y mosquitos del sustrato. Espolvorea en raíces al trasplantar.'
+  },
+  {
+    id:'eggshell', emoji:'🥚', title:'Cáscara de Huevo (Calcio)',
+    subtitle:'Fertilizante rico en calcio para suelos ácidos',
+    ingredients:['Cáscaras de 6-10 huevos','Licuadora o mortero'],
+    preparation:'Lava las cáscaras. Sécalas al sol 1-2 días. Tritúralas hasta polvo fino (entre más fino, más rápido actúa).',
+    application:'Mezcla 2 cucharadas por maceta mediana en la superficie. Riega normal. Se descompone en 2-3 meses. Ideal para tomates, pimientos y rosas.'
+  },
+  {
+    id:'banana-peel', emoji:'🍌', title:'Cáscara de Plátano (Potasio)',
+    subtitle:'Fertilizante rico en potasio para floración abundante',
+    ingredients:['3-4 cáscaras de plátano','1 litro de agua','Frasco de vidrio'],
+    preparation:'Corta las cáscaras en trozos. Coloca en el frasco con agua. Tapa y deja fermentar 48-72 horas (fuera del sol).',
+    application:'Diluye: 1 parte de "agua de plátano" por 5 de agua limpia. Riega cada 15 días. Ideal para rosas, hortensias y plantas con flor. También puedes enterrar cáscaras directamente.'
+  },
+  {
+    id:'neem-oil', emoji:'🌿', title:'Aceite de Neem',
+    subtitle:'Insecticida, fungicida y acaricida orgánico',
+    ingredients:['5ml aceite de neem puro (prensado en frío)','1 litro de agua tibia','3 gotas de jabón líquido biodegradable (emulsificante)'],
+    preparation:'Mezcla el jabón con el aceite de neem. Agrega el agua tibia y agita vigorosamente. Usar inmediatamente (se degrada con la luz).',
+    application:'Pulveriza al atardecer (se degrada con UV). Cubre ambos lados de las hojas. Repite cada 7 días por 3-4 semanas. Efectivo contra: pulgones, mosca blanca, cochinilla, araña roja, trips, minador de hojas.'
+  },
+  {
+    id:'beer-trap', emoji:'🍺', title:'Trampa de Cerveza para Caracoles',
+    subtitle:'Atrapa babosas y caracoles sin químicos',
+    ingredients:['Cerveza (cualquier tipo, incluso rancia)','Recipiente bajo (tapa de frasco, plato hondo)'],
+    preparation:'Llena el recipiente con cerveza hasta 2-3cm de profundidad.',
+    application:'Entiérralo a nivel del suelo cerca de plantas afectadas. Los caracoles se sienten atraídos, caen y se ahogan. Renueva cada 2-3 días. Coloca varias trampas en el jardín.'
+  },
+  {
+    id:'coffee-grounds', emoji:'☕', title:'Borra de Café',
+    subtitle:'Acidificante, fertilizante y repelente',
+    ingredients:['Borra de café usada (seca)'],
+    preparation:'Seca la borra al sol o en horno a baja temperatura. Guardar en frasco seco.',
+    application:'Mezcla 1-2 cucharadas en la superficie del sustrato. Acidifica ligeramente (ideal para hortensias azules, gardenias, azaleas). Repele caracoles y gatos. Aporta nitrógeno lentamente. NO usar en exceso (puede compactar).'
+  },
+  {
+    id:'epsom-salt', emoji:'🧂', title:'Sal de Epsom (Magnesio)',
+    subtitle:'Para hojas más verdes y frutos más grandes',
+    ingredients:['1 cucharada de sal de Epsom (sulfato de magnesio)','1 litro de agua'],
+    preparation:'Disuelve la sal de Epsom en agua tibia.',
+    application:'Riega cada 4-6 semanas durante temporada de crecimiento. Ideal para tomates, pimientos y rosas. Pulverizar sobre hojas para absorción rápida. Si las hojas amarillean entre las venas = deficiencia de magnesio.'
+  }
+];
+
+const PESTS_DATA = [
+  {
+    id:'aphids', emoji:'🟢', title:'Pulgones (Áfidos)',
+    desc:'Los más comunes. Colonizan brotes y hojas nuevas.',
+    visual:'Insectos blandos de 1-3mm, verdes, negros, o amarillos. Forman colonias densas.',
+    damage:'Chupan savia, deforman hojas, segregan melaza que atrae hongos (negrilla).',
+    organic:'Chorro de agua fuerte. Jabón potásico 2%. Spray de ajo. Liberar mariquitas o crisopas.',
+    chemical:'Imidacloprid sistémico. Pirimicarb específico para pulgones.'
+  },
+  {
+    id:'whitefly', emoji:'🦟', title:'Mosca Blanca',
+    desc:'Mosquitas blancas que vuelan al agitar las hojas.',
+    visual:'Moscas diminutas (1-2mm) blancas. Se posan debajo de las hojas.',
+    damage:'Chupan savia, debilitan la planta, transmiten virus, segregan melaza.',
+    organic:'Trampas amarillas pegajosas. Jabón potásico + aceite de neem. Albahaca repele naturalmente.',
+    chemical:'Acetamiprid. Spiromesifen.'
+  },
+  {
+    id:'mealybug', emoji:'🐛', title:'Cochinilla Algodonosa',
+    desc:'Bolitas blancas como algodón en tallos y axilas.',
+    visual:'Insectos ovalados cubiertos de cera blanca algodonosa. 3-5mm.',
+    damage:'Chupan savia, debilitan severamente. Producen melaza y negrilla.',
+    organic:'Algodón con alcohol isopropílico 70%. Aceite de neem. Jabón potásico.',
+    chemical:'Imidacloprid. Clorpirifos (muy tóxico, último recurso).'
+  },
+  {
+    id:'spider-mite', emoji:'🕷️', title:'Araña Roja',
+    desc:'Ácaro casi invisible. Adora ambientes secos y calurosos.',
+    visual:'Puntitos rojos/marrones < 0.5mm. Telarañas finísimas entre hojas. Ver con lupa.',
+    damage:'Punteado amarillo en hojas (miles de picaduras). Hojas secas y caen. Puede matar la planta.',
+    organic:'Pulverizar follaje con agua (odia humedad). Aceite de neem. Jabón potásico + azufre.',
+    chemical:'Abamectina. Espirodiclofeno. Alternar productos (genera resistencia fácilmente).'
+  },
+  {
+    id:'thrips', emoji:'🪲', title:'Trips',
+    desc:'Insectos diminutos alargados que raspan hojas.',
+    visual:'1-2mm, alargados como bastoncitos. Color amarillo a marrón. Difíciles de ver.',
+    damage:'Raspaduras plateadas en hojas. Deforman flores y brotes. Transmiten virus.',
+    organic:'Trampas azules pegajosas. Aceite de neem. Spinosad (orgánico).',
+    chemical:'Spinosad. Acrinatrin.'
+  }
+];
+
+/* ═══════════════════════════════════════════
+   COMPOSTING DATA
+   ═══════════════════════════════════════════ */
+const COMPOST_DATA = {
+  greens:['Restos de frutas y verduras','Cáscara de huevo (triturada)','Borra de café y filtros','Bolsas de té','Pasto recién cortado','Restos de poda verde','Flores marchitas','Cáscara de plátano'],
+  browns:['Hojas secas','Cartón sin tinta (pedazos)','Servilletas de papel usadas','Ramas secas trituradas','Aserrín (no tratado)','Paja o heno','Papel periódico (tiras)','Cascarilla de arroz'],
+  noCompost:['❌ Carne, pollo o pescado','❌ Lácteos o huesos','❌ Aceite o grasa','❌ Plantas enfermas','❌ Heces de mascotas','❌ Carbón o ceniza de carbón','❌ Madera tratada o pintada','❌ Plásticos o metales'],
+  steps:[
+    {step:'Elige contenedor', detail:'Maceta grande, compostera, o simplemente un rincón del jardín. Mínimo 50×50cm.'},
+    {step:'Capa base', detail:'Ramitas secas o cartón para drenaje y aireación (10cm).'},
+    {step:'Alterna capas', detail:'1 capa marrón (seco) + 1 capa verde (húmedo). Proporción ideal: 3 partes marrón por 1 verde.'},
+    {step:'Humedece', detail:'Debe sentirse como esponja exprimida. Ni seco ni encharcado.'},
+    {step:'Voltea semanalmente', detail:'Mover con pala o tenedor para oxigenar. Esto acelera la descomposición.'},
+    {step:'Paciencia', detail:'Composta lista en 2-4 meses en clima cálido, 4-6 meses en frío. Debe oler a tierra húmeda.'}
+  ],
+  diyFertilizers:[
+    {name:'Té de plátano', recipe:'4 cáscaras en 1L agua, fermentar 48h. Diluir 1:5. Rico en potasio.'},
+    {name:'Agua de arroz', recipe:'El agua de lavar arroz sin cocer. Regar directo. Rica en almidón y nutrientes.'},
+    {name:'Té de composta', recipe:'1 puño de composta en 1L agua. Reposar 24h. Colar. Riego completo.'},
+    {name:'Licuado verde', recipe:'Cáscaras + restos de verdura licuados con agua. Enterrar en la maceta.'},
+    {name:'Vinagre diluido', recipe:'1 cucharada de vinagre en 1L agua. Acidifica para gardenias y hortensias.'}
+  ]
+};
+
+/* ═══════════════════════════════════════════
+   MOON PHASE CALCULATOR
+   ═══════════════════════════════════════════ */
+function getMoonPhase(date) {
+  const year = date.getFullYear();
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  // Conway's moon phase algorithm
+  let r = year % 100;
+  r %= 19;
+  if (r > 9) r -= 19;
+  r = ((r * 11) % 30) + month + day;
+  if (month < 3) r += 2;
+  r -= ((year < 2000) ? 4 : 8.3);
+  r = Math.floor(r + 0.5) % 30;
+  if (r < 0) r += 30;
+  return r; // 0-29, 0=new, 15=full
+}
+
+function getMoonInfo(phase) {
+  if (phase <= 1 || phase >= 29) return {icon:'🌑',name:'Luna Nueva',desc:'Energía baja. Momento de descanso para el jardín.',recs:{plant:'Evitar siembras',prune:'No podar',harvest:'No cosechar',special:'Planificar, preparar sustrato, compostar'}};
+  if (phase <= 6) return {icon:'🌒',name:'Luna Creciente',desc:'La savia sube. Ideal para plantas de hoja y flor.',recs:{plant:'Sembrar plantas de hoja y flor',prune:'Podar para estimular crecimiento',harvest:'No es momento de cosechar',special:'Trasplantar, aplicar fertilizante foliar'}};
+  if (phase <= 9) return {icon:'🌓',name:'Cuarto Creciente',desc:'Máxima absorción. Gran momento para sembrar.',recs:{plant:'Excelente para sembrar todo',prune:'Poda de formación',harvest:'Cosechar hierbas aromáticas',special:'Abonar, injertar, hacer esquejes'}};
+  if (phase <= 12) return {icon:'🌔',name:'Gibosa Creciente',desc:'Energía en aumento. La planta concentra fuerzas.',recs:{plant:'Sembrar plantas de fruto',prune:'Poda ligera',harvest:'Cosechar flores',special:'Regar abundantemente, abonar raíces'}};
+  if (phase <= 16) return {icon:'🌕',name:'Luna Llena',desc:'Máxima energía. Las raíces absorben más nutrientes.',recs:{plant:'Sembrar tubérculos y bulbos',prune:'Evitar podas fuertes (mucha savia)',harvest:'Cosecha abundante',special:'Trasplantar, dividir matas, regar bien'}};
+  if (phase <= 20) return {icon:'🌖',name:'Gibosa Menguante',desc:'La energía baja hacia las raíces.',recs:{plant:'Sembrar raíces: zanahorias, rábanos',prune:'Buen momento para podar',harvest:'Cosechar frutos',special:'Aplicar abono orgánico, compostar'}};
+  if (phase <= 23) return {icon:'🌗',name:'Cuarto Menguante',desc:'Reposo. Bueno para labores de mantenimiento.',recs:{plant:'Sembrar tubérculos',prune:'Poda fuerte, eliminar ramas enfermas',harvest:'Cosechar raíces',special:'Deshierbar, controlar plagas, arar'}};
+  return {icon:'🌘',name:'Luna Menguante',desc:'Energía mínima. El jardín descansa.',recs:{plant:'Evitar siembras',prune:'Podar lo seco y enfermo',harvest:'No cosechar',special:'Limpiar, preparar camas, compostar'}};
+}
+
+/* ═══════════════════════════════════════════
+   SEASONAL BANNER DATA
+   ═══════════════════════════════════════════ */
+function getSeasonalBanner() {
+  const m = new Date().getMonth();
+  if (m >= 2 && m <= 4) return {emoji:'🌸',title:'¡Primavera!',desc:'Temporada de siembra y trasplante. Tus plantas despiertan.'};
+  if (m >= 5 && m <= 7) return {emoji:'☀️',title:'Verano intenso',desc:'Riega temprano, protege del sol de mediodía.'};
+  if (m >= 8 && m <= 9) return {emoji:'🍂',title:'Llegó el otoño',desc:'Prepara tu jardín para el descanso invernal.'};
+  return {emoji:'❄️',title:'Invierno',desc:'Reduce riegos, protege del frío. Planifica la primavera.'};
+}
 
 /* ═══════════════════════════════════════════
    SEASONAL TIPS
@@ -1200,7 +2038,8 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.getElementById(page).classList.add('active');
     currentPage = page;
     if (page === 'pageGarden') renderGarden();
-    if (page === 'pageCalendar') renderCalendar();
+    if (page === 'pageCalendar') { renderCalendar(); renderMoonSection(); }
+    if (page === 'pageDoctor') renderDoctor();
     if (page === 'pageTips') renderTips();
   });
 });
@@ -1231,17 +2070,28 @@ function renderCatalog() {
     });
   }
 
+  // Seasonal banner
+  const banner = getSeasonalBanner();
+  const bannerEl = document.getElementById('seasonalBanner');
+  if (bannerEl) bannerEl.innerHTML = `<div class="sb-emoji">${banner.emoji}</div><div class="sb-text"><div class="sb-title">${banner.title}</div><div class="sb-desc">${banner.desc}</div></div>`;
+
+  // Plant of the day
+  const dayIdx = Math.floor(Date.now() / 86400000) % FLOWERS.length;
+  const pod = FLOWERS[dayIdx];
+  const podEl = document.getElementById('plantOfDay');
+  if (podEl) { podEl.innerHTML = `<div class="pod-emoji">${pod.emoji}</div><div class="pod-info"><div class="pod-badge">✨ Planta del día</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
+
   grid.innerHTML = flowers.map(f => `
     <div class="flower-card" data-id="${f.id}">
       <div class="card-emoji">${f.emoji}</div>
-      <div class="difficulty-dots">
-        ${[1,2,3].map(d => `<div class="difficulty-dot${d <= f.difficulty ? ' filled' : ''}"></div>`).join('')}
+      <div class="difficulty-leaves">
+        ${[1,2,3].map(d => `<span class="difficulty-leaf${d <= f.difficulty ? ' filled' : ''}">🌿</span>`).join('')}
       </div>
       <div class="card-name">${f.name}</div>
       <div class="card-scientific">${f.scientific}</div>
       <div class="card-tags">
         <span class="card-tag">${f.sunlightLabel}</span>
-        <span class="card-tag">💧 c/${f.waterDays}d</span>
+        <span class="card-tag">💧 ${f.waterMl}ml c/${f.waterDays}d</span>
       </div>
     </div>
   `).join('');
@@ -1282,12 +2132,63 @@ function openFlowerDetail(id) {
 
   document.getElementById('modalInfoGrid').innerHTML = `
     <div class="info-item"><div class="info-icon">☀️</div><div class="info-label">Luz</div><div class="info-value">${f.sunlightLabel}</div></div>
-    <div class="info-item"><div class="info-icon">💧</div><div class="info-label">Riego</div><div class="info-value">Cada ${f.waterDays} días</div></div>
+    <div class="info-item"><div class="info-icon">💧</div><div class="info-label">Riego</div><div class="info-value">${f.waterMl}ml cada ${f.waterDays} días</div></div>
     <div class="info-item"><div class="info-icon">🌡️</div><div class="info-label">Temperatura</div><div class="info-value">${f.tempMin}° - ${f.tempMax}°C</div></div>
     <div class="info-item"><div class="info-icon">🪴</div><div class="info-label">Suelo</div><div class="info-value">${f.soil}</div></div>
-    <div class="info-item"><div class="info-icon">📊</div><div class="info-label">Dificultad</div><div class="info-value">${difficultyLabel(f.difficulty)}</div></div>
+    <div class="info-item"><div class="info-icon">📊</div><div class="info-label">Dificultad</div><div class="info-value">${[1,2,3].map(d => d<=f.difficulty?'🌿':'·').join('')} ${difficultyLabel(f.difficulty)}</div></div>
     <div class="info-item"><div class="info-icon">📅</div><div class="info-label">Floración</div><div class="info-value">${f.seasonLabel}</div></div>
   `;
+
+  // Build rich detail sections below the info grid
+  let detailHTML = '';
+
+  // Toxicity
+  if (f.toxic) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🐾</span> Mascotas y Toxicidad</div><div class="detail-tag-row"><span class="detail-tag ${f.toxicLevel}">${f.toxicLevel==='safe'?'✅ Segura':f.toxicLevel==='toxic'?'⚠️ Tóxica':'⚡ Precaución'}</span></div><p class="detail-text" style="margin-top:8px">${f.toxic}</p></div>`;
+  }
+
+  // Planting guide
+  if (f.plantingSteps) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🌱</span> Guía de Siembra</div><ol class="detail-steps">${f.plantingSteps.map(s => `<li>${s}</li>`).join('')}</ol></div>`;
+  }
+
+  // Fertilizer
+  if (f.fertilizer) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🧪</span> Fertilización</div><p class="detail-text">${f.fertilizer}</p></div>`;
+  }
+
+  // Pruning
+  if (f.pruning) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">✂️</span> Poda</div><p class="detail-text">${f.pruning}</p></div>`;
+  }
+
+  // Propagation
+  if (f.propagation) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🔄</span> Propagación</div><p class="detail-text">${f.propagation}</p></div>`;
+  }
+
+  // Companions
+  if (f.companions) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🤝</span> Plantas Compañeras</div><p class="detail-text">${f.companions}</p></div>`;
+  }
+
+  // Diseases
+  if (f.diseases && f.diseases.length) {
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🦠</span> Enfermedades Comunes</div>${f.diseases.map(d => `<div style="margin-bottom:12px;padding:10px;background:rgba(232,112,112,0.05);border-radius:var(--radius-sm)"><strong style="font-size:13px">${d.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">Síntoma: ${d.symptom}</span><br><span style="font-size:12px;color:var(--primary-dark)">💊 ${d.treatment}</span></div>`).join('')}</div>`;
+  }
+
+  // Share button
+  detailHTML += `<button class="share-btn" onclick="sharePlant('${f.id}')">📤 Compartir ficha</button>`;
+
+  // Insert detail sections after fun-fact
+  const funFact = document.getElementById('modalFunFact');
+  let detailContainer = document.getElementById('modalDetailSections');
+  if (!detailContainer) {
+    detailContainer = document.createElement('div');
+    detailContainer.id = 'modalDetailSections';
+    funFact.parentNode.insertBefore(detailContainer, funFact.nextSibling);
+  }
+  detailContainer.innerHTML = detailHTML;
 
   const inGarden = garden.some(g => g.flowerId === id);
   const btn = document.getElementById('modalAddBtn');
@@ -1547,6 +2448,8 @@ function renderCalendar() {
 document.getElementById('calPrev').addEventListener('click', () => { calWeekOffset--; renderCalendar(); });
 document.getElementById('calNext').addEventListener('click', () => { calWeekOffset++; renderCalendar(); });
 
+// Render moon phase when calendar is shown
+
 /* ═══════════════════════════════════════════
    TIPS
    ═══════════════════════════════════════════ */
@@ -1666,10 +2569,286 @@ if (localStorage.getItem('rocio_onboarded')) {
 }
 
 /* ═══════════════════════════════════════════
+   SHARE PLANT
+   ═══════════════════════════════════════════ */
+function sharePlant(id) {
+  const f = FLOWERS.find(fl => fl.id === id);
+  if (!f) return;
+  const text = `${f.emoji} ${f.name} (${f.scientific})\n☀️ ${f.sunlightLabel} | 💧 ${f.waterMl}ml cada ${f.waterDays} días\n🌡️ ${f.tempMin}-${f.tempMax}°C\n\n${f.fact}\n\n— Rocío 🌸`;
+  if (navigator.share) {
+    navigator.share({title:`${f.name} — Rocío 🌸`, text}).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('📋 Copiado al portapapeles'));
+  }
+}
+
+/* ═══════════════════════════════════════════
+   DOCTOR PAGE
+   ═══════════════════════════════════════════ */
+function renderDoctor() {
+  renderSymptoms();
+  renderPests();
+  renderRemedies();
+  renderCompost();
+  renderCalculator();
+}
+
+// Doctor tabs
+document.getElementById('doctorTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.doctor-tab');
+  if (!tab) return;
+  document.querySelectorAll('.doctor-tab').forEach(t => t.classList.remove('active'));
+  tab.classList.add('active');
+  document.querySelectorAll('.doctor-tab-content').forEach(c => c.style.display = 'none');
+  document.getElementById('dtab-' + tab.dataset.dtab).style.display = 'block';
+});
+
+function renderSymptoms() {
+  document.getElementById('symptomsList').innerHTML = SYMPTOMS.map(s => `
+    <div class="doctor-card" onclick="toggleSymptom('${s.id}')">
+      <div class="dc-emoji">${s.emoji}</div>
+      <div class="dc-info"><div class="dc-title">${s.title}</div><div class="dc-desc">${s.desc}</div></div>
+      <div class="dc-arrow">›</div>
+    </div>
+    <div class="doctor-detail" id="sym-${s.id}">
+      <div style="padding:4px 0 16px">
+        ${s.causes.map(c => `
+          <div class="remedy-card">
+            <div class="rc-header"><div class="rc-title">${c.cause}</div></div>
+            <div class="rc-body">${c.detail}</div>
+            <div class="rc-section"><div class="rc-section-title">Solución</div><div class="rc-body">${c.solution}</div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleSymptom(id) {
+  const el = document.getElementById('sym-' + id);
+  el.classList.toggle('active');
+}
+
+function renderPests() {
+  document.getElementById('pestsList').innerHTML = PESTS_DATA.map(p => `
+    <div class="remedy-card">
+      <div class="rc-header"><div class="rc-emoji">${p.emoji}</div><div><div class="rc-title">${p.title}</div><div class="rc-subtitle">${p.desc}</div></div></div>
+      <div class="rc-body"><strong>Aspecto:</strong> ${p.visual}</div>
+      <div class="rc-section"><div class="rc-section-title">Daño</div><div class="rc-body">${p.damage}</div></div>
+      <div class="rc-section"><div class="rc-section-title">🌿 Control orgánico</div><div class="rc-body">${p.organic}</div></div>
+      <div class="rc-section"><div class="rc-section-title">🧪 Control químico</div><div class="rc-body">${p.chemical}</div></div>
+    </div>
+  `).join('');
+}
+
+function renderRemedies() {
+  document.getElementById('remediesList').innerHTML = REMEDIES.map(r => `
+    <div class="remedy-card">
+      <div class="rc-header"><div class="rc-emoji">${r.emoji}</div><div><div class="rc-title">${r.title}</div><div class="rc-subtitle">${r.subtitle}</div></div></div>
+      <div class="rc-section"><div class="rc-section-title">Ingredientes</div><div class="rc-body"><ul class="detail-list">${r.ingredients.map(i => `<li>${i}</li>`).join('')}</ul></div></div>
+      <div class="rc-section"><div class="rc-section-title">Preparación</div><div class="rc-body">${r.preparation}</div></div>
+      <div class="rc-section"><div class="rc-section-title">Aplicación</div><div class="rc-body">${r.application}</div></div>
+    </div>
+  `).join('');
+}
+
+function renderCompost() {
+  const d = COMPOST_DATA;
+  document.getElementById('compostContent').innerHTML = `
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:14px">♻️ Composta 101</h3>
+    <p class="detail-text" style="margin-bottom:16px">La composta es oro para tu jardín. Transforma desechos orgánicos en alimento nutritivo para tus plantas.</p>
+
+    <div class="compost-grid">
+      <div class="compost-col" style="background:rgba(123,198,123,0.1)">
+        <h4>🟢 Verdes (Nitrógeno)</h4>
+        <ul>${d.greens.map(g => `<li>✅ ${g}</li>`).join('')}</ul>
+      </div>
+      <div class="compost-col" style="background:rgba(139,115,85,0.1)">
+        <h4>🟤 Marrones (Carbono)</h4>
+        <ul>${d.browns.map(b => `<li>✅ ${b}</li>`).join('')}</ul>
+      </div>
+    </div>
+
+    <div class="remedy-card">
+      <div class="rc-header"><div class="rc-emoji">🚫</div><div><div class="rc-title">NO compostar</div></div></div>
+      <div class="rc-body">${d.noCompost.join('<br>')}</div>
+    </div>
+
+    <div class="remedy-card">
+      <div class="rc-header"><div class="rc-emoji">📋</div><div><div class="rc-title">Paso a Paso</div><div class="rc-subtitle">Tu primera composta casera</div></div></div>
+      <ol class="detail-steps">${d.steps.map(s => `<li><strong>${s.step}:</strong> ${s.detail}</li>`).join('')}</ol>
+    </div>
+
+    <h3 style="font-size:16px;font-weight:700;margin:16px 0 10px">🌿 Fertilizantes DIY</h3>
+    ${d.diyFertilizers.map(f => `
+      <div class="remedy-card">
+        <div class="rc-title">${f.name}</div>
+        <div class="rc-body">${f.recipe}</div>
+      </div>
+    `).join('')}
+
+    <div class="remedy-card">
+      <div class="rc-header"><div class="rc-emoji">🪱</div><div><div class="rc-title">Vermicomposta (Lombricomposta)</div><div class="rc-subtitle">El mejor abono del mundo</div></div></div>
+      <div class="rc-body">
+        <strong>¿Qué es?</strong> Composta hecha por lombrices rojas californianas.<br><br>
+        <strong>Ventajas:</strong> Sin olor, rápida (1-2 meses), apta para departamentos.<br><br>
+        <strong>Cómo empezar:</strong><br>
+        1. Consigue una caja con tapa y agujeros de ventilación<br>
+        2. Cama de cartón húmedo y tierra<br>
+        3. Agrega lombrices rojas (Eisenia fetida)<br>
+        4. Alimenta con restos de cocina 2-3 veces por semana<br>
+        5. Cosecha humus cada 2-3 meses del fondo<br><br>
+        <strong>El humus de lombriz</strong> es el mejor fertilizante orgánico universal. Mezcla 20% con tu sustrato.
+      </div>
+    </div>
+  `;
+}
+
+function renderCalculator() {
+  document.getElementById('calculatorContent').innerHTML = `
+    <div class="calc-section">
+      <h3>💧 Calculadora de Riego</h3>
+      <div class="calc-row">
+        <span class="calc-label">Planta</span>
+        <select class="calc-select" id="calcPlant">
+          ${FLOWERS.map(f => `<option value="${f.id}">${f.emoji} ${f.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="calc-row">
+        <span class="calc-label">Maceta (cm)</span>
+        <input class="calc-input" type="number" id="calcPotSize" value="20" min="5" max="80">
+      </div>
+      <div class="calc-row">
+        <span class="calc-label">Ubicación</span>
+        <select class="calc-select" id="calcLocation">
+          <option value="indoor">🏠 Interior</option>
+          <option value="outdoor">🌳 Exterior</option>
+          <option value="balcony">🏗️ Balcón</option>
+        </select>
+      </div>
+      <div class="calc-row">
+        <span class="calc-label">Clima</span>
+        <select class="calc-select" id="calcClimate">
+          <option value="temperate">🌤️ Templado</option>
+          <option value="hot">🔥 Caluroso</option>
+          <option value="cold">❄️ Frío</option>
+          <option value="humid">🌧️ Húmedo</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="calculateWater()" style="margin-top:8px">🔢 Calcular</button>
+
+      <div id="calcResultArea"></div>
+    </div>
+  `;
+}
+
+function calculateWater() {
+  const flowerId = document.getElementById('calcPlant').value;
+  const potSize = parseInt(document.getElementById('calcPotSize').value) || 20;
+  const location = document.getElementById('calcLocation').value;
+  const climate = document.getElementById('calcClimate').value;
+  const flower = FLOWERS.find(f => f.id === flowerId);
+  if (!flower) return;
+
+  // Base water from plant data, adjusted by pot size
+  let ml = flower.waterMl * (potSize / 20);
+  let freq = flower.waterDays;
+  let time = '🌅 Temprano por la mañana (7-9 AM)';
+
+  // Location adjustments
+  if (location === 'outdoor') { ml *= 1.3; freq = Math.max(1, freq - 1); }
+  if (location === 'balcony') { ml *= 1.15; }
+  if (location === 'indoor') { ml *= 0.85; freq += 1; }
+
+  // Climate adjustments
+  if (climate === 'hot') { ml *= 1.4; freq = Math.max(1, freq - 1); time = '🌅 Al amanecer (6-7 AM) o al atardecer'; }
+  if (climate === 'cold') { ml *= 0.6; freq += 2; time = '☀️ Media mañana (10-11 AM)'; }
+  if (climate === 'humid') { ml *= 0.7; freq += 1; }
+
+  // Season adjustment
+  const month = new Date().getMonth();
+  if (month >= 5 && month <= 8) { ml *= 1.2; } // summer
+  if (month >= 11 || month <= 1) { ml *= 0.7; freq += 1; } // winter
+
+  ml = Math.round(ml);
+  freq = Math.round(freq);
+  const gaugePercent = Math.min(100, Math.round((ml / 600) * 100));
+
+  document.getElementById('calcResultArea').innerHTML = `
+    <div class="water-gauge">
+      <div class="water-gauge-fill" style="height:${gaugePercent}%"></div>
+      <div class="water-gauge-label">${ml}ml</div>
+    </div>
+    <div class="calc-result">
+      <div class="cr-amount">${ml}ml cada ${freq} días</div>
+      <div class="cr-freq">Para ${flower.emoji} ${flower.name} en maceta de ${potSize}cm</div>
+      <div class="cr-time">${time}</div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   MOON PHASE IN CALENDAR
+   ═══════════════════════════════════════════ */
+function renderMoonSection() {
+  const phase = getMoonPhase(new Date());
+  const info = getMoonInfo(phase);
+  const moonEl = document.getElementById('moonSection');
+  if (!moonEl) return;
+  moonEl.innerHTML = `
+    <div class="moon-phase-icon">${info.icon}</div>
+    <div class="moon-phase-name">${info.name}</div>
+    <div class="moon-phase-desc">${info.desc}</div>
+    <div class="moon-recs">
+      <div class="moon-rec"><div class="mr-icon">🌱</div><div class="mr-label">Sembrar</div><div class="mr-value">${info.recs.plant}</div></div>
+      <div class="moon-rec"><div class="mr-icon">✂️</div><div class="mr-label">Podar</div><div class="mr-value">${info.recs.prune}</div></div>
+      <div class="moon-rec"><div class="mr-icon">🧺</div><div class="mr-label">Cosechar</div><div class="mr-value">${info.recs.harvest}</div></div>
+      <div class="moon-rec"><div class="mr-icon">⭐</div><div class="mr-label">Especial</div><div class="mr-value">${info.recs.special}</div></div>
+    </div>
+  `;
+}
+
+/* ═══════════════════════════════════════════
+   OFFLINE SUPPORT
+   ═══════════════════════════════════════════ */
+window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
+
+// Cache data in localStorage
+function cacheAllData() {
+  try {
+    localStorage.setItem('rocio_flowers_cache', JSON.stringify(FLOWERS));
+    localStorage.setItem('rocio_cached_at', Date.now().toString());
+  } catch(e) {}
+}
+
+/* ═══════════════════════════════════════════
+   RIPPLE EFFECT ON BUTTONS
+   ═══════════════════════════════════════════ */
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.btn-primary, .filter-chip, .gc-action-btn');
+  if (!btn) return;
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const size = Math.max(rect.width, rect.height);
+  ripple.style.width = ripple.style.height = size + 'px';
+  ripple.style.left = (e.clientX - rect.left - size/2) + 'px';
+  ripple.style.top = (e.clientY - rect.top - size/2) + 'px';
+  btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
+});
+
+/* ═══════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════ */
 renderCatalog();
 updateBadge();
+renderDoctor();
+cacheAllData();
+if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
 </script>
 </body>
 </html>
