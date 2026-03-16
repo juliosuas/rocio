@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#8fbc8f">
+<title>Rocío — Cuida tus flores con amor 🌸</title>
+<style>
+/* ═══════════════════════════════════════════
+   CSS CUSTOM PROPERTIES
+   ═══════════════════════════════════════════ */
+:root {
+  --primary: #8fbc8f;
+  --primary-light: #b5d5b5;
+  --primary-dark: #6a9b6a;
+  --bg: #faf8f0;
+  --bg-card: #ffffff;
+  --bg-glass: rgba(255,255,255,0.72);
+  --accent: #e8a0bf;
+  --accent-light: #f3c8dc;
+  --accent-dark: #d4789f;
+  --secondary: #8b7355;
+  --secondary-light: #b09a7e;
+  --text: #2d3a2d;
+  --text-secondary: #6b7c6b;
+  --text-muted: #99a899;
+  --shadow: 0 2px 16px rgba(45,58,45,0.08);
+  --shadow-lg: 0 8px 32px rgba(45,58,45,0.12);
+  --shadow-sm: 0 1px 4px rgba(45,58,45,0.06);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-full: 999px;
+  --nav-height: 72px;
+  --header-height: 56px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Urgency */
+  --good: #7bc67b;
+  --soon: #f0c040;
+  --overdue: #e87070;
+}
+
+[data-theme="dark"] {
+  --bg: #1a2118;
+  --bg-card: #242e22;
+  --bg-glass: rgba(36,46,34,0.82);
+  --text: #e0e8de;
+  --text-secondary: #a0b09e;
+  --text-muted: #6b7b69;
+  --shadow: 0 2px 16px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.2);
+  --primary-dark: #a8cfa8;
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--transition), color var(--transition);
+}
+
+button { font: inherit; border: none; cursor: pointer; background: none; color: inherit; }
+input, textarea { font: inherit; border: none; outline: none; background: none; color: inherit; }
+img { display: block; max-width: 100%; }
+
+/* ═══════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════ */
+.header {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: calc(var(--header-height) + var(--safe-top));
+  padding-top: var(--safe-top);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(143,188,143,0.15);
+  z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-left: 20px; padding-right: 20px;
+  transition: background var(--transition);
+}
+
+.header-title {
+  font-size: 22px; font-weight: 700;
+  background: linear-gradient(135deg, var(--primary-dark), var(--accent));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.3px;
+}
+
+.header-actions { display: flex; gap: 8px; align-items: center; }
+
+.icon-btn {
+  width: 38px; height: 38px; border-radius: var(--radius-full);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s var(--bounce), box-shadow var(--transition);
+  position: relative;
+}
+.icon-btn:active { transform: scale(0.9); }
+
+.badge {
+  position: absolute; top: -2px; right: -2px;
+  min-width: 18px; height: 18px; border-radius: 9px;
+  background: var(--overdue);
+  color: #fff; font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0 5px;
+  border: 2px solid var(--bg);
+  animation: badgePop 0.3s var(--bounce);
+}
+.badge:empty, .badge[data-count="0"] { display: none; }
+
+@keyframes badgePop {
+  0% { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+/* ═══════════════════════════════════════════
+   BOTTOM NAV
+   ═══════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: calc(var(--nav-height) + var(--safe-bottom));
+  padding-bottom: var(--safe-bottom);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(143,188,143,0.15);
+  display: flex; z-index: 100;
+  transition: background var(--transition);
+}
+
+.nav-item {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px;
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  transition: color var(--transition);
+  padding: 8px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-item .nav-icon { font-size: 24px; transition: transform 0.2s var(--bounce); }
+.nav-item.active { color: var(--primary-dark); }
+.nav-item.active .nav-icon { transform: scale(1.15); }
+.nav-item:active .nav-icon { transform: scale(0.85); }
+
+/* ═══════════════════════════════════════════
+   PAGES
+   ═══════════════════════════════════════════ */
+.page-container {
+  padding-top: calc(var(--header-height) + var(--safe-top));
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 16px);
+  min-height: 100dvh;
+}
+
+.page {
+  display: none;
+  padding: 16px 16px 0;
+  animation: pageIn 0.35s ease-out;
+}
+.page.active { display: block; }
+
+@keyframes pageIn {
+  0% { opacity: 0; transform: translateY(12px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.page-title {
+  font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.page-subtitle {
+  font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════
+   SEARCH BAR
+   ═══════════════════════════════════════════ */
+.search-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 16px;
+  transition: box-shadow var(--transition), background var(--transition);
+}
+.search-bar:focus-within { box-shadow: var(--shadow), 0 0 0 2px var(--primary-light); }
+.search-bar input { flex: 1; font-size: 15px; }
+.search-bar input::placeholder { color: var(--text-muted); }
+.search-bar .search-icon { font-size: 18px; opacity: 0.5; }
+
+/* Filters */
+.filter-row {
+  display: flex; gap: 8px; margin-bottom: 16px;
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 8px 16px; border-radius: var(--radius-full);
+  font-size: 13px; font-weight: 600;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s var(--bounce);
+  white-space: nowrap;
+}
+.filter-chip.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(143,188,143,0.4);
+}
+.filter-chip:active { transform: scale(0.95); }
+
+/* ═══════════════════════════════════════════
+   CARDS
+   ═══════════════════════════════════════════ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.flower-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s var(--bounce), box-shadow var(--transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+.flower-card:active { transform: scale(0.97); }
+.flower-card:hover { box-shadow: var(--shadow-lg); }
+
+.flower-card .card-emoji {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+}
+
+.flower-card .card-name {
+  font-size: 15px; font-weight: 700;
+  margin-bottom: 2px;
+  line-height: 1.2;
+}
+.flower-card .card-scientific {
+  font-size: 11px; color: var(--text-muted);
+  font-style: italic; margin-bottom: 8px;
+}
+
+.card-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.card-tag {
+  font-size: 10px; padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(143,188,143,0.15);
+  color: var(--primary-dark);
+  font-weight: 600;
+}
+
+.difficulty-dots { display: flex; gap: 3px; margin-bottom: 6px; }
+.difficulty-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary-light);
+}
+.difficulty-dot.filled { background: var(--primary-dark); }
+
+/* ═══════════════════════════════════════════
+   DETAIL MODAL
+   ═══════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  z-index: 200;
+  display: none; align-items: flex-end; justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+.modal-overlay.show { display: flex; }
+
+@keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+.modal-sheet {
+  background: var(--bg-card);
+  border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 500px;
+  max-height: 85dvh;
+  overflow-y: auto;
+  padding: 12px 20px 32px;
+  animation: slideUp 0.35s var(--bounce);
+  transition: background var(--transition);
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(100%); }
+  100% { transform: translateY(0); }
+}
+
+.modal-handle {
+  width: 36px; height: 4px; border-radius: 2px;
+  background: var(--text-muted); opacity: 0.3;
+  margin: 0 auto 16px;
+}
+
+.modal-emoji { font-size: 72px; text-align: center; margin-bottom: 12px; }
+.modal-name { font-size: 24px; font-weight: 800; text-align: center; }
+.modal-scientific { font-size: 14px; color: var(--text-muted); font-style: italic; text-align: center; margin-bottom: 20px; }
+
+.info-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 10px; margin-bottom: 20px;
+}
+
+.info-item {
+  background: rgba(143,188,143,0.08);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+}
+.info-item .info-icon { font-size: 20px; margin-bottom: 4px; }
+.info-item .info-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.info-item .info-value { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+.fun-fact {
+  background: linear-gradient(135deg, rgba(232,160,191,0.1), rgba(143,188,143,0.1));
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 20px;
+  font-size: 13px; line-height: 1.5;
+  color: var(--text-secondary);
+}
+.fun-fact::before { content: '💡 '; }
+
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 14px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 15px; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(143,188,143,0.35);
+  transition: transform 0.15s var(--bounce), box-shadow var(--transition);
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary.added {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  box-shadow: 0 4px 16px rgba(232,160,191,0.35);
+}
+
+/* ═══════════════════════════════════════════
+   MI JARDÍN
+   ═══════════════════════════════════════════ */
+.garden-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+  display: flex; gap: 14px;
+  margin-bottom: 12px;
+  transition: transform 0.15s var(--bounce), background var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.garden-card:active { transform: scale(0.98); }
+
+.garden-card .gc-emoji { font-size: 42px; flex-shrink: 0; align-self: center; }
+.garden-card .gc-info { flex: 1; min-width: 0; }
+.garden-card .gc-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.garden-card .gc-status {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 11px; font-weight: 600;
+  padding: 3px 10px; border-radius: var(--radius-full);
+  margin-bottom: 6px;
+}
+.status-healthy { background: rgba(123,198,123,0.15); color: #4a9e4a; }
+.status-needs-water { background: rgba(70,140,220,0.15); color: #3a7cc0; }
+.status-needs-sun { background: rgba(240,192,64,0.15); color: #b89030; }
+.status-sick { background: rgba(232,112,112,0.15); color: #c04a4a; }
+
+.gc-last-water {
+  font-size: 12px; color: var(--text-muted);
+}
+
+.gc-actions {
+  display: flex; flex-direction: column; gap: 6px;
+  align-self: center; flex-shrink: 0;
+}
+.gc-action-btn {
+  width: 36px; height: 36px;
+  border-radius: var(--radius-full);
+  background: rgba(143,188,143,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: transform 0.15s var(--bounce), background var(--transition);
+}
+.gc-action-btn:active { transform: scale(0.85); background: rgba(143,188,143,0.25); }
+
+.water-animation {
+  position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(100,180,255,0.2), transparent);
+  animation: waterWave 0.8s ease-out forwards;
+  pointer-events: none;
+}
+@keyframes waterWave {
+  0% { transform: translateY(100%); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translateY(-10%); opacity: 0; }
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center; padding: 60px 20px;
+}
+.empty-state .empty-art {
+  font-size: 80px; margin-bottom: 16px;
+  animation: gentleBounce 3s ease-in-out infinite;
+}
+@keyframes gentleBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.empty-state h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════ */
+.cal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px;
+}
+.cal-header h3 { font-size: 18px; font-weight: 700; }
+.cal-nav { display: flex; gap: 8px; }
+.cal-nav button {
+  width: 34px; height: 34px; border-radius: var(--radius-full);
+  background: var(--bg-card); box-shadow: var(--shadow-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px;
+  transition: transform 0.15s var(--bounce);
+}
+.cal-nav button:active { transform: scale(0.9); }
+
+.cal-week {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  gap: 6px; margin-bottom: 20px;
+}
+.cal-day {
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 10px 4px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease, background var(--transition);
+  min-height: 80px;
+}
+.cal-day.today {
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 0 2px rgba(143,188,143,0.2);
+}
+.cal-day-label { font-size: 10px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+.cal-day-num { font-size: 16px; font-weight: 700; margin: 4px 0 6px; }
+.cal-dots { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+.cal-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+.cal-dot.good { background: var(--good); }
+.cal-dot.soon { background: var(--soon); }
+.cal-dot.overdue { background: var(--overdue); }
+
+.today-tasks { margin-top: 8px; }
+.today-tasks h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+
+.task-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: background var(--transition);
+}
+.task-item .task-emoji { font-size: 28px; }
+.task-item .task-info { flex: 1; }
+.task-item .task-name { font-size: 14px; font-weight: 700; }
+.task-item .task-desc { font-size: 12px; color: var(--text-muted); }
+.task-item .task-urgency {
+  width: 10px; height: 10px; border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   TIPS
+   ═══════════════════════════════════════════ */
+.tip-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: background var(--transition);
+}
+.tip-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 4px;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+}
+.tip-card .tip-emoji { font-size: 36px; margin-bottom: 10px; }
+.tip-card .tip-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.tip-card .tip-body { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+.tip-card .tip-month {
+  position: absolute; top: 14px; right: 16px;
+  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* Identifier */
+.identifier-section {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  text-align: center;
+  margin-bottom: 20px;
+  transition: background var(--transition);
+}
+.identifier-section h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.identifier-section p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+
+.upload-zone {
+  border: 2px dashed var(--primary-light);
+  border-radius: var(--radius);
+  padding: 32px 20px;
+  transition: border-color var(--transition), background var(--transition);
+  cursor: pointer;
+}
+.upload-zone:hover { border-color: var(--primary); background: rgba(143,188,143,0.05); }
+.upload-zone .upload-icon { font-size: 40px; margin-bottom: 8px; }
+.upload-zone p { font-size: 13px; color: var(--text-muted); }
+
+.scan-animation {
+  display: none;
+  flex-direction: column; align-items: center; gap: 16px;
+  padding: 20px;
+}
+.scan-animation.active { display: flex; }
+
+.scan-circle {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  border: 3px solid var(--primary-light);
+  border-top-color: var(--primary-dark);
+  animation: spin 1s linear infinite;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.scan-text {
+  font-size: 14px; font-weight: 600; color: var(--text-secondary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.scan-result {
+  display: none;
+  text-align: center; padding: 16px;
+  animation: pageIn 0.4s ease-out;
+}
+.scan-result.show { display: block; }
+.scan-result .sr-emoji { font-size: 64px; margin-bottom: 8px; }
+.scan-result .sr-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+.scan-result .sr-scientific { font-size: 13px; color: var(--text-muted); font-style: italic; margin-bottom: 12px; }
+.scan-result .sr-confidence {
+  display: inline-block;
+  padding: 4px 12px; border-radius: var(--radius-full);
+  background: rgba(143,188,143,0.15);
+  font-size: 12px; font-weight: 600; color: var(--primary-dark);
+}
+
+/* ═══════════════════════════════════════════
+   NOTES MODAL
+   ═══════════════════════════════════════════ */
+.notes-modal .modal-sheet { padding-bottom: 40px; }
+.notes-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(143,188,143,0.08);
+  font-size: 14px; line-height: 1.6;
+  resize: vertical;
+  margin-bottom: 16px;
+  color: var(--text);
+  transition: background var(--transition);
+}
+
+.status-selector {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.status-option {
+  padding: 8px 14px; border-radius: var(--radius-full);
+  font-size: 12px; font-weight: 600;
+  background: var(--bg);
+  transition: all 0.2s var(--bounce), background var(--transition);
+}
+.status-option.selected {
+  background: var(--primary); color: #fff;
+}
+.status-option:active { transform: scale(0.95); }
+
+/* ═══════════════════════════════════════════
+   ONBOARDING
+   ═══════════════════════════════════════════ */
+.onboarding-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.onboarding-overlay.hidden { display: none; }
+
+.onboarding-card {
+  background: var(--bg-card);
+  border-radius: 24px;
+  padding: 40px 28px 32px;
+  max-width: 340px; width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.5s var(--bounce);
+}
+.ob-emoji { font-size: 64px; margin-bottom: 16px; }
+.ob-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+.ob-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
+
+.ob-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.ob-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--text-muted); opacity: 0.3;
+  transition: all var(--transition);
+}
+.ob-dot.active { opacity: 1; background: var(--primary); width: 24px; border-radius: 4px; }
+
+.ob-btn {
+  padding: 14px 32px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 15px; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(143,188,143,0.35);
+  transition: transform 0.15s var(--bounce);
+}
+.ob-btn:active { transform: scale(0.96); }
+
+/* ═══════════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  top: calc(var(--header-height) + var(--safe-top) + 8px);
+  left: 50%; transform: translateX(-50%);
+  z-index: 250;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 12px 20px;
+  box-shadow: var(--shadow-lg);
+  font-size: 14px; font-weight: 600;
+  animation: toastIn 0.35s var(--bounce), toastOut 0.3s ease 2.2s forwards;
+  white-space: nowrap;
+}
+
+@keyframes toastIn {
+  0% { opacity: 0; transform: translateY(-20px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toastOut {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* ═══════════════════════════════════════════
+   DELETE BUTTON
+   ═══════════════════════════════════════════ */
+.btn-danger {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; padding: 12px;
+  border-radius: var(--radius);
+  background: rgba(232,112,112,0.1);
+  color: var(--overdue); font-size: 14px; font-weight: 600;
+  margin-top: 8px;
+  transition: transform 0.15s var(--bounce), background var(--transition);
+}
+.btn-danger:active { transform: scale(0.97); }
+
+/* ═══════════════════════════════════════════
+   WATER DROP ANIMATION
+   ═══════════════════════════════════════════ */
+.water-drops {
+  position: fixed; inset: 0; pointer-events: none; z-index: 150;
+}
+.water-drop {
+  position: absolute;
+  width: 10px; height: 14px;
+  background: radial-gradient(ellipse at 30% 20%, rgba(120,200,255,0.8), rgba(70,150,220,0.5));
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  animation: dropFall 1s ease-in forwards;
+}
+@keyframes dropFall {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  80% { opacity: 1; }
+  100% { transform: translateY(120px) scale(0.5); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (min-width: 600px) {
+  .page { padding: 24px 24px 0; max-width: 600px; margin: 0 auto; }
+  .card-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .page { max-width: 800px; }
+  .card-grid { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <span class="header-title">Rocío 🌸</span>
+  <div class="header-actions">
+    <button class="icon-btn" id="identifierBtn" title="Identificar planta">📸</button>
+    <button class="icon-btn" id="themeToggle" title="Cambiar tema">🌙</button>
+  </div>
+</header>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- WATER DROPS CONTAINER -->
+<div class="water-drops" id="waterDrops"></div>
+
+<!-- MAIN CONTENT -->
+<main class="page-container">
+
+  <!-- ════════ CATÁLOGO ════════ -->
+  <section class="page active" id="pageCatalog">
+    <h1 class="page-title">Catálogo 🌸</h1>
+    <p class="page-subtitle">Descubre flores hermosas y aprende a cuidarlas</p>
+
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar flores...">
+    </div>
+
+    <div class="filter-row" id="filterRow">
+      <button class="filter-chip active" data-filter="all">Todas</button>
+      <button class="filter-chip" data-filter="easy">🟢 Fácil</button>
+      <button class="filter-chip" data-filter="medium">🟡 Media</button>
+      <button class="filter-chip" data-filter="hard">🔴 Difícil</button>
+      <button class="filter-chip" data-filter="spring">🌷 Primavera</button>
+      <button class="filter-chip" data-filter="summer">☀️ Verano</button>
+      <button class="filter-chip" data-filter="fall">🍂 Otoño</button>
+      <button class="filter-chip" data-filter="winter">❄️ Invierno</button>
+      <button class="filter-chip" data-filter="full-sun">☀️ Sol pleno</button>
+      <button class="filter-chip" data-filter="partial">⛅ Parcial</button>
+      <button class="filter-chip" data-filter="shade">🌥️ Sombra</button>
+    </div>
+
+    <div class="card-grid" id="catalogGrid"></div>
+  </section>
+
+  <!-- ════════ MI JARDÍN ════════ -->
+  <section class="page" id="pageGarden">
+    <h1 class="page-title">Mi Jardín 🌱</h1>
+    <p class="page-subtitle">Tu colección personal de flores</p>
+    <div id="gardenList"></div>
+    <div class="empty-state" id="gardenEmpty" style="display:none;">
+      <div class="empty-art">🌿</div>
+      <h3>Tu jardín está vacío</h3>
+      <p>Explora el catálogo y agrega tus flores favoritas para comenzar a cuidarlas con amor.</p>
+    </div>
+  </section>
+
+  <!-- ════════ CALENDARIO ════════ -->
+  <section class="page" id="pageCalendar">
+    <h1 class="page-title">Calendario 📅</h1>
+    <p class="page-subtitle">Tu agenda de cuidado semanal</p>
+
+    <div class="cal-header">
+      <h3 id="calWeekLabel">Esta semana</h3>
+      <div class="cal-nav">
+        <button id="calPrev">‹</button>
+        <button id="calNext">›</button>
+      </div>
+    </div>
+    <div class="cal-week" id="calWeek"></div>
+
+    <div class="today-tasks">
+      <h3>📋 Tareas de hoy</h3>
+      <div id="todayTasks"></div>
+      <div class="empty-state" id="tasksEmpty" style="display:none;">
+        <div class="empty-art">✅</div>
+        <h3>¡Todo al día!</h3>
+        <p>No hay tareas pendientes por hoy. Tus plantas están felices.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════ TIPS ════════ -->
+  <section class="page" id="pageTips">
+    <h1 class="page-title">Tips 💡</h1>
+    <p class="page-subtitle">Consejos de temporada para tu jardín</p>
+
+    <!-- Plant Identifier -->
+    <div class="identifier-section" id="identifierSection">
+      <h3>📸 Identificador de Plantas</h3>
+      <p>Sube una foto de una flor y te diremos cuál es</p>
+      <div class="upload-zone" id="uploadZone">
+        <div class="upload-icon">🌺</div>
+        <p>Toca para subir una foto</p>
+        <input type="file" id="fileInput" accept="image/*" style="display:none">
+      </div>
+      <div class="scan-animation" id="scanAnim">
+        <div class="scan-circle">🔬</div>
+        <div class="scan-text">Analizando tu flor...</div>
+      </div>
+      <div class="scan-result" id="scanResult">
+        <div class="sr-emoji" id="srEmoji"></div>
+        <div class="sr-name" id="srName"></div>
+        <div class="sr-scientific" id="srScientific"></div>
+        <div class="sr-confidence" id="srConfidence"></div>
+      </div>
+    </div>
+
+    <div id="tipsList"></div>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="pageCatalog">
+    <span class="nav-icon">🌸</span>
+    <span>Catálogo</span>
+  </button>
+  <button class="nav-item" data-page="pageGarden">
+    <span class="nav-icon">🌱</span>
+    <span>Mi Jardín</span>
+  </button>
+  <button class="nav-item" data-page="pageCalendar">
+    <span class="nav-icon">📅</span>
+    <span>Calendario</span>
+  </button>
+  <button class="nav-item" data-page="pageTips">
+    <span class="nav-icon">💡</span>
+    <span>Tips</span>
+  </button>
+</nav>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-emoji" id="modalEmoji"></div>
+    <div class="modal-name" id="modalName"></div>
+    <div class="modal-scientific" id="modalScientific"></div>
+    <div class="info-grid" id="modalInfoGrid"></div>
+    <div class="fun-fact" id="modalFunFact"></div>
+    <button class="btn-primary" id="modalAddBtn">🌱 Agregar a Mi Jardín</button>
+  </div>
+</div>
+
+<!-- GARDEN ITEM MODAL -->
+<div class="modal-overlay notes-modal" id="gardenModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-emoji" id="gmEmoji"></div>
+    <div class="modal-name" id="gmName"></div>
+    <div style="margin-top:16px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Estado</label>
+      <div class="status-selector" id="gmStatus"></div>
+    </div>
+    <div style="margin-top:8px">
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Notas</label>
+      <textarea class="notes-textarea" id="gmNotes" placeholder="Escribe notas sobre tu planta..."></textarea>
+    </div>
+    <button class="btn-primary" id="gmSaveBtn">💾 Guardar cambios</button>
+    <button class="btn-danger" id="gmDeleteBtn">🗑 Quitar del jardín</button>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="onboarding-overlay" id="onboarding">
+  <div class="onboarding-card">
+    <div class="ob-emoji" id="obEmoji">🌸</div>
+    <div class="ob-title" id="obTitle">Bienvenido a Rocío</div>
+    <div class="ob-desc" id="obDesc">Cuida tus flores con amor. Descubre, aprende y cultiva las flores más hermosas.</div>
+    <div class="ob-dots">
+      <div class="ob-dot active" data-step="0"></div>
+      <div class="ob-dot" data-step="1"></div>
+      <div class="ob-dot" data-step="2"></div>
+    </div>
+    <button class="ob-btn" id="obBtn">Siguiente</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   FLOWER DATABASE
+   ═══════════════════════════════════════════ */
+const FLOWERS = [
+  {
+    id:'rosa', emoji:'🌹', name:'Rosa', scientific:'Rosa spp.',
+    difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:3, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'Las rosas existen desde hace más de 35 millones de años. Son las flores más vendidas del mundo.'
+  },
+  {
+    id:'tulipan', emoji:'🌷', name:'Tulipán', scientific:'Tulipa spp.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:5, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
+    seasons:['spring'], seasonLabel:'Primavera',
+    fact:'En el siglo XVII, los tulipanes llegaron a valer más que las casas en Holanda durante la "Tulipomanía".'
+  },
+  {
+    id:'orquidea', emoji:'🪻', name:'Orquídea', scientific:'Orchidaceae',
+    difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
+    waterDays:7, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo',
+    seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
+    fact:'Existen más de 25,000 especies de orquídeas. Algunas pueden vivir hasta 100 años.'
+  },
+  {
+    id:'girasol', emoji:'🌻', name:'Girasol', scientific:'Helianthus annuus',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:4, tempMin:20, tempMax:35, soil:'Franco, fértil',
+    seasons:['summer'], seasonLabel:'Verano',
+    fact:'Los girasoles jóvenes siguen al sol durante el día, un fenómeno llamado heliotropismo.'
+  },
+  {
+    id:'lavanda', emoji:'💜', name:'Lavanda', scientific:'Lavandula angustifolia',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:7, tempMin:12, tempMax:30, soil:'Arenoso, alcalino',
+    seasons:['summer'], seasonLabel:'Verano',
+    fact:'La lavanda se ha usado por más de 2,500 años. Los romanos la usaban para perfumar sus baños.'
+  },
+  {
+    id:'gardenia', emoji:'🤍', name:'Gardenia', scientific:'Gardenia jasminoides',
+    difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
+    waterDays:3, tempMin:16, tempMax:24, soil:'Ácido, rico en humus',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'Las gardenias son símbolo de pureza y dulzura. Su perfume es uno de los más usados en perfumería.'
+  },
+  {
+    id:'jazmin', emoji:'🌼', name:'Jazmín', scientific:'Jasminum officinale',
+    difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:4, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'El jazmín libera su fragancia más intensa por la noche para atraer polinizadores nocturnos.'
+  },
+  {
+    id:'hortensia', emoji:'💠', name:'Hortensia', scientific:'Hydrangea macrophylla',
+    difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
+    waterDays:3, tempMin:12, tempMax:25, soil:'Ácido, húmedo',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'El color de las hortensias cambia según la acidez del suelo: ácido = azul, alcalino = rosa.'
+  },
+  {
+    id:'lirio', emoji:'🪷', name:'Lirio', scientific:'Lilium spp.',
+    difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
+    waterDays:5, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'Los lirios han sido símbolo de pureza desde la antigua Grecia. Representan renacimiento.'
+  },
+  {
+    id:'margarita', emoji:'🌼', name:'Margarita', scientific:'Bellis perennis',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:4, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
+    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
+    fact:'Una margarita no es una sola flor, sino cientos de pequeñas flores agrupadas.'
+  },
+  {
+    id:'clavel', emoji:'🌺', name:'Clavel', scientific:'Dianthus caryophyllus',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:4, tempMin:12, tempMax:24, soil:'Franco, bien drenado',
+    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
+    fact:'Los claveles pueden durar hasta 3 semanas en un florero. Son las flores de corte más duraderas.'
+  },
+  {
+    id:'violeta', emoji:'💜', name:'Violeta', scientific:'Viola odorata',
+    difficulty:1, sunlight:'shade', sunlightLabel:'Sombra',
+    waterDays:3, tempMin:8, tempMax:20, soil:'Rico en materia orgánica',
+    seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
+    fact:'Las violetas eran las flores favoritas de Napoleón. Las usaba como símbolo secreto de lealtad.'
+  },
+  {
+    id:'geranio', emoji:'🌺', name:'Geranio', scientific:'Pelargonium spp.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:5, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
+    fact:'Los geranios repelen mosquitos naturalmente. Son perfectos para balcones y ventanas.'
+  },
+  {
+    id:'petunia', emoji:'🌸', name:'Petunia', scientific:'Petunia × hybrida',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:2, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
+    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
+    fact:'Las petunias están emparentadas con los tomates y el tabaco. Todas son de la familia Solanaceae.'
+  },
+  {
+    id:'cempasuchil', emoji:'🏵️', name:'Cempasúchil', scientific:'Tagetes erecta',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
+    waterDays:3, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
+    seasons:['summer','fall'], seasonLabel:'Verano - Otoño',
+    fact:'El cempasúchil es esencial en el Día de Muertos. Se cree que su aroma guía a los difuntos de vuelta.'
+  }
+];
+
+/* ═══════════════════════════════════════════
+   SEASONAL TIPS
+   ═══════════════════════════════════════════ */
+const SEASONAL_TIPS = {
+  0: [ // Enero
+    { emoji:'❄️', title:'Protege del frío', body:'Cubre tus plantas sensibles con tela o plástico durante las heladas nocturnas. Las macetas de barro pueden romperse con el hielo.' },
+    { emoji:'✂️', title:'Poda de invierno', body:'Es buen momento para podar rosales y árboles frutales que han perdido sus hojas. Corta ramas secas o enfermas.' },
+    { emoji:'📋', title:'Planifica tu jardín', body:'Enero es perfecto para planear qué sembrar en primavera. Revisa semillas, macetas y herramientas.' }
+  ],
+  1: [ // Febrero
+    { emoji:'🌱', title:'Prepara semilleros', body:'Comienza a germinar semillas en interior para tener plantas listas cuando llegue la primavera.' },
+    { emoji:'💚', title:'Revisa tus plantas de interior', body:'Limpia hojas con un paño húmedo. La luz invernal es débil, acerca las plantas a las ventanas.' },
+    { emoji:'🌹', title:'Poda de rosales', body:'Febrero es ideal para podar rosales. Corta en diagonal, justo arriba de un brote que mire hacia afuera.' }
+  ],
+  2: [ // Marzo
+    { emoji:'🌷', title:'¡Hora de plantar tulipanes!', body:'Si no los plantaste en otoño, aún puedes encontrar bulbos pre-enfriados. Plántalos a 15cm de profundidad.' },
+    { emoji:'🐛', title:'Vigila las plagas', body:'Con el calor llegan los pulgones. Revisa hojas y tallos. El jabón potásico es un remedio natural eficaz.' },
+    { emoji:'💧', title:'Aumenta el riego', body:'Los días más largos y cálidos hacen que tus plantas necesiten más agua. Riega temprano en la mañana.' }
+  ],
+  3: [ // Abril
+    { emoji:'🌸', title:'Primavera en pleno', body:'Es el mejor mes para trasplantar. Las plantas están activas y se adaptan rápido a nuevas macetas.' },
+    { emoji:'🌻', title:'Siembra girasoles', body:'Planta semillas de girasol directamente en tierra. En 2-3 meses tendrás flores enormes y alegres.' },
+    { emoji:'🧪', title:'Fertiliza', body:'Tus plantas despiertan hambrientas. Usa fertilizante orgánico cada 2 semanas para un crecimiento exuberante.' }
+  ],
+  4: [ // Mayo
+    { emoji:'🌺', title:'Explosión de color', body:'Planta petunias, geranios y begonias para balcones llenos de color todo el verano.' },
+    { emoji:'☀️', title:'Cuidado con el sol directo', body:'Las plantas recién trasplantadas necesitan aclimatarse. Dales sombra parcial la primera semana.' },
+    { emoji:'💐', title:'Corta flores para el hogar', body:'Cortar flores estimula que la planta produzca más. Corta en la mañana cuando están más hidratadas.' }
+  ],
+  5: [ // Junio
+    { emoji:'💧', title:'Riego profundo', body:'Con el calor, riega profundamente pero menos frecuente. Esto estimula raíces fuertes y profundas.' },
+    { emoji:'🌿', title:'Acolchado es clave', body:'Pon una capa de mulch o corteza alrededor de tus plantas. Retiene humedad y mantiene raíces frescas.' },
+    { emoji:'🪴', title:'Cuida tus orquídeas', body:'El verano es ideal para sacar orquídeas al exterior en un lugar con sombra parcial y buena ventilación.' }
+  ],
+  6: [ // Julio
+    { emoji:'🌡️', title:'Calor extremo', body:'Mueve macetas a zonas con sombra por la tarde. Las hojas quemadas por el sol no se recuperan.' },
+    { emoji:'🚿', title:'Riega al amanecer', body:'Evita regar al mediodía — el agua se evapora y puede quemar hojas. Temprano o al atardecer.' },
+    { emoji:'🦋', title:'Atrae polinizadores', body:'Planta lavanda, salvia y cempasúchil para llenar tu jardín de mariposas y abejas.' }
+  ],
+  7: [ // Agosto
+    { emoji:'✂️', title:'Poda de verano', body:'Recorta las flores marchitas para estimular nueva floración. Quita hojas secas y ramas débiles.' },
+    { emoji:'🌱', title:'Prepara para otoño', body:'Comienza a planear siembras de otoño. Algunas flores de primavera necesitan plantarse ahora.' },
+    { emoji:'💦', title:'Revisa el drenaje', body:'Las lluvias de agosto pueden encharcar macetas. Asegúrate de que todas tengan buen drenaje.' }
+  ],
+  8: [ // Septiembre
+    { emoji:'🍂', title:'Transición de temporada', body:'Reduce el fertilizante gradualmente. Las plantas empiezan a prepararse para descansar.' },
+    { emoji:'🏵️', title:'Temporada de cempasúchil', body:'Si quieres flores para Día de Muertos, septiembre es el último momento para sembrar cempasúchil.' },
+    { emoji:'🧹', title:'Limpieza de jardín', body:'Retira plantas anuales que terminaron su ciclo. Prepara la tierra con composta para la próxima temporada.' }
+  ],
+  9: [ // Octubre
+    { emoji:'🎃', title:'Bulbos de primavera', body:'Planta tulipanes, narcisos y crocus ahora. Necesitan el frío invernal para florecer en primavera.' },
+    { emoji:'🏵️', title:'Día de Muertos', body:'El cempasúchil está en su máximo esplendor. Riega bien para que dure más durante las festividades.' },
+    { emoji:'🏠', title:'Plantas al interior', body:'Mete al interior las plantas tropicales antes de las primeras heladas.' }
+  ],
+  10: [ // Noviembre
+    { emoji:'🧤', title:'Protege del frío', body:'Envuelve macetas de exterior con tela de yute. Las raíces son más sensibles al frío que la parte aérea.' },
+    { emoji:'💤', title:'Descanso invernal', body:'Muchas plantas entran en dormancia. Reduce riegos y deja de fertilizar hasta primavera.' },
+    { emoji:'📚', title:'Aprende y planifica', body:'Investiga nuevas variedades que quieras probar. Los catálogos de semillas empiezan a salir.' }
+  ],
+  11: [ // Diciembre
+    { emoji:'🎄', title:'Nochebuenas', body:'Riega tu nochebuena solo cuando la tierra esté seca al tacto. Evita corrientes de aire frío.' },
+    { emoji:'💧', title:'Riego mínimo', body:'Las plantas duermen en invierno. Riega poco — la tierra húmeda fría puede causar pudrición de raíces.' },
+    { emoji:'🎁', title:'Regala plantas', body:'Una planta es el regalo perfecto. Suculentas, cactus o kokedamas son elegantes y fáciles de cuidar.' }
+  ]
+};
+
+const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_SHORT = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const STATUS_OPTIONS = [
+  { id:'healthy', label:'🌿 Saludable', class:'status-healthy' },
+  { id:'needs-water', label:'💧 Necesita agua', class:'status-needs-water' },
+  { id:'needs-sun', label:'☀️ Necesita sol', class:'status-needs-sun' },
+  { id:'sick', label:'🤒 Enferma', class:'status-sick' }
+];
+
+/* ═══════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════ */
+let garden = JSON.parse(localStorage.getItem('rocio_garden') || '[]');
+let currentPage = 'pageCatalog';
+let currentFilter = 'all';
+let searchQuery = '';
+let selectedFlower = null;
+let editingGardenItem = null;
+let calWeekOffset = 0;
+
+/* ═══════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════ */
+function saveGarden() { localStorage.setItem('rocio_garden', JSON.stringify(garden)); }
+
+function showToast(msg) {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2600);
+}
+
+function showWaterDrops(x, y) {
+  const container = document.getElementById('waterDrops');
+  for (let i = 0; i < 6; i++) {
+    const drop = document.createElement('div');
+    drop.className = 'water-drop';
+    drop.style.left = (x + (Math.random()-0.5)*40) + 'px';
+    drop.style.top = (y - 10) + 'px';
+    drop.style.animationDelay = (Math.random()*0.3) + 's';
+    container.appendChild(drop);
+    setTimeout(() => drop.remove(), 1300);
+  }
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return Infinity;
+  return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+}
+
+function getUrgency(gardenItem) {
+  const flower = FLOWERS.find(f => f.id === gardenItem.flowerId);
+  if (!flower) return 'good';
+  const days = daysSince(gardenItem.lastWatered);
+  if (days >= flower.waterDays) return 'overdue';
+  if (days >= flower.waterDays - 1) return 'soon';
+  return 'good';
+}
+
+function difficultyLabel(d) { return d === 1 ? 'Fácil' : d === 2 ? 'Media' : 'Difícil'; }
+
+function updateBadge() {
+  const overdue = garden.filter(g => getUrgency(g) !== 'good').length;
+  const badge = document.querySelector('#identifierBtn + .icon-btn .badge, .nav-item[data-page=pageGarden] .badge');
+  // Update garden nav badge
+  const gardenNav = document.querySelector('.nav-item[data-page="pageGarden"]');
+  let b = gardenNav.querySelector('.badge');
+  if (!b) { b = document.createElement('span'); b.className = 'badge'; gardenNav.querySelector('.nav-icon').style.position = 'relative'; gardenNav.style.position = 'relative'; gardenNav.appendChild(b); }
+  b.textContent = overdue || '';
+  b.dataset.count = overdue;
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════ */
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const page = btn.dataset.page;
+    if (page === currentPage) return;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+    currentPage = page;
+    if (page === 'pageGarden') renderGarden();
+    if (page === 'pageCalendar') renderCalendar();
+    if (page === 'pageTips') renderTips();
+  });
+});
+
+/* ═══════════════════════════════════════════
+   CATALOG
+   ═══════════════════════════════════════════ */
+function renderCatalog() {
+  const grid = document.getElementById('catalogGrid');
+  let flowers = FLOWERS;
+
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    flowers = flowers.filter(f =>
+      f.name.toLowerCase().includes(q) ||
+      f.scientific.toLowerCase().includes(q)
+    );
+  }
+
+  if (currentFilter !== 'all') {
+    flowers = flowers.filter(f => {
+      if (currentFilter === 'easy') return f.difficulty === 1;
+      if (currentFilter === 'medium') return f.difficulty === 2;
+      if (currentFilter === 'hard') return f.difficulty === 3;
+      if (['spring','summer','fall','winter'].includes(currentFilter)) return f.seasons.includes(currentFilter);
+      if (currentFilter === 'full-sun' || currentFilter === 'partial' || currentFilter === 'shade') return f.sunlight === currentFilter;
+      return true;
+    });
+  }
+
+  grid.innerHTML = flowers.map(f => `
+    <div class="flower-card" data-id="${f.id}">
+      <div class="card-emoji">${f.emoji}</div>
+      <div class="difficulty-dots">
+        ${[1,2,3].map(d => `<div class="difficulty-dot${d <= f.difficulty ? ' filled' : ''}"></div>`).join('')}
+      </div>
+      <div class="card-name">${f.name}</div>
+      <div class="card-scientific">${f.scientific}</div>
+      <div class="card-tags">
+        <span class="card-tag">${f.sunlightLabel}</span>
+        <span class="card-tag">💧 c/${f.waterDays}d</span>
+      </div>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.flower-card').forEach(card => {
+    card.addEventListener('click', () => openFlowerDetail(card.dataset.id));
+  });
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value;
+  renderCatalog();
+});
+
+// Filters
+document.getElementById('filterRow').addEventListener('click', e => {
+  const chip = e.target.closest('.filter-chip');
+  if (!chip) return;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentFilter = chip.dataset.filter;
+  renderCatalog();
+});
+
+/* ═══════════════════════════════════════════
+   FLOWER DETAIL MODAL
+   ═══════════════════════════════════════════ */
+function openFlowerDetail(id) {
+  selectedFlower = FLOWERS.find(f => f.id === id);
+  if (!selectedFlower) return;
+  const f = selectedFlower;
+
+  document.getElementById('modalEmoji').textContent = f.emoji;
+  document.getElementById('modalName').textContent = f.name;
+  document.getElementById('modalScientific').textContent = f.scientific;
+  document.getElementById('modalFunFact').textContent = f.fact;
+
+  document.getElementById('modalInfoGrid').innerHTML = `
+    <div class="info-item"><div class="info-icon">☀️</div><div class="info-label">Luz</div><div class="info-value">${f.sunlightLabel}</div></div>
+    <div class="info-item"><div class="info-icon">💧</div><div class="info-label">Riego</div><div class="info-value">Cada ${f.waterDays} días</div></div>
+    <div class="info-item"><div class="info-icon">🌡️</div><div class="info-label">Temperatura</div><div class="info-value">${f.tempMin}° - ${f.tempMax}°C</div></div>
+    <div class="info-item"><div class="info-icon">🪴</div><div class="info-label">Suelo</div><div class="info-value">${f.soil}</div></div>
+    <div class="info-item"><div class="info-icon">📊</div><div class="info-label">Dificultad</div><div class="info-value">${difficultyLabel(f.difficulty)}</div></div>
+    <div class="info-item"><div class="info-icon">📅</div><div class="info-label">Floración</div><div class="info-value">${f.seasonLabel}</div></div>
+  `;
+
+  const inGarden = garden.some(g => g.flowerId === id);
+  const btn = document.getElementById('modalAddBtn');
+  if (inGarden) {
+    btn.innerHTML = '✅ Ya está en tu jardín';
+    btn.classList.add('added');
+  } else {
+    btn.innerHTML = '🌱 Agregar a Mi Jardín';
+    btn.classList.remove('added');
+  }
+
+  document.getElementById('detailModal').classList.add('show');
+}
+
+document.getElementById('modalAddBtn').addEventListener('click', () => {
+  if (!selectedFlower) return;
+  const inGarden = garden.some(g => g.flowerId === selectedFlower.id);
+  if (inGarden) return;
+
+  garden.push({
+    flowerId: selectedFlower.id,
+    addedAt: new Date().toISOString(),
+    lastWatered: null,
+    status: 'healthy',
+    notes: ''
+  });
+  saveGarden();
+  updateBadge();
+
+  const btn = document.getElementById('modalAddBtn');
+  btn.innerHTML = '✅ Ya está en tu jardín';
+  btn.classList.add('added');
+  showToast('🌱 ' + selectedFlower.name + ' agregada a tu jardín');
+});
+
+// Close modals
+['detailModal','gardenModal'].forEach(id => {
+  const modal = document.getElementById(id);
+  modal.addEventListener('click', e => {
+    if (e.target === modal) modal.classList.remove('show');
+  });
+  modal.querySelector('.modal-handle').addEventListener('click', () => modal.classList.remove('show'));
+});
+
+/* ═══════════════════════════════════════════
+   MI JARDÍN
+   ═══════════════════════════════════════════ */
+function renderGarden() {
+  const list = document.getElementById('gardenList');
+  const empty = document.getElementById('gardenEmpty');
+
+  if (garden.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  list.innerHTML = garden.map((g, i) => {
+    const f = FLOWERS.find(fl => fl.id === g.flowerId);
+    if (!f) return '';
+    const urgency = getUrgency(g);
+    const days = daysSince(g.lastWatered);
+    const waterText = g.lastWatered
+      ? (days === 0 ? 'Regada hoy' : `Hace ${days} día${days>1?'s':''}`)
+      : 'Sin registrar';
+    const statusInfo = STATUS_OPTIONS.find(s => s.id === g.status) || STATUS_OPTIONS[0];
+
+    return `
+      <div class="garden-card" data-index="${i}">
+        <div class="gc-emoji">${f.emoji}</div>
+        <div class="gc-info">
+          <div class="gc-name">${f.name}</div>
+          <div class="gc-status ${statusInfo.class}">${statusInfo.label}</div>
+          <div class="gc-last-water">💧 ${waterText}</div>
+          ${g.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${g.notes}</div>` : ''}
+        </div>
+        <div class="gc-actions">
+          <button class="gc-action-btn water-btn" data-index="${i}" title="Regar">💧</button>
+          <button class="gc-action-btn edit-btn" data-index="${i}" title="Editar">✏️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Water buttons
+  list.querySelectorAll('.water-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.index);
+      garden[idx].lastWatered = new Date().toISOString();
+      if (garden[idx].status === 'needs-water') garden[idx].status = 'healthy';
+      saveGarden();
+      updateBadge();
+
+      const rect = btn.getBoundingClientRect();
+      showWaterDrops(rect.left + rect.width/2, rect.top);
+
+      // Water animation on card
+      const card = btn.closest('.garden-card');
+      const wave = document.createElement('div');
+      wave.className = 'water-animation';
+      card.appendChild(wave);
+      setTimeout(() => wave.remove(), 900);
+
+      const f = FLOWERS.find(fl => fl.id === garden[idx].flowerId);
+      showToast('💧 ' + (f ? f.name : 'Planta') + ' regada');
+      setTimeout(() => renderGarden(), 400);
+    });
+  });
+
+  // Edit buttons
+  list.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      openGardenEdit(parseInt(btn.dataset.index));
+    });
+  });
+}
+
+function openGardenEdit(index) {
+  editingGardenItem = index;
+  const g = garden[index];
+  const f = FLOWERS.find(fl => fl.id === g.flowerId);
+  if (!f) return;
+
+  document.getElementById('gmEmoji').textContent = f.emoji;
+  document.getElementById('gmName').textContent = f.name;
+  document.getElementById('gmNotes').value = g.notes || '';
+
+  const statusContainer = document.getElementById('gmStatus');
+  statusContainer.innerHTML = STATUS_OPTIONS.map(s =>
+    `<button class="status-option${g.status === s.id ? ' selected' : ''}" data-status="${s.id}">${s.label}</button>`
+  ).join('');
+
+  statusContainer.querySelectorAll('.status-option').forEach(btn => {
+    btn.addEventListener('click', () => {
+      statusContainer.querySelectorAll('.status-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+
+  document.getElementById('gardenModal').classList.add('show');
+}
+
+document.getElementById('gmSaveBtn').addEventListener('click', () => {
+  if (editingGardenItem === null) return;
+  const selected = document.querySelector('#gmStatus .status-option.selected');
+  garden[editingGardenItem].status = selected ? selected.dataset.status : 'healthy';
+  garden[editingGardenItem].notes = document.getElementById('gmNotes').value;
+  saveGarden();
+  updateBadge();
+  document.getElementById('gardenModal').classList.remove('show');
+  renderGarden();
+  showToast('💾 Cambios guardados');
+});
+
+document.getElementById('gmDeleteBtn').addEventListener('click', () => {
+  if (editingGardenItem === null) return;
+  const f = FLOWERS.find(fl => fl.id === garden[editingGardenItem].flowerId);
+  garden.splice(editingGardenItem, 1);
+  saveGarden();
+  updateBadge();
+  document.getElementById('gardenModal').classList.remove('show');
+  renderGarden();
+  showToast('🗑 ' + (f ? f.name : 'Planta') + ' removida del jardín');
+});
+
+/* ═══════════════════════════════════════════
+   CALENDAR
+   ═══════════════════════════════════════════ */
+function getWeekDates(offset) {
+  const today = new Date();
+  const dayOfWeek = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1) + offset * 7);
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function renderCalendar() {
+  const dates = getWeekDates(calWeekOffset);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const label = document.getElementById('calWeekLabel');
+  if (calWeekOffset === 0) label.textContent = 'Esta semana';
+  else if (calWeekOffset === 1) label.textContent = 'Próxima semana';
+  else if (calWeekOffset === -1) label.textContent = 'Semana pasada';
+  else label.textContent = `${dates[0].getDate()} ${MONTHS_ES[dates[0].getMonth()].substring(0,3)} - ${dates[6].getDate()} ${MONTHS_ES[dates[6].getMonth()].substring(0,3)}`;
+
+  const calWeek = document.getElementById('calWeek');
+  calWeek.innerHTML = dates.map((date, i) => {
+    const isToday = date.getTime() === today.getTime();
+    // Calculate which plants need water on this date
+    const dots = garden.map(g => {
+      const f = FLOWERS.find(fl => fl.id === g.flowerId);
+      if (!f || !g.lastWatered) return null;
+      const lastWater = new Date(g.lastWatered);
+      lastWater.setHours(0,0,0,0);
+      const diff = Math.floor((date - lastWater) / 86400000);
+      if (diff > 0 && diff % f.waterDays === 0) {
+        const daysFromToday = Math.floor((date - today) / 86400000);
+        if (daysFromToday < 0) return 'overdue';
+        if (daysFromToday === 0) return 'soon';
+        return 'good';
+      }
+      return null;
+    }).filter(Boolean);
+
+    return `
+      <div class="cal-day${isToday ? ' today' : ''}">
+        <div class="cal-day-label">${DAYS_SHORT[i]}</div>
+        <div class="cal-day-num">${date.getDate()}</div>
+        <div class="cal-dots">
+          ${dots.map(d => `<div class="cal-dot ${d}"></div>`).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Today's tasks
+  const tasks = document.getElementById('todayTasks');
+  const empty = document.getElementById('tasksEmpty');
+  const todayItems = garden.map(g => {
+    const f = FLOWERS.find(fl => fl.id === g.flowerId);
+    if (!f) return null;
+    const urgency = getUrgency(g);
+    if (urgency === 'good') return null;
+    const days = daysSince(g.lastWatered);
+    return { flower: f, gardenItem: g, urgency, days };
+  }).filter(Boolean);
+
+  if (todayItems.length === 0) {
+    tasks.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tasks.innerHTML = todayItems.map(item => `
+      <div class="task-item">
+        <div class="task-emoji">${item.flower.emoji}</div>
+        <div class="task-info">
+          <div class="task-name">${item.flower.name}</div>
+          <div class="task-desc">${item.urgency === 'overdue' ? '⚠️ Necesita agua — ' + item.days + ' días sin regar' : '💧 Regar hoy'}</div>
+        </div>
+        <div class="task-urgency" style="background:var(--${item.urgency})"></div>
+      </div>
+    `).join('');
+  }
+}
+
+document.getElementById('calPrev').addEventListener('click', () => { calWeekOffset--; renderCalendar(); });
+document.getElementById('calNext').addEventListener('click', () => { calWeekOffset++; renderCalendar(); });
+
+/* ═══════════════════════════════════════════
+   TIPS
+   ═══════════════════════════════════════════ */
+function renderTips() {
+  const month = new Date().getMonth();
+  const tips = SEASONAL_TIPS[month] || [];
+  const monthName = MONTHS_ES[month];
+
+  document.getElementById('tipsList').innerHTML = tips.map(tip => `
+    <div class="tip-card">
+      <div class="tip-month">${monthName}</div>
+      <div class="tip-emoji">${tip.emoji}</div>
+      <div class="tip-title">${tip.title}</div>
+      <div class="tip-body">${tip.body}</div>
+    </div>
+  `).join('');
+}
+
+/* ═══════════════════════════════════════════
+   PLANT IDENTIFIER
+   ═══════════════════════════════════════════ */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const scanAnim = document.getElementById('scanAnim');
+const scanResult = document.getElementById('scanResult');
+
+document.getElementById('identifierBtn').addEventListener('click', () => {
+  // Navigate to tips page and scroll to identifier
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelector('.nav-item[data-page="pageTips"]').classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pageTips').classList.add('active');
+  currentPage = 'pageTips';
+  renderTips();
+  document.getElementById('identifierSection').scrollIntoView({ behavior: 'smooth' });
+});
+
+uploadZone.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', () => {
+  if (!fileInput.files.length) return;
+  uploadZone.style.display = 'none';
+  scanAnim.classList.add('active');
+  scanResult.classList.remove('show');
+
+  setTimeout(() => {
+    scanAnim.classList.remove('active');
+    // Pick a random flower
+    const flower = FLOWERS[Math.floor(Math.random() * FLOWERS.length)];
+    const confidence = (75 + Math.random() * 20).toFixed(1);
+    document.getElementById('srEmoji').textContent = flower.emoji;
+    document.getElementById('srName').textContent = flower.name;
+    document.getElementById('srScientific').textContent = flower.scientific;
+    document.getElementById('srConfidence').textContent = confidence + '% de coincidencia';
+    scanResult.classList.add('show');
+
+    // Reset after a while
+    setTimeout(() => {
+      uploadZone.style.display = '';
+      scanResult.classList.remove('show');
+      fileInput.value = '';
+    }, 5000);
+  }, 2500);
+});
+
+/* ═══════════════════════════════════════════
+   DARK MODE
+   ═══════════════════════════════════════════ */
+const themeToggle = document.getElementById('themeToggle');
+let isDark = localStorage.getItem('rocio_theme') === 'dark';
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  themeToggle.textContent = isDark ? '☀️' : '🌙';
+  document.querySelector('meta[name="theme-color"]').content = isDark ? '#1a2118' : '#8fbc8f';
+}
+
+themeToggle.addEventListener('click', () => {
+  isDark = !isDark;
+  localStorage.setItem('rocio_theme', isDark ? 'dark' : 'light');
+  applyTheme();
+});
+applyTheme();
+
+/* ═══════════════════════════════════════════
+   ONBOARDING
+   ═══════════════════════════════════════════ */
+const onboardingSteps = [
+  { emoji: '🌸', title: 'Bienvenido a Rocío', desc: 'Cuida tus flores con amor. Descubre, aprende y cultiva las flores más hermosas.' },
+  { emoji: '🌱', title: 'Tu Jardín Personal', desc: 'Agrega flores a tu jardín, registra riegos y lleva notas de cada una de tus plantas.' },
+  { emoji: '📅', title: 'Nunca Olvides Regar', desc: 'El calendario te muestra cuándo cada planta necesita atención. ¡Tus flores te lo agradecerán!' }
+];
+
+let obStep = 0;
+const onboarding = document.getElementById('onboarding');
+
+function renderOnboarding() {
+  document.getElementById('obEmoji').textContent = onboardingSteps[obStep].emoji;
+  document.getElementById('obTitle').textContent = onboardingSteps[obStep].title;
+  document.getElementById('obDesc').textContent = onboardingSteps[obStep].desc;
+  document.querySelectorAll('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === obStep));
+  document.getElementById('obBtn').textContent = obStep === 2 ? '¡Comenzar! 🌿' : 'Siguiente';
+}
+
+document.getElementById('obBtn').addEventListener('click', () => {
+  if (obStep < 2) { obStep++; renderOnboarding(); }
+  else {
+    onboarding.classList.add('hidden');
+    localStorage.setItem('rocio_onboarded', '1');
+  }
+});
+
+if (localStorage.getItem('rocio_onboarded')) {
+  onboarding.classList.add('hidden');
+} else {
+  renderOnboarding();
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+renderCatalog();
+updateBadge();
+</script>
+</body>
+</html>
