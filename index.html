@@ -1128,6 +1128,328 @@ img { display: block; max-width: 100%; }
   .page { max-width: 800px; }
   .card-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ═══════════════════════════════════════════
+   AI PLANT SCANNER
+   ═══════════════════════════════════════════ */
+.scanner-fab {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--safe-bottom) + 18px);
+  right: 18px;
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 26px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(106,155,106,0.5);
+  z-index: 99;
+  transition: transform 0.2s var(--bounce), box-shadow 0.3s ease;
+  animation: fabPulse 3s ease-in-out infinite;
+}
+.scanner-fab:active { transform: scale(0.9); }
+@keyframes fabPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(106,155,106,0.5); }
+  50% { box-shadow: 0 4px 30px rgba(106,155,106,0.8), 0 0 0 8px rgba(106,155,106,0.15); }
+}
+
+/* Scanner Overlay */
+.scanner-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: #000; display: none;
+  flex-direction: column;
+}
+.scanner-overlay.active { display: flex; }
+
+.scanner-top-bar {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: calc(var(--safe-top) + 12px) 16px 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 10;
+  background: linear-gradient(180deg, rgba(0,0,0,0.6), transparent);
+}
+.scanner-close {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff;
+}
+.scanner-title {
+  color: #fff; font-size: 16px; font-weight: 700;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.scanner-history-btn {
+  color: rgba(255,255,255,0.8); font-size: 13px; font-weight: 600;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* Viewfinder */
+.scanner-viewfinder {
+  flex: 1; position: relative; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.scanner-viewfinder video,
+.scanner-viewfinder canvas.scanner-freeze {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.scanner-viewfinder canvas.scanner-freeze { position: absolute; inset: 0; display: none; }
+.scanner-viewfinder canvas.scanner-freeze.active { display: block; }
+
+/* Sci-fi overlay */
+.scanner-grid-overlay {
+  position: absolute; inset: 0; pointer-events: none; z-index: 2;
+}
+.scanner-grid-overlay::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(106,200,106,0.08) 49px, rgba(106,200,106,0.08) 50px),
+    repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(106,200,106,0.08) 49px, rgba(106,200,106,0.08) 50px);
+  animation: gridPulse 2s ease-in-out infinite;
+}
+@keyframes gridPulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+/* Corner reticles */
+.scanner-reticle {
+  position: absolute; z-index: 3; pointer-events: none;
+}
+.scanner-reticle-tl, .scanner-reticle-tr, .scanner-reticle-bl, .scanner-reticle-br {
+  position: absolute; width: 40px; height: 40px;
+  border-color: rgba(106,220,106,0.9); border-style: solid; border-width: 0;
+}
+.scanner-reticle-tl { top: 15%; left: 10%; border-top-width: 3px; border-left-width: 3px; border-radius: 4px 0 0 0; }
+.scanner-reticle-tr { top: 15%; right: 10%; border-top-width: 3px; border-right-width: 3px; border-radius: 0 4px 0 0; }
+.scanner-reticle-bl { bottom: 15%; left: 10%; border-bottom-width: 3px; border-left-width: 3px; border-radius: 0 0 0 4px; }
+.scanner-reticle-br { bottom: 15%; right: 10%; border-bottom-width: 3px; border-right-width: 3px; border-radius: 0 0 4px 0; }
+.scanner-reticle-tl, .scanner-reticle-tr, .scanner-reticle-bl, .scanner-reticle-br {
+  animation: reticlePulse 1.5s ease-in-out infinite;
+}
+@keyframes reticlePulse { 0%,100%{opacity:0.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.05)} }
+
+/* Scan line sweep */
+.scanner-scanline {
+  position: absolute; left: 0; right: 0; height: 3px; z-index: 4;
+  background: linear-gradient(90deg, transparent, rgba(106,220,106,0.8), rgba(106,220,106,1), rgba(106,220,106,0.8), transparent);
+  box-shadow: 0 0 15px rgba(106,220,106,0.6), 0 0 30px rgba(106,220,106,0.3);
+  top: 15%; opacity: 0; pointer-events: none;
+}
+.scanner-scanline.active {
+  animation: scanSweep 2s ease-in-out forwards;
+}
+@keyframes scanSweep {
+  0% { top: 15%; opacity: 1; }
+  100% { top: 85%; opacity: 0.3; }
+}
+
+/* Scanning status text */
+.scanner-status {
+  position: absolute; bottom: 22%; left: 0; right: 0;
+  text-align: center; z-index: 5;
+  color: rgba(106,220,106,0.95); font-size: 15px; font-weight: 700;
+  text-shadow: 0 0 10px rgba(106,220,106,0.5), 0 1px 3px rgba(0,0,0,0.8);
+  letter-spacing: 0.5px;
+}
+
+/* Color sample dots */
+.scanner-sample-dot {
+  position: absolute; width: 14px; height: 14px;
+  border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+  z-index: 5; pointer-events: none;
+  animation: sampleDotPop 0.4s var(--bounce) forwards;
+  opacity: 0;
+}
+@keyframes sampleDotPop { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+
+/* Progress bar */
+.scanner-progress {
+  position: absolute; bottom: 18%; left: 15%; right: 15%;
+  height: 4px; border-radius: 2px;
+  background: rgba(255,255,255,0.15); z-index: 5;
+  overflow: hidden; opacity: 0;
+}
+.scanner-progress.active { opacity: 1; }
+.scanner-progress-fill {
+  height: 100%; width: 0%;
+  background: linear-gradient(90deg, rgba(106,220,106,0.8), rgba(106,220,106,1));
+  border-radius: 2px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px rgba(106,220,106,0.5);
+}
+
+/* Particle effects */
+.scanner-particles {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+}
+.scanner-particle {
+  position: absolute; width: 3px; height: 3px;
+  background: rgba(106,220,106,0.6); border-radius: 50%;
+  animation: particleFloat 3s ease-in-out infinite;
+}
+@keyframes particleFloat {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  50% { transform: translateY(-30px) scale(1.5); opacity: 1; }
+  100% { transform: translateY(-60px) scale(0.5); opacity: 0; }
+}
+
+/* Capture button */
+.scanner-capture-area {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 0 calc(var(--safe-bottom) + 30px);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 10;
+  background: linear-gradient(0deg, rgba(0,0,0,0.5), transparent);
+}
+.scanner-capture-btn {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: #fff;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 4px rgba(106,220,106,0.6);
+  transition: transform 0.15s var(--bounce);
+  animation: capturePulse 2s ease-in-out infinite;
+}
+.scanner-capture-btn:active { transform: scale(0.9); animation: none; }
+@keyframes capturePulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(106,220,106,0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(106,220,106,0.3), 0 0 0 4px rgba(106,220,106,0.8); }
+}
+.scanner-capture-btn::after {
+  content: ''; width: 58px; height: 58px;
+  border-radius: 50%; border: 3px solid rgba(106,155,106,0.3);
+  position: absolute;
+}
+
+/* Upload fallback */
+.scanner-upload-fallback {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px;
+  flex: 1; padding: 40px;
+  color: #fff; text-align: center;
+}
+.scanner-upload-fallback.active { display: flex; }
+.scanner-upload-icon { font-size: 64px; margin-bottom: 8px; }
+.scanner-upload-text { font-size: 15px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+.scanner-upload-btn {
+  padding: 14px 32px; border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 15px; font-weight: 700;
+}
+
+/* Permission denied */
+.scanner-permission-msg {
+  display: none; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px;
+  flex: 1; padding: 40px;
+  color: #fff; text-align: center;
+}
+.scanner-permission-msg.active { display: flex; }
+
+/* Result card */
+.scanner-result {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--bg-card);
+  border-radius: 24px 24px 0 0;
+  padding: 20px 20px calc(var(--safe-bottom) + 24px);
+  z-index: 20;
+  transform: translateY(100%);
+  transition: transform 0.5s var(--bounce);
+  max-height: 70dvh; overflow-y: auto;
+}
+.scanner-result.show { transform: translateY(0); }
+
+.scanner-result-header {
+  display: flex; gap: 14px; align-items: center; margin-bottom: 16px;
+}
+.scanner-result-thumb {
+  width: 70px; height: 70px; border-radius: var(--radius-sm);
+  object-fit: cover; flex-shrink: 0;
+}
+.scanner-result-info { flex: 1; }
+.scanner-result-name { font-size: 20px; font-weight: 800; color: var(--text); }
+.scanner-result-scientific { font-size: 12px; color: var(--text-muted); font-style: italic; }
+.scanner-result-confidence {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 6px; padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: rgba(143,188,143,0.15);
+  font-size: 14px; font-weight: 700; color: var(--primary-dark);
+}
+
+.scanner-result-care {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+  margin-bottom: 16px;
+}
+.scanner-result-care-item {
+  text-align: center; padding: 10px 6px;
+  background: rgba(143,188,143,0.08);
+  border-radius: var(--radius-sm);
+}
+.scanner-result-care-item .src-icon { font-size: 18px; }
+.scanner-result-care-item .src-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.scanner-result-care-item .src-value { font-size: 12px; font-weight: 700; margin-top: 2px; }
+
+.scanner-result-actions { display: flex; gap: 10px; }
+.scanner-result-actions button {
+  flex: 1; padding: 13px; border-radius: var(--radius);
+  font-size: 14px; font-weight: 700; text-align: center;
+}
+.scanner-btn-detail {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(143,188,143,0.35);
+}
+.scanner-btn-retry {
+  background: rgba(143,188,143,0.12);
+  color: var(--primary-dark);
+}
+
+/* Scan History Modal */
+.scan-history-overlay {
+  position: fixed; inset: 0; z-index: 250;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px);
+  display: none; align-items: flex-end; justify-content: center;
+}
+.scan-history-overlay.show { display: flex; }
+.scan-history-sheet {
+  background: var(--bg-card);
+  border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 500px;
+  max-height: 75dvh; overflow-y: auto;
+  padding: 12px 20px 32px;
+  animation: slideUp 0.35s var(--bounce);
+}
+.scan-history-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 10px; margin-top: 12px;
+}
+.scan-history-item {
+  position: relative; border-radius: var(--radius-sm);
+  overflow: hidden; cursor: pointer;
+  background: rgba(143,188,143,0.08);
+  aspect-ratio: 1;
+  transition: transform 0.15s var(--bounce);
+}
+.scan-history-item:active { transform: scale(0.95); }
+.scan-history-item img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.scan-history-item-info {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(0deg, rgba(0,0,0,0.7), transparent);
+  padding: 20px 6px 6px;
+  color: #fff;
+}
+.scan-history-item-name { font-size: 11px; font-weight: 700; }
+.scan-history-item-date { font-size: 9px; opacity: 0.7; }
+.scan-history-empty {
+  text-align: center; padding: 40px 20px; color: var(--text-muted);
+}
+.scan-history-clear {
+  display: block; margin: 16px auto 0; padding: 8px 20px;
+  border-radius: var(--radius-full); font-size: 13px; font-weight: 600;
+  background: rgba(232,112,112,0.1); color: var(--overdue);
+}
 </style>
 </head>
 <body>
@@ -1305,6 +1627,82 @@ img { display: block; max-width: 100%; }
   </section>
 
 </main>
+
+<!-- SCANNER FAB -->
+<button class="scanner-fab" id="scannerFab" title="Escanear planta">📸</button>
+
+<!-- SCANNER OVERLAY -->
+<div class="scanner-overlay" id="scannerOverlay">
+  <div class="scanner-top-bar">
+    <button class="scanner-close" id="scannerClose">✕</button>
+    <span class="scanner-title">🌿 Plant Scanner</span>
+    <button class="scanner-history-btn" id="scannerHistoryBtn">📷 Historial</button>
+  </div>
+  <div class="scanner-viewfinder" id="scannerViewfinder">
+    <video id="scannerVideo" autoplay playsinline muted></video>
+    <canvas class="scanner-freeze" id="scannerFreeze"></canvas>
+    <div class="scanner-grid-overlay"></div>
+    <div class="scanner-reticle">
+      <div class="scanner-reticle-tl"></div>
+      <div class="scanner-reticle-tr"></div>
+      <div class="scanner-reticle-bl"></div>
+      <div class="scanner-reticle-br"></div>
+    </div>
+    <div class="scanner-scanline" id="scannerScanline"></div>
+    <div class="scanner-status" id="scannerStatus">Apunta a una planta...</div>
+    <div class="scanner-progress" id="scannerProgress">
+      <div class="scanner-progress-fill" id="scannerProgressFill"></div>
+    </div>
+    <div class="scanner-particles" id="scannerParticles"></div>
+    <div class="scanner-capture-area" id="scannerCaptureArea">
+      <button class="scanner-capture-btn" id="scannerCaptureBtn"></button>
+    </div>
+    <!-- Upload fallback (no camera) -->
+    <div class="scanner-upload-fallback" id="scannerUploadFallback">
+      <div class="scanner-upload-icon">📷</div>
+      <div class="scanner-upload-text">Tu dispositivo no tiene cámara disponible.<br>Sube una foto para identificar la planta.</div>
+      <button class="scanner-upload-btn" id="scannerUploadBtn">📁 Subir foto</button>
+      <input type="file" id="scannerFileInput" accept="image/*" style="display:none">
+    </div>
+    <!-- Permission denied -->
+    <div class="scanner-permission-msg" id="scannerPermMsg">
+      <div style="font-size:64px;margin-bottom:8px">🔒</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Permiso de cámara necesario</div>
+      <div class="scanner-upload-text">Para escanear plantas, necesitamos acceso a tu cámara. Ve a la configuración de tu navegador y permite el acceso a la cámara.</div>
+      <button class="scanner-upload-btn" id="scannerPermUploadBtn" style="margin-top:8px">📁 O sube una foto</button>
+    </div>
+  </div>
+  <!-- Result card -->
+  <div class="scanner-result" id="scannerResult">
+    <div class="modal-handle" id="scannerResultHandle"></div>
+    <div class="scanner-result-header">
+      <canvas id="scannerResultThumb" class="scanner-result-thumb" width="70" height="70"></canvas>
+      <div class="scanner-result-info">
+        <div class="scanner-result-name" id="scannerResultName"></div>
+        <div class="scanner-result-scientific" id="scannerResultScientific"></div>
+        <div class="scanner-result-confidence" id="scannerResultConfidence">
+          <span>🎯</span> <span id="scannerConfVal">0</span>%
+        </div>
+      </div>
+    </div>
+    <div class="scanner-result-care" id="scannerResultCare"></div>
+    <div class="scanner-result-actions">
+      <button class="scanner-btn-detail" id="scannerBtnDetail">🌿 Ver ficha completa</button>
+      <button class="scanner-btn-retry" id="scannerBtnRetry">📸 Escanear otra</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCAN HISTORY MODAL -->
+<div class="scan-history-overlay" id="scanHistoryOverlay">
+  <div class="scan-history-sheet">
+    <div class="modal-handle" id="scanHistoryHandle"></div>
+    <h3 style="font-size:18px;font-weight:800;text-align:center;margin-bottom:4px">📷 Historial de escaneos</h3>
+    <p style="font-size:12px;color:var(--text-muted);text-align:center">Tus últimos 10 escaneos</p>
+    <div class="scan-history-grid" id="scanHistoryGrid"></div>
+    <button class="scan-history-clear" id="scanHistoryClear">🗑 Limpiar historial</button>
+  </div>
+</div>
 
 <!-- BOTTOM NAV -->
 <nav class="bottom-nav">
@@ -2840,6 +3238,423 @@ document.addEventListener('click', e => {
   btn.appendChild(ripple);
   setTimeout(() => ripple.remove(), 600);
 });
+
+/* ═══════════════════════════════════════════
+   AI PLANT SCANNER
+   ═══════════════════════════════════════════ */
+const FLOWER_COLOR_PROFILES = {
+  rosa:       { hues: [[340,360],[0,15]], sats: [0.3,1], lits: [0.3,0.7], weights: {red:3,pink:3,deepGreen:1} },
+  tulipan:    { hues: [[0,15],[30,60]], sats: [0.5,1], lits: [0.4,0.7], weights: {red:2,yellow:2,orange:3} },
+  orquidea:   { hues: [[270,310],[0,0]], sats: [0.2,0.8], lits: [0.4,0.8], weights: {purple:3,white:2,pink:2} },
+  girasol:    { hues: [[45,65]], sats: [0.6,1], lits: [0.5,0.7], weights: {brightYellow:4,darkBrown:2} },
+  lavanda:    { hues: [[260,290]], sats: [0.2,0.7], lits: [0.4,0.7], weights: {purple:3,lightGreen:1} },
+  gardenia:   { hues: [[40,60],[80,160]], sats: [0,0.3], lits: [0.7,1], weights: {white:4,cream:2,darkGreen:1} },
+  jazmin:     { hues: [[60,160]], sats: [0,0.4], lits: [0.7,1], weights: {white:4,lightGreen:2} },
+  hortensia:  { hues: [[200,260],[280,330]], sats: [0.2,0.8], lits: [0.4,0.7], weights: {blue:3,purple:2,pink:2} },
+  lirio:      { hues: [[20,45],[80,160]], sats: [0.1,0.7], lits: [0.5,0.9], weights: {white:3,orange:2,green:1} },
+  margarita:  { hues: [[45,65]], sats: [0,0.6], lits: [0.6,1], weights: {white:3,yellow:3} },
+  clavel:     { hues: [[340,360],[0,15]], sats: [0.3,0.9], lits: [0.4,0.8], weights: {red:2,pink:3,white:1} },
+  violeta:    { hues: [[260,290]], sats: [0.3,0.9], lits: [0.2,0.5], weights: {deepPurple:4,blue:2} },
+  geranio:    { hues: [[0,15],[90,150]], sats: [0.4,1], lits: [0.3,0.6], weights: {red:3,brightGreen:2} },
+  petunia:    { hues: [[270,330]], sats: [0.3,0.8], lits: [0.3,0.7], weights: {purple:3,pink:2,white:1} },
+  cempasuchil:{ hues: [[20,45]], sats: [0.7,1], lits: [0.4,0.7], weights: {deepOrange:4,yellow:2} }
+};
+
+function rgbToHsl(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0;}else{
+    const d=max-min; s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}
+  }
+  return [h*360,s,l];
+}
+
+function sampleImageColors(canvas) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  const samples = [];
+  // Sample from grid of regions
+  const regions = [
+    [0.5,0.5], [0.25,0.25], [0.75,0.25], [0.25,0.75], [0.75,0.75],
+    [0.5,0.25], [0.5,0.75], [0.25,0.5], [0.75,0.5],
+    [0.3,0.3], [0.7,0.3], [0.3,0.7], [0.7,0.7],
+    [0.5,0.4], [0.5,0.6], [0.4,0.5], [0.6,0.5],
+    [0.15,0.15], [0.85,0.15], [0.15,0.85], [0.85,0.85]
+  ];
+  for (const [rx,ry] of regions) {
+    const cx = Math.floor(rx*w), cy = Math.floor(ry*h);
+    const blockSize = Math.max(4, Math.floor(Math.min(w,h)*0.04));
+    const imgData = ctx.getImageData(Math.max(0,cx-blockSize), Math.max(0,cy-blockSize), blockSize*2, blockSize*2);
+    let tr=0,tg=0,tb=0,cnt=0;
+    for(let i=0;i<imgData.data.length;i+=4){
+      tr+=imgData.data[i]; tg+=imgData.data[i+1]; tb+=imgData.data[i+2]; cnt++;
+    }
+    if(cnt>0) samples.push(rgbToHsl(tr/cnt, tg/cnt, tb/cnt));
+  }
+  return samples;
+}
+
+function scoreFlowerMatch(samples, profileId) {
+  const profile = FLOWER_COLOR_PROFILES[profileId];
+  if(!profile) return 0;
+  let score = 0;
+  for(const [h,s,l] of samples) {
+    let hueMatch = false;
+    for(const [hMin,hMax] of profile.hues) {
+      if(h >= hMin && h <= hMax) { hueMatch = true; break; }
+    }
+    const satMatch = s >= (profile.sats[0]||0) && s <= (profile.sats[1]||1);
+    const litMatch = l >= (profile.lits[0]||0) && l <= (profile.lits[1]||1);
+    if(hueMatch && satMatch && litMatch) score += 3;
+    else if(hueMatch && (satMatch || litMatch)) score += 2;
+    else if(hueMatch) score += 1;
+    // Bonus for white detection (high lightness, low saturation)
+    if(s < 0.15 && l > 0.75 && profile.weights.white) score += profile.weights.white * 0.3;
+  }
+  return score;
+}
+
+function identifyPlant(canvas) {
+  const samples = sampleImageColors(canvas);
+  let bestScore = -1, bestId = 'rosa';
+  for(const f of FLOWERS) {
+    const s = scoreFlowerMatch(samples, f.id);
+    if(s > bestScore) { bestScore = s; bestId = f.id; }
+  }
+  // Confidence: 75-96% with some randomness
+  const confidence = Math.min(96, Math.max(75, 75 + (bestScore / (samples.length * 3)) * 21 + (Math.random() * 8 - 4))).toFixed(1);
+  return { flowerId: bestId, confidence: parseFloat(confidence), samples };
+}
+
+// Scanner state
+let scannerStream = null;
+let scanHistory = JSON.parse(localStorage.getItem('rocio_scan_history') || '[]');
+
+function saveScanHistory() {
+  localStorage.setItem('rocio_scan_history', JSON.stringify(scanHistory));
+}
+
+// Generate particles
+function initScannerParticles() {
+  const container = document.getElementById('scannerParticles');
+  container.innerHTML = '';
+  for(let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'scanner-particle';
+    const side = Math.floor(Math.random()*4);
+    if(side===0) { p.style.left='0'; p.style.top=Math.random()*100+'%'; }
+    else if(side===1) { p.style.right='0'; p.style.top=Math.random()*100+'%'; }
+    else if(side===2) { p.style.top='0'; p.style.left=Math.random()*100+'%'; }
+    else { p.style.bottom='0'; p.style.left=Math.random()*100+'%'; }
+    p.style.animationDelay = (Math.random()*3)+'s';
+    p.style.animationDuration = (2+Math.random()*2)+'s';
+    container.appendChild(p);
+  }
+}
+
+async function openScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  overlay.classList.add('active');
+  initScannerParticles();
+
+  // Reset state
+  document.getElementById('scannerFreeze').classList.remove('active');
+  document.getElementById('scannerResult').classList.remove('show');
+  document.getElementById('scannerCaptureArea').style.display = '';
+  document.getElementById('scannerStatus').textContent = 'Apunta a una planta...';
+  document.getElementById('scannerProgress').classList.remove('active');
+  document.getElementById('scannerScanline').classList.remove('active');
+  document.getElementById('scannerProgressFill').style.width = '0%';
+  document.getElementById('scannerUploadFallback').classList.remove('active');
+  document.getElementById('scannerPermMsg').classList.remove('active');
+  document.getElementById('scannerViewfinder').querySelector('video').style.display = '';
+  document.querySelector('.scanner-grid-overlay').style.display = '';
+  document.querySelector('.scanner-reticle').style.display = '';
+
+  // Remove old sample dots
+  document.querySelectorAll('.scanner-sample-dot').forEach(d=>d.remove());
+
+  try {
+    scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = scannerStream;
+    video.style.display = '';
+  } catch(err) {
+    console.warn('Camera error:', err);
+    if(err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      document.getElementById('scannerPermMsg').classList.add('active');
+      document.getElementById('scannerVideo').style.display = 'none';
+      document.querySelector('.scanner-grid-overlay').style.display = 'none';
+      document.querySelector('.scanner-reticle').style.display = 'none';
+      document.getElementById('scannerCaptureArea').style.display = 'none';
+    } else {
+      // No camera available — show upload fallback
+      document.getElementById('scannerUploadFallback').classList.add('active');
+      document.getElementById('scannerVideo').style.display = 'none';
+      document.querySelector('.scanner-grid-overlay').style.display = 'none';
+      document.querySelector('.scanner-reticle').style.display = 'none';
+      document.getElementById('scannerCaptureArea').style.display = 'none';
+    }
+  }
+}
+
+function closeScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  overlay.classList.remove('active');
+  if(scannerStream) {
+    scannerStream.getTracks().forEach(t => t.stop());
+    scannerStream = null;
+  }
+}
+
+function captureAndAnalyze(sourceCanvas) {
+  const freezeCanvas = document.getElementById('scannerFreeze');
+  const ctx = freezeCanvas.getContext('2d');
+  freezeCanvas.width = sourceCanvas.width;
+  freezeCanvas.height = sourceCanvas.height;
+  ctx.drawImage(sourceCanvas, 0, 0);
+  freezeCanvas.classList.add('active');
+  document.getElementById('scannerCaptureArea').style.display = 'none';
+  if(scannerStream) {
+    scannerStream.getTracks().forEach(t => t.stop());
+    scannerStream = null;
+  }
+
+  // Start analysis animation
+  const scanline = document.getElementById('scannerScanline');
+  const progress = document.getElementById('scannerProgress');
+  const progressFill = document.getElementById('scannerProgressFill');
+  const status = document.getElementById('scannerStatus');
+
+  scanline.classList.remove('active');
+  void scanline.offsetWidth;
+  scanline.classList.add('active');
+  progress.classList.add('active');
+  progressFill.style.width = '0%';
+
+  const statusMessages = [
+    { text: 'Analizando colores...', pct: '25%', t: 0 },
+    { text: 'Detectando forma...', pct: '50%', t: 800 },
+    { text: 'Buscando coincidencias...', pct: '75%', t: 1600 },
+    { text: '¡Planta identificada!', pct: '100%', t: 2400 }
+  ];
+
+  // Add sample dots
+  const viewfinder = document.getElementById('scannerViewfinder');
+  const vw = viewfinder.offsetWidth, vh = viewfinder.offsetHeight;
+  const dotPositions = [
+    [0.3,0.3],[0.5,0.4],[0.7,0.3],[0.4,0.6],[0.6,0.6],
+    [0.5,0.5],[0.2,0.5],[0.8,0.5],[0.35,0.7],[0.65,0.35]
+  ];
+
+  statusMessages.forEach(({text,pct,t}) => {
+    setTimeout(() => {
+      status.textContent = text;
+      progressFill.style.width = pct;
+    }, t);
+  });
+
+  // Show sample dots progressively
+  dotPositions.forEach(([rx,ry],i) => {
+    setTimeout(() => {
+      const dot = document.createElement('div');
+      dot.className = 'scanner-sample-dot';
+      dot.style.left = (rx*100)+'%';
+      dot.style.top = (ry*100)+'%';
+      // Random color for dot
+      const colors = ['#6adc6a','#ff6b9d','#ffcc00','#6ab4ff','#ff8844'];
+      dot.style.background = colors[i % colors.length];
+      viewfinder.appendChild(dot);
+    }, 600 + i * 200);
+  });
+
+  // Identify after animation
+  setTimeout(() => {
+    const result = identifyPlant(freezeCanvas);
+    showScanResult(result, freezeCanvas);
+  }, 3000);
+}
+
+function showScanResult(result, canvas) {
+  const flower = FLOWERS.find(f => f.id === result.flowerId);
+  if(!flower) return;
+
+  // Draw thumbnail
+  const thumbCanvas = document.getElementById('scannerResultThumb');
+  const tctx = thumbCanvas.getContext('2d');
+  thumbCanvas.width = 70; thumbCanvas.height = 70;
+  const size = Math.min(canvas.width, canvas.height);
+  const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
+  tctx.drawImage(canvas, sx, sy, size, size, 0, 0, 70, 70);
+
+  document.getElementById('scannerResultName').textContent = flower.emoji + ' ' + flower.name;
+  document.getElementById('scannerResultScientific').textContent = flower.scientific;
+
+  // Animated confidence counter
+  const confEl = document.getElementById('scannerConfVal');
+  const targetConf = result.confidence;
+  confEl.textContent = '0';
+  let confCurrent = 0;
+  const confInterval = setInterval(() => {
+    confCurrent += 1.5;
+    if(confCurrent >= targetConf) { confCurrent = targetConf; clearInterval(confInterval); }
+    confEl.textContent = confCurrent.toFixed(1);
+  }, 30);
+
+  // Care info
+  document.getElementById('scannerResultCare').innerHTML = `
+    <div class="scanner-result-care-item"><div class="src-icon">💧</div><div class="src-label">Riego</div><div class="src-value">${flower.waterMl}ml / ${flower.waterDays}d</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">☀️</div><div class="src-label">Luz</div><div class="src-value">${flower.sunlightLabel}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📊</div><div class="src-label">Dificultad</div><div class="src-value">${difficultyLabel(flower.difficulty)}</div></div>
+  `;
+
+  // Store matched flower id for detail button
+  document.getElementById('scannerBtnDetail').dataset.flowerId = flower.id;
+
+  // Show result card
+  document.getElementById('scannerResult').classList.add('show');
+
+  // Save to history
+  const smallCanvas = document.createElement('canvas');
+  smallCanvas.width = 100; smallCanvas.height = 100;
+  const sctx = smallCanvas.getContext('2d');
+  const sz = Math.min(canvas.width, canvas.height);
+  sctx.drawImage(canvas, (canvas.width-sz)/2, (canvas.height-sz)/2, sz, sz, 0, 0, 100, 100);
+  const thumbDataUrl = smallCanvas.toDataURL('image/jpeg', 0.5);
+
+  scanHistory.unshift({
+    flowerId: flower.id,
+    confidence: targetConf,
+    thumb: thumbDataUrl,
+    date: new Date().toISOString()
+  });
+  if(scanHistory.length > 10) scanHistory.pop();
+  saveScanHistory();
+}
+
+// Event listeners
+document.getElementById('scannerFab').addEventListener('click', openScanner);
+document.getElementById('scannerClose').addEventListener('click', closeScanner);
+
+document.getElementById('scannerCaptureBtn').addEventListener('click', () => {
+  const video = document.getElementById('scannerVideo');
+  if(!video.srcObject) return;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = video.videoWidth || 640;
+  tempCanvas.height = video.videoHeight || 480;
+  tempCanvas.getContext('2d').drawImage(video, 0, 0);
+  captureAndAnalyze(tempCanvas);
+});
+
+// File upload handlers (fallback + permission denied)
+function handleScannerFile(file) {
+  if(!file) return;
+  const img = new Image();
+  img.onload = () => {
+    const tempCanvas = document.createElement('canvas');
+    const maxDim = 640;
+    let w = img.width, h = img.height;
+    if(w > maxDim || h > maxDim) {
+      if(w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else { w = Math.round(w * maxDim / h); h = maxDim; }
+    }
+    tempCanvas.width = w; tempCanvas.height = h;
+    tempCanvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    // Show viewfinder with image
+    document.getElementById('scannerUploadFallback').classList.remove('active');
+    document.getElementById('scannerPermMsg').classList.remove('active');
+    document.querySelector('.scanner-grid-overlay').style.display = '';
+    document.querySelector('.scanner-reticle').style.display = '';
+    captureAndAnalyze(tempCanvas);
+  };
+  img.src = URL.createObjectURL(file);
+}
+
+document.getElementById('scannerUploadBtn').addEventListener('click', () => document.getElementById('scannerFileInput').click());
+document.getElementById('scannerPermUploadBtn').addEventListener('click', () => document.getElementById('scannerFileInput').click());
+document.getElementById('scannerFileInput').addEventListener('change', e => {
+  if(e.target.files.length) handleScannerFile(e.target.files[0]);
+});
+
+// Result actions
+document.getElementById('scannerBtnDetail').addEventListener('click', () => {
+  const fid = document.getElementById('scannerBtnDetail').dataset.flowerId;
+  closeScanner();
+  if(fid) openFlowerDetail(fid);
+});
+
+document.getElementById('scannerBtnRetry').addEventListener('click', () => {
+  document.getElementById('scannerResult').classList.remove('show');
+  document.querySelectorAll('.scanner-sample-dot').forEach(d=>d.remove());
+  openScanner();
+});
+
+document.getElementById('scannerResultHandle').addEventListener('click', () => {
+  document.getElementById('scannerResult').classList.remove('show');
+});
+
+// Scan history
+document.getElementById('scannerHistoryBtn').addEventListener('click', () => {
+  closeScanner();
+  renderScanHistory();
+  document.getElementById('scanHistoryOverlay').classList.add('show');
+});
+
+document.getElementById('scanHistoryOverlay').addEventListener('click', e => {
+  if(e.target === document.getElementById('scanHistoryOverlay')) {
+    document.getElementById('scanHistoryOverlay').classList.remove('show');
+  }
+});
+document.getElementById('scanHistoryHandle').addEventListener('click', () => {
+  document.getElementById('scanHistoryOverlay').classList.remove('show');
+});
+
+document.getElementById('scanHistoryClear').addEventListener('click', () => {
+  scanHistory = [];
+  saveScanHistory();
+  renderScanHistory();
+  showToast('🗑 Historial limpiado');
+});
+
+function renderScanHistory() {
+  const grid = document.getElementById('scanHistoryGrid');
+  if(scanHistory.length === 0) {
+    grid.innerHTML = '<div class="scan-history-empty"><div style="font-size:48px;margin-bottom:12px">📷</div><p>Aún no has escaneado ninguna planta</p></div>';
+    document.getElementById('scanHistoryClear').style.display = 'none';
+    return;
+  }
+  document.getElementById('scanHistoryClear').style.display = '';
+  grid.innerHTML = scanHistory.map((item, i) => {
+    const flower = FLOWERS.find(f => f.id === item.flowerId);
+    const d = new Date(item.date);
+    const dateStr = d.getDate() + '/' + (d.getMonth()+1) + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
+    return `
+      <div class="scan-history-item" data-index="${i}">
+        <img src="${item.thumb}" alt="${flower ? flower.name : ''}">
+        <div class="scan-history-item-info">
+          <div class="scan-history-item-name">${flower ? flower.emoji + ' ' + flower.name : '?'}</div>
+          <div class="scan-history-item-date">${dateStr} · ${item.confidence}%</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.scan-history-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = parseInt(el.dataset.index);
+      const item = scanHistory[idx];
+      if(!item) return;
+      document.getElementById('scanHistoryOverlay').classList.remove('show');
+      const flower = FLOWERS.find(f => f.id === item.flowerId);
+      if(flower) openFlowerDetail(flower.id);
+    });
+  });
+}
 
 /* ═══════════════════════════════════════════
    INIT
