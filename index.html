@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#8fbc8f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <title>Rocío — Cuida tus flores con amor 🌸</title>
 <style>
 /* ═══════════════════════════════════════════
@@ -23,6 +26,12 @@
   --accent-dark: #d4789f;
   --secondary: #8b7355;
   --secondary-light: #b09a7e;
+  --coral: #FF6B6B;
+  --golden: #FFD93D;
+  --lavender: #C3AED6;
+  --coral-light: rgba(255,107,107,0.15);
+  --golden-light: rgba(255,217,61,0.15);
+  --lavender-light: rgba(195,174,214,0.15);
   --text: #2d3a2d;
   --text-secondary: #6b7c6b;
   --text-muted: #99a899;
@@ -32,12 +41,14 @@
   --radius: 16px;
   --radius-sm: 10px;
   --radius-full: 999px;
-  --nav-height: 72px;
+  --nav-height: 82px;
   --header-height: 56px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
 
   /* Urgency */
   --good: #7bc67b;
@@ -56,6 +67,9 @@
   --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.2);
   --primary-dark: #a8cfa8;
+  --coral: #ff8080;
+  --golden: #ffe066;
+  --lavender: #d4c4e6;
 }
 
 /* ═══════════════════════════════════════════
@@ -70,7 +84,7 @@ html {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   min-height: 100dvh;
@@ -153,16 +167,41 @@ img { display: block; max-width: 100%; }
 
 .nav-item {
   flex: 1; display: flex; flex-direction: column; align-items: center;
-  justify-content: center; gap: 3px;
-  font-size: 10px; font-weight: 600; color: var(--text-muted);
+  justify-content: center; gap: 4px;
+  font-size: 11px; font-weight: 700; color: var(--text-muted);
   transition: color var(--transition);
   padding: 8px 0;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  letter-spacing: 0.2px;
 }
-.nav-item .nav-icon { font-size: 24px; transition: transform 0.2s var(--bounce); }
+.nav-item .nav-icon {
+  font-size: 28px;
+  transition: transform 0.3s var(--bounce), filter 0.3s ease;
+  display: flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px;
+  border-radius: var(--radius-full);
+}
+.nav-item .nav-label {
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  transition: color var(--transition), opacity var(--transition);
+  opacity: 0.6;
+}
 .nav-item.active { color: var(--primary-dark); }
-.nav-item.active .nav-icon { transform: scale(1.15); }
+.nav-item.active .nav-icon {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 8px rgba(143,188,143,0.5));
+  background: rgba(143,188,143,0.12);
+  animation: navIconActive 0.4s var(--bounce);
+}
+.nav-item.active .nav-label { opacity: 1; color: var(--primary-dark); }
 .nav-item:active .nav-icon { transform: scale(0.85); }
+@keyframes navIconActive {
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1.2); }
+}
 
 /* ═══════════════════════════════════════════
    PAGES
@@ -181,12 +220,13 @@ img { display: block; max-width: 100%; }
 .page.active { display: block; }
 
 @keyframes pageIn {
-  0% { opacity: 0; transform: translateY(12px); }
-  100% { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; transform: translateY(16px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .page-title {
-  font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
+  font-family: var(--font-heading);
+  font-size: 30px; font-weight: 800; letter-spacing: -0.3px;
   margin-bottom: 4px;
 }
 .page-subtitle {
@@ -229,9 +269,10 @@ img { display: block; max-width: 100%; }
   white-space: nowrap;
 }
 .filter-chip.active {
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff;
-  box-shadow: 0 2px 8px rgba(143,188,143,0.4);
+  box-shadow: 0 4px 12px rgba(143,188,143,0.4);
+  transform: translateY(-1px);
 }
 .filter-chip:active { transform: scale(0.95); }
 
@@ -249,19 +290,34 @@ img { display: block; max-width: 100%; }
   border-radius: var(--radius);
   padding: 16px;
   box-shadow: var(--shadow);
-  transition: transform 0.2s var(--bounce), box-shadow var(--transition);
+  transition: transform 0.3s var(--bounce), box-shadow 0.4s ease;
   cursor: pointer;
   position: relative;
   overflow: hidden;
 }
-.flower-card:active { transform: scale(0.97); }
-.flower-card:hover { box-shadow: var(--shadow-lg); }
+.flower-card:active { transform: scale(0.96) translateY(2px); }
+.flower-card:hover {
+  box-shadow: 0 12px 40px rgba(45,58,45,0.18);
+  transform: translateY(-4px);
+}
 
 .flower-card .card-emoji {
-  font-size: 48px;
+  font-size: 56px;
   text-align: center;
   margin-bottom: 10px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.12));
+  animation: floatEmoji 4s ease-in-out infinite;
+  animation-delay: calc(var(--card-index, 0) * 0.3s);
+}
+
+@keyframes floatEmoji {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(1deg); }
+  75% { transform: translateY(2px) rotate(-1deg); }
+}
+
+.flower-card .card-name {
+  font-family: var(--font-heading);
 }
 
 .flower-card .card-name {
@@ -327,8 +383,8 @@ img { display: block; max-width: 100%; }
   margin: 0 auto 16px;
 }
 
-.modal-emoji { font-size: 72px; text-align: center; margin-bottom: 12px; }
-.modal-name { font-size: 24px; font-weight: 800; text-align: center; }
+.modal-emoji { font-size: 80px; text-align: center; margin-bottom: 12px; animation: floatEmoji 4s ease-in-out infinite; }
+.modal-name { font-family: var(--font-heading); font-size: 26px; font-weight: 800; text-align: center; }
 .modal-scientific { font-size: 14px; color: var(--text-muted); font-style: italic; text-align: center; margin-bottom: 20px; }
 
 .info-grid {
@@ -358,12 +414,13 @@ img { display: block; max-width: 100%; }
 
 .btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 8px;
-  width: 100%; padding: 14px;
+  width: 100%; padding: 15px;
   border-radius: var(--radius);
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
   color: #fff; font-size: 15px; font-weight: 700;
+  font-family: var(--font-body);
   box-shadow: 0 4px 16px rgba(143,188,143,0.35);
-  transition: transform 0.15s var(--bounce), box-shadow var(--transition);
+  transition: transform 0.2s var(--bounce), box-shadow var(--transition);
 }
 .btn-primary:active { transform: scale(0.97); }
 .btn-primary.added {
@@ -381,13 +438,42 @@ img { display: block; max-width: 100%; }
   box-shadow: var(--shadow);
   display: flex; gap: 14px;
   margin-bottom: 12px;
-  transition: transform 0.15s var(--bounce), background var(--transition);
+  transition: transform 0.3s var(--bounce), box-shadow 0.4s ease, background var(--transition);
   position: relative;
   overflow: hidden;
 }
 .garden-card:active { transform: scale(0.98); }
+.garden-card:hover { box-shadow: 0 8px 28px rgba(45,58,45,0.15); transform: translateY(-2px); }
 
-.garden-card .gc-emoji { font-size: 42px; flex-shrink: 0; align-self: center; }
+.garden-card .gc-emoji {
+  font-size: 48px; flex-shrink: 0; align-self: center;
+  animation: floatEmoji 4s ease-in-out infinite;
+}
+
+.gc-urgency-dot {
+  position: absolute; top: 12px; right: 12px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--bg-card);
+}
+.gc-urgency-dot.good { background: var(--good); }
+.gc-urgency-dot.soon { background: var(--soon); animation: pulseUrgency 2s ease-in-out infinite; }
+.gc-urgency-dot.overdue { background: var(--overdue); animation: pulseUrgency 1s ease-in-out infinite; }
+
+@keyframes pulseUrgency {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 currentColor; }
+  50% { transform: scale(1.2); box-shadow: 0 0 8px 2px currentColor; }
+}
+
+.gc-growth-bar {
+  height: 4px; border-radius: 2px;
+  background: rgba(143,188,143,0.15);
+  margin-top: 6px; overflow: hidden;
+}
+.gc-growth-fill {
+  height: 100%; border-radius: 2px;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
+  transition: width 1s var(--bounce);
+}
 .garden-card .gc-info { flex: 1; min-width: 0; }
 .garden-card .gc-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
 .garden-card .gc-status {
@@ -436,15 +522,40 @@ img { display: block; max-width: 100%; }
   text-align: center; padding: 60px 20px;
 }
 .empty-state .empty-art {
-  font-size: 80px; margin-bottom: 16px;
-  animation: gentleBounce 3s ease-in-out infinite;
+  font-size: 64px; margin-bottom: 20px;
+  position: relative; display: inline-block;
+}
+.empty-state .empty-art::before {
+  content: '🌿';
+  position: absolute; top: -10px; left: -30px;
+  font-size: 28px; opacity: 0.4;
+  animation: floatLeft 5s ease-in-out infinite;
+}
+.empty-state .empty-art::after {
+  content: '🌸';
+  position: absolute; top: -15px; right: -30px;
+  font-size: 24px; opacity: 0.4;
+  animation: floatRight 4s ease-in-out infinite;
+}
+@keyframes floatLeft {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-6px, -8px) rotate(-10deg); }
+}
+@keyframes floatRight {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(6px, -10px) rotate(10deg); }
 }
 @keyframes gentleBounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
-.empty-state h3 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
-.empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.5; }
+.empty-state .empty-illustration {
+  font-size: 80px;
+  animation: gentleBounce 3s ease-in-out infinite;
+  margin-bottom: 8px;
+}
+.empty-state h3 { font-family: var(--font-heading); font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.empty-state p { font-size: 14px; color: var(--text-secondary); line-height: 1.6; max-width: 280px; margin: 0 auto; }
 
 /* ═══════════════════════════════════════════
    CALENDAR
@@ -528,7 +639,7 @@ img { display: block; max-width: 100%; }
 .tip-card::before {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 4px;
-  background: linear-gradient(90deg, var(--primary), var(--accent));
+  background: linear-gradient(90deg, var(--primary), var(--coral), var(--golden));
 }
 .tip-card .tip-emoji { font-size: 36px; margin-bottom: 10px; }
 .tip-card .tip-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
@@ -578,6 +689,15 @@ img { display: block; max-width: 100%; }
   animation: spin 1s linear infinite;
   display: flex; align-items: center; justify-content: center;
   font-size: 40px;
+  position: relative;
+}
+.scan-circle::after {
+  content: '';
+  position: absolute; inset: -8px;
+  border-radius: 50%;
+  border: 2px dashed var(--lavender);
+  animation: spin 3s linear infinite reverse;
+  opacity: 0.4;
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
@@ -597,10 +717,20 @@ img { display: block; max-width: 100%; }
 .scan-result .sr-name { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
 .scan-result .sr-scientific { font-size: 13px; color: var(--text-muted); font-style: italic; margin-bottom: 12px; }
 .scan-result .sr-confidence {
-  display: inline-block;
-  padding: 4px 12px; border-radius: var(--radius-full);
-  background: rgba(143,188,143,0.15);
-  font-size: 12px; font-weight: 600; color: var(--primary-dark);
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 16px; border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(143,188,143,0.15), rgba(195,174,214,0.15));
+  font-size: 13px; font-weight: 700; color: var(--primary-dark);
+}
+.sr-confidence-bar {
+  display: inline-block; width: 60px; height: 6px;
+  border-radius: 3px; background: rgba(143,188,143,0.2);
+  overflow: hidden; vertical-align: middle;
+}
+.sr-confidence-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--coral));
+  transition: width 1s ease;
 }
 
 /* ═══════════════════════════════════════════
@@ -748,7 +878,7 @@ img { display: block; max-width: 100%; }
    SEASONAL BANNER
    ═══════════════════════════════════════════ */
 .seasonal-banner {
-  background: linear-gradient(135deg, var(--primary), var(--accent));
+  background: linear-gradient(135deg, var(--primary), var(--accent), var(--lavender));
   border-radius: var(--radius);
   padding: 14px 18px;
   margin-bottom: 16px;
@@ -931,16 +1061,34 @@ img { display: block; max-width: 100%; }
    MOON PHASE
    ═══════════════════════════════════════════ */
 .moon-section {
-  background: var(--bg-card);
+  background: linear-gradient(135deg, var(--bg-card), rgba(195,174,214,0.08));
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 24px;
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   text-align: center;
   transition: background var(--transition);
+  position: relative;
+  overflow: hidden;
 }
-.moon-phase-icon { font-size: 48px; margin-bottom: 8px; }
-.moon-phase-name { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.moon-section::before {
+  content: '✨';
+  position: absolute; top: 14px; right: 20px;
+  font-size: 20px; opacity: 0.3;
+  animation: twinkle 3s ease-in-out infinite;
+}
+.moon-section::after {
+  content: '⭐';
+  position: absolute; top: 30px; right: 50px;
+  font-size: 12px; opacity: 0.2;
+  animation: twinkle 4s ease-in-out infinite 1s;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.3); }
+}
+.moon-phase-icon { font-size: 64px; margin-bottom: 10px; filter: drop-shadow(0 0 12px rgba(195,174,214,0.5)); }
+.moon-phase-name { font-family: var(--font-heading); font-size: 20px; font-weight: 700; margin-bottom: 4px; }
 .moon-phase-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
 .moon-recs {
   display: grid; grid-template-columns: 1fr 1fr;
@@ -1063,16 +1211,17 @@ img { display: block; max-width: 100%; }
    PLANTA DEL DÍA
    ═══════════════════════════════════════════ */
 .plant-of-day {
-  background: linear-gradient(135deg, var(--bg-card), rgba(232,160,191,0.08));
+  background: linear-gradient(135deg, var(--bg-card), rgba(255,217,61,0.08), rgba(232,160,191,0.08));
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
   margin-bottom: 16px;
   display: flex; gap: 14px; align-items: center;
   cursor: pointer;
-  transition: transform 0.15s var(--bounce);
+  transition: transform 0.3s var(--bounce), box-shadow 0.4s ease;
   overflow: hidden; position: relative;
 }
+.plant-of-day:hover { box-shadow: 0 8px 28px rgba(255,217,61,0.2); transform: translateY(-2px); }
 .plant-of-day:active { transform: scale(0.98); }
 .plant-of-day .pod-emoji {
   font-size: 48px;
@@ -1120,9 +1269,203 @@ img { display: block; max-width: 100%; }
 }
 .collapsible-body.open { max-height: 2000px; }
 
+/* ═══════════════════════════════════════════
+   SPLASH SCREEN
+   ═══════════════════════════════════════════ */
+.splash-screen {
+  position: fixed; inset: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #e8f5e9 0%, #faf8f0 30%, #fce4ec 70%, #f3e5f5 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.splash-screen.hide {
+  opacity: 0; transform: scale(1.1);
+  pointer-events: none;
+}
+.splash-logo {
+  font-size: 56px; font-family: var(--font-heading);
+  font-weight: 900; color: #2d3a2d;
+  display: flex; align-items: center; gap: 8px;
+  animation: splashPop 0.8s var(--bounce);
+}
+.splash-flowers {
+  font-size: 60px;
+  display: flex; gap: 4px;
+  margin-bottom: 20px;
+}
+.splash-flowers span {
+  display: inline-block;
+  animation: splashFlower 1.2s var(--bounce) both;
+}
+.splash-flowers span:nth-child(1) { animation-delay: 0.1s; }
+.splash-flowers span:nth-child(2) { animation-delay: 0.2s; }
+.splash-flowers span:nth-child(3) { animation-delay: 0.3s; }
+.splash-flowers span:nth-child(4) { animation-delay: 0.4s; }
+.splash-flowers span:nth-child(5) { animation-delay: 0.5s; }
+@keyframes splashFlower {
+  0% { opacity: 0; transform: translateY(30px) scale(0.3) rotate(-20deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
+}
+@keyframes splashPop {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.splash-subtitle {
+  font-size: 14px; color: #6b7c6b;
+  font-weight: 600; letter-spacing: 2px;
+  text-transform: uppercase;
+  animation: splashPop 0.8s var(--bounce) 0.6s both;
+}
+.splash-dots {
+  display: flex; gap: 6px;
+  margin-top: 30px;
+}
+.splash-dots span {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--primary);
+  animation: splashDot 1.4s ease-in-out infinite;
+}
+.splash-dots span:nth-child(2) { animation-delay: 0.2s; }
+.splash-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes splashDot {
+  0%, 100% { transform: scale(0.6); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════
+   HERO SECTION
+   ═══════════════════════════════════════════ */
+.hero-section {
+  position: relative;
+  margin: -16px -16px 20px;
+  padding: 32px 24px 28px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: linear-gradient(135deg, #e8f5e9 0%, #fce4ec 50%, #f3e5f5 80%, #fff9c4 100%);
+  background-size: 200% 200%;
+  animation: heroGradient 8s ease-in-out infinite;
+  overflow: hidden;
+  text-align: center;
+}
+@keyframes heroGradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+[data-theme="dark"] .hero-section {
+  background: linear-gradient(135deg, #1a3320 0%, #2a1a2e 50%, #1a2a18 100%);
+  background-size: 200% 200%;
+  animation: heroGradient 8s ease-in-out infinite;
+}
+.hero-flowers {
+  font-size: 52px;
+  display: flex; align-items: center; justify-content: center;
+  gap: 4px; margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.hero-flowers span {
+  display: inline-block;
+  animation: floatEmoji 4s ease-in-out infinite;
+}
+.hero-flowers span:nth-child(1) { animation-delay: 0s; font-size: 36px; }
+.hero-flowers span:nth-child(2) { animation-delay: 0.5s; font-size: 44px; }
+.hero-flowers span:nth-child(3) { animation-delay: 0.2s; font-size: 60px; }
+.hero-flowers span:nth-child(4) { animation-delay: 0.7s; font-size: 44px; }
+.hero-flowers span:nth-child(5) { animation-delay: 0.4s; font-size: 36px; }
+.hero-title {
+  font-family: var(--font-heading);
+  font-size: 28px; font-weight: 900;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #2d3a2d, #6a9b6a, #d4789f);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-subtitle {
+  font-size: 14px; color: var(--text-secondary);
+  font-weight: 600;
+}
+.hero-petals {
+  position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+}
+.hero-petal {
+  position: absolute;
+  font-size: 18px; opacity: 0.15;
+  animation: petalDrift 12s linear infinite;
+}
+@keyframes petalDrift {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0.15; }
+  50% { opacity: 0.25; }
+  100% { transform: translateY(200px) rotate(360deg); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   CONFETTI
+   ═══════════════════════════════════════════ */
+.confetti-container {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 160;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute; top: -10px;
+  width: 10px; height: 10px;
+  animation: confettiFall 2.5s ease-in forwards;
+}
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════
+   ENHANCED CALENDAR
+   ═══════════════════════════════════════════ */
+.cal-day .cal-event-dots {
+  display: flex; gap: 2px; justify-content: center;
+  margin-top: 2px;
+}
+.cal-event-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.cal-event-dot.plant { background: var(--primary); }
+.cal-event-dot.water { background: #64b5f6; }
+.cal-event-dot.fertilize { background: var(--golden); }
+
+/* ═══════════════════════════════════════════
+   MISC HEADING ENHANCEMENTS
+   ═══════════════════════════════════════════ */
+.header-title {
+  font-family: var(--font-heading);
+}
+.tip-card .tip-title,
+.remedy-card .rc-title,
+.doctor-card .dc-title,
+.detail-section-title,
+.ob-title,
+.emergency-card .ec-title {
+  font-family: var(--font-heading);
+}
+.flower-card .card-name {
+  font-family: var(--font-heading);
+}
+.gc-name {
+  font-family: var(--font-heading);
+}
+
+/* ═══════════════════════════════════════════
+   WATERING PULSE
+   ═══════════════════════════════════════════ */
+.water-reminder-pulse {
+  animation: waterPulse 2s ease-in-out infinite;
+}
+@keyframes waterPulse {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 4px rgba(100,180,255,0.2), var(--shadow); }
+}
+
 @media (min-width: 600px) {
   .page { padding: 24px 24px 0; max-width: 600px; margin: 0 auto; }
   .card-grid { grid-template-columns: repeat(3, 1fr); }
+  .hero-section { margin: -24px -24px 20px; border-radius: 0 0 24px 24px; }
 }
 @media (min-width: 900px) {
   .page { max-width: 800px; }
@@ -1369,10 +1712,20 @@ img { display: block; max-width: 100%; }
 .scanner-result-scientific { font-size: 12px; color: var(--text-muted); font-style: italic; }
 .scanner-result-confidence {
   display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 6px; padding: 4px 12px;
+  margin-top: 6px; padding: 6px 14px;
   border-radius: var(--radius-full);
-  background: rgba(143,188,143,0.15);
+  background: linear-gradient(135deg, rgba(143,188,143,0.15), rgba(195,174,214,0.15));
   font-size: 14px; font-weight: 700; color: var(--primary-dark);
+}
+.scanner-result-conf-bar {
+  display: inline-block; width: 50px; height: 5px;
+  border-radius: 3px; background: rgba(143,188,143,0.2);
+  overflow: hidden; vertical-align: middle; margin-left: 4px;
+}
+.scanner-result-conf-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary), var(--golden));
+  transition: width 1.5s ease;
 }
 
 .scanner-result-care {
@@ -1454,6 +1807,25 @@ img { display: block; max-width: 100%; }
 </head>
 <body>
 
+<!-- SPLASH SCREEN -->
+<div class="splash-screen" id="splashScreen">
+  <div class="splash-flowers">
+    <span>🌿</span>
+    <span>🌷</span>
+    <span>🌸</span>
+    <span>🌹</span>
+    <span>🌻</span>
+  </div>
+  <div class="splash-logo">Rocío 🌸</div>
+  <div class="splash-subtitle">Cuida tus flores con amor</div>
+  <div class="splash-dots">
+    <span></span><span></span><span></span>
+  </div>
+</div>
+
+<!-- CONFETTI CONTAINER -->
+<div class="confetti-container" id="confettiContainer"></div>
+
 <!-- HEADER -->
 <header class="header">
   <span class="header-title">Rocío 🌸</span>
@@ -1477,8 +1849,18 @@ img { display: block; max-width: 100%; }
 
   <!-- ════════ CATÁLOGO ════════ -->
   <section class="page active" id="pageCatalog">
-    <h1 class="page-title">Catálogo 🌸</h1>
-    <p class="page-subtitle">Descubre flores hermosas y aprende a cuidarlas</p>
+    <div class="hero-section" id="heroSection">
+      <div class="hero-petals" id="heroPetals"></div>
+      <div class="hero-flowers">
+        <span>🌿</span>
+        <span>🌷</span>
+        <span>🌸</span>
+        <span>🌹</span>
+        <span>🌻</span>
+      </div>
+      <div class="hero-title">Descubre & Cultiva</div>
+      <div class="hero-subtitle">Tu guía botánica personal con amor 💚</div>
+    </div>
 
     <div class="search-bar">
       <span class="search-icon">🔍</span>
@@ -1511,9 +1893,11 @@ img { display: block; max-width: 100%; }
     <p class="page-subtitle">Tu colección personal de flores</p>
     <div id="gardenList"></div>
     <div class="empty-state" id="gardenEmpty" style="display:none;">
-      <div class="empty-art">🌿</div>
-      <h3>Tu jardín está vacío</h3>
-      <p>Explora el catálogo y agrega tus flores favoritas para comenzar a cuidarlas con amor.</p>
+      <div class="empty-art">
+        <div class="empty-illustration">🌿</div>
+      </div>
+      <h3>Tu jardín espera florecer</h3>
+      <p>Explora el catálogo y agrega tus flores favoritas para comenzar a cuidarlas con todo el amor del mundo 💚</p>
     </div>
   </section>
 
@@ -1537,9 +1921,11 @@ img { display: block; max-width: 100%; }
       <h3>📋 Tareas de hoy</h3>
       <div id="todayTasks"></div>
       <div class="empty-state" id="tasksEmpty" style="display:none;">
-        <div class="empty-art">✅</div>
+        <div class="empty-art">
+          <div class="empty-illustration">✨</div>
+        </div>
         <h3>¡Todo al día!</h3>
-        <p>No hay tareas pendientes por hoy. Tus plantas están felices.</p>
+        <p>Tus plantas están felices y saludables. Buen trabajo, jardinero 🌱</p>
       </div>
     </div>
   </section>
@@ -1682,6 +2068,7 @@ img { display: block; max-width: 100%; }
         <div class="scanner-result-scientific" id="scannerResultScientific"></div>
         <div class="scanner-result-confidence" id="scannerResultConfidence">
           <span>🎯</span> <span id="scannerConfVal">0</span>%
+          <span class="scanner-result-conf-bar"><span class="scanner-result-conf-fill" id="scannerConfBar" style="width:0%"></span></span>
         </div>
       </div>
     </div>
@@ -1708,23 +2095,23 @@ img { display: block; max-width: 100%; }
 <nav class="bottom-nav">
   <button class="nav-item active" data-page="pageCatalog">
     <span class="nav-icon">🌸</span>
-    <span>Catálogo</span>
+    <span class="nav-label">Catálogo</span>
   </button>
   <button class="nav-item" data-page="pageGarden">
     <span class="nav-icon">🌱</span>
-    <span>Mi Jardín</span>
+    <span class="nav-label">Jardín</span>
   </button>
   <button class="nav-item" data-page="pageCalendar">
     <span class="nav-icon">📅</span>
-    <span>Calendario</span>
+    <span class="nav-label">Calendario</span>
   </button>
   <button class="nav-item" data-page="pageDoctor">
     <span class="nav-icon">🏥</span>
-    <span>Doctor</span>
+    <span class="nav-label">Doctor</span>
   </button>
   <button class="nav-item" data-page="pageTips">
     <span class="nav-icon">💡</span>
-    <span>Tips</span>
+    <span class="nav-label">Tips</span>
   </button>
 </nav>
 
@@ -2494,7 +2881,8 @@ function renderCatalog() {
     </div>
   `).join('');
 
-  grid.querySelectorAll('.flower-card').forEach(card => {
+  grid.querySelectorAll('.flower-card').forEach((card, i) => {
+    card.style.setProperty('--card-index', i % 8);
     card.addEventListener('click', () => openFlowerDetail(card.dataset.id));
   });
 }
@@ -2655,13 +3043,22 @@ function renderGarden() {
       : 'Sin registrar';
     const statusInfo = STATUS_OPTIONS.find(s => s.id === g.status) || STATUS_OPTIONS[0];
 
+    // Growth stage: days since added, mapped to 0-100
+    const daysSinceAdded = g.addedAt ? Math.floor((Date.now() - new Date(g.addedAt).getTime()) / 86400000) : 0;
+    const growthPct = Math.min(100, Math.round((daysSinceAdded / 90) * 100));
+    const growthLabel = growthPct < 25 ? '🌱 Brote' : growthPct < 50 ? '🌿 Creciendo' : growthPct < 75 ? '🪴 Madurando' : '🌸 Florecida';
+    const isWaterReminder = urgency !== 'good';
+
     return `
-      <div class="garden-card" data-index="${i}">
+      <div class="garden-card${isWaterReminder ? ' water-reminder-pulse' : ''}" data-index="${i}">
+        <div class="gc-urgency-dot ${urgency}"></div>
         <div class="gc-emoji">${f.emoji}</div>
         <div class="gc-info">
           <div class="gc-name">${f.name}</div>
           <div class="gc-status ${statusInfo.class}">${statusInfo.label}</div>
           <div class="gc-last-water">💧 ${waterText}</div>
+          <div class="gc-growth-bar" title="${growthLabel}"><div class="gc-growth-fill" style="width:${growthPct}%"></div></div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;">${growthLabel} · ${growthPct}%</div>
           ${g.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${g.notes}</div>` : ''}
         </div>
         <div class="gc-actions">
@@ -2693,7 +3090,8 @@ function renderGarden() {
       setTimeout(() => wave.remove(), 900);
 
       const f = FLOWERS.find(fl => fl.id === garden[idx].flowerId);
-      showToast('💧 ' + (f ? f.name : 'Planta') + ' regada');
+      showToast('💧 ' + (f ? f.name : 'Planta') + ' regada con amor');
+      showConfetti();
       setTimeout(() => renderGarden(), 400);
     });
   });
@@ -3497,13 +3895,16 @@ function showScanResult(result, canvas) {
 
   // Animated confidence counter
   const confEl = document.getElementById('scannerConfVal');
+  const confBar = document.getElementById('scannerConfBar');
   const targetConf = result.confidence;
   confEl.textContent = '0';
+  confBar.style.width = '0%';
   let confCurrent = 0;
   const confInterval = setInterval(() => {
     confCurrent += 1.5;
     if(confCurrent >= targetConf) { confCurrent = targetConf; clearInterval(confInterval); }
     confEl.textContent = confCurrent.toFixed(1);
+    confBar.style.width = confCurrent + '%';
   }, 30);
 
   // Care info
@@ -3657,9 +4058,75 @@ function renderScanHistory() {
 }
 
 /* ═══════════════════════════════════════════
+   SPLASH SCREEN
+   ═══════════════════════════════════════════ */
+(function() {
+  const splash = document.getElementById('splashScreen');
+  if (sessionStorage.getItem('rocio_splash_shown')) {
+    splash.style.display = 'none';
+  } else {
+    sessionStorage.setItem('rocio_splash_shown', '1');
+    setTimeout(() => {
+      splash.classList.add('hide');
+      setTimeout(() => splash.style.display = 'none', 600);
+    }, 2000);
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   HERO PETALS
+   ═══════════════════════════════════════════ */
+(function() {
+  const petals = document.getElementById('heroPetals');
+  if (!petals) return;
+  const petalEmojis = ['🌸','🌺','🌷','🪻','💮','🏵️','🌼'];
+  for (let i = 0; i < 8; i++) {
+    const p = document.createElement('div');
+    p.className = 'hero-petal';
+    p.textContent = petalEmojis[i % petalEmojis.length];
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.animationDelay = (Math.random() * 10) + 's';
+    p.style.animationDuration = (10 + Math.random() * 8) + 's';
+    p.style.fontSize = (14 + Math.random() * 12) + 'px';
+    petals.appendChild(p);
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   CONFETTI ON WATERING
+   ═══════════════════════════════════════════ */
+function showConfetti() {
+  const container = document.getElementById('confettiContainer');
+  const colors = ['#FF6B6B','#FFD93D','#C3AED6','#8fbc8f','#e8a0bf','#64b5f6','#FF8844'];
+  const shapes = ['●','■','▲','★','🌸','💧','🌿'];
+  for (let i = 0; i < 40; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.textContent = shapes[Math.floor(Math.random() * shapes.length)];
+    piece.style.left = (Math.random() * 100) + '%';
+    piece.style.color = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.fontSize = (8 + Math.random() * 14) + 'px';
+    piece.style.animationDelay = (Math.random() * 0.8) + 's';
+    piece.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+    container.appendChild(piece);
+    setTimeout(() => piece.remove(), 3500);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CARD INDEX CSS VARS FOR STAGGERED ANIMATION
+   ═══════════════════════════════════════════ */
+function assignCardIndices() {
+  document.querySelectorAll('.flower-card').forEach((card, i) => {
+    card.style.setProperty('--card-index', i % 8);
+  });
+}
+
+/* ═══════════════════════════════════════════
    INIT
    ═══════════════════════════════════════════ */
 renderCatalog();
+assignCardIndices();
 updateBadge();
 renderDoctor();
 cacheAllData();
