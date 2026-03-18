@@ -1457,6 +1457,89 @@ img { display: block; max-width: 100%; }
 .water-reminder-pulse {
   animation: waterPulse 2s ease-in-out infinite;
 }
+
+/* ═══════════════════════════════════════════
+   PLANT PHOTOS
+   ═══════════════════════════════════════════ */
+.plant-photo-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.plant-photo {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-light);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.3s var(--bounce);
+}
+.plant-photo:hover {
+  transform: scale(1.1);
+}
+.flower-card .plant-photo {
+  margin-bottom: 8px;
+}
+.plant-emoji-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  font-size: 20px;
+  background: var(--bg-card);
+  border-radius: 50%;
+  padding: 2px 4px;
+  box-shadow: var(--shadow-sm);
+  line-height: 1;
+}
+.plant-emoji-fallback {
+  display: none;
+  font-size: 56px;
+  text-align: center;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.12));
+}
+.garden-card .plant-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+}
+.garden-card .plant-emoji-badge {
+  font-size: 16px;
+  bottom: -2px;
+  right: -2px;
+}
+.modal-plant-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--primary-light);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+  display: block;
+  margin: 0 auto 12px;
+}
+.hero-photo-mosaic {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.hero-photo-mosaic img {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.8);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  animation: floatEmoji 4s ease-in-out infinite;
+}
+.hero-photo-mosaic img:nth-child(1) { animation-delay: 0s; width: 40px; height: 40px; }
+.hero-photo-mosaic img:nth-child(2) { animation-delay: 0.5s; width: 50px; height: 50px; }
+.hero-photo-mosaic img:nth-child(3) { animation-delay: 0.2s; width: 64px; height: 64px; }
+.hero-photo-mosaic img:nth-child(4) { animation-delay: 0.7s; width: 50px; height: 50px; }
+.hero-photo-mosaic img:nth-child(5) { animation-delay: 0.4s; width: 40px; height: 40px; }
 @keyframes waterPulse {
   0%, 100% { box-shadow: var(--shadow); }
   50% { box-shadow: 0 0 0 4px rgba(100,180,255,0.2), var(--shadow); }
@@ -1851,12 +1934,12 @@ img { display: block; max-width: 100%; }
   <section class="page active" id="pageCatalog">
     <div class="hero-section" id="heroSection">
       <div class="hero-petals" id="heroPetals"></div>
-      <div class="hero-flowers">
-        <span>🌿</span>
-        <span>🌷</span>
-        <span>🌸</span>
-        <span>🌹</span>
-        <span>🌻</span>
+      <div class="hero-photo-mosaic">
+        <img src="https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&h=400&fit=crop" alt="Lavanda" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1524386416438-98b9b2d4b433?w=400&h=400&fit=crop" alt="Tulipán" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop" alt="Rosa" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop" alt="Girasol" loading="lazy">
+        <img src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&h=400&fit=crop" alt="Hortensia" loading="lazy">
       </div>
       <div class="hero-title">Descubre & Cultiva</div>
       <div class="hero-subtitle">Tu guía botánica personal con amor 💚</div>
@@ -2168,7 +2251,7 @@ img { display: block; max-width: 100%; }
    ═══════════════════════════════════════════ */
 const FLOWERS = [
   {
-    id:'rosa', emoji:'🌹', name:'Rosa', scientific:'Rosa spp.',
+    id:'rosa', emoji:'🌹', img:'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop', name:'Rosa', scientific:'Rosa spp.',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:3, waterMl:300, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2187,7 +2270,7 @@ const FLOWERS = [
     plantingSteps:['Elige ubicación con 6+ horas de sol directo','Cava hoyo 40×40cm, mezcla tierra con composta','Remoja raíces 1 hora antes de plantar','Planta con injerto 5cm sobre nivel del suelo','Riega abundantemente y aplica acolchado','Primeras 2 semanas: riego diario ligero']
   },
   {
-    id:'tulipan', emoji:'🌷', name:'Tulipán', scientific:'Tulipa spp.',
+    id:'tulipan', emoji:'🌷', img:'https://images.unsplash.com/photo-1524386416438-98b9b2d4b433?w=400&h=400&fit=crop', name:'Tulipán', scientific:'Tulipa spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:5, waterMl:150, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
     seasons:['spring'], seasonLabel:'Primavera',
@@ -2205,7 +2288,7 @@ const FLOWERS = [
     plantingSteps:['Plantar bulbos en octubre-noviembre (necesitan frío)','Cavar hoyos de 15cm profundidad','Colocar bulbo con punta hacia arriba','Espaciar 10cm entre bulbos','Cubrir con tierra y regar bien','Florecerán en primavera (marzo-abril)']
   },
   {
-    id:'orquidea', emoji:'🪻', name:'Orquídea', scientific:'Orchidaceae',
+    id:'orquidea', emoji:'🪻', img:'https://images.unsplash.com/photo-1566873535350-a3f5d4a804b7?w=400&h=400&fit=crop', name:'Orquídea', scientific:'Orchidaceae',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:7, waterMl:100, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo sphagnum',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
@@ -2224,7 +2307,7 @@ const FLOWERS = [
     plantingSteps:['Usar maceta transparente con agujeros de drenaje','Sustrato: corteza de pino gruesa + carbón + perlita','NO usar tierra normal (mata las raíces)','Colocar en luz brillante indirecta (nunca sol directo)','Regar sumergiendo maceta 10 min en agua, escurrir bien','Temperatura nocturna 5°C menor que diurna estimula floración']
   },
   {
-    id:'girasol', emoji:'🌻', name:'Girasol', scientific:'Helianthus annuus',
+    id:'girasol', emoji:'🌻', img:'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop', name:'Girasol', scientific:'Helianthus annuus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:400, tempMin:20, tempMax:35, soil:'Franco, fértil',
     seasons:['summer'], seasonLabel:'Verano',
@@ -2242,7 +2325,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar después de última helada (abril-mayo)','Plantar semillas a 2.5cm de profundidad','Espaciar 30-45cm entre plantas','Lugar con 6-8 horas de sol directo','Regar bien al plantar, luego cada 3-4 días','Puede necesitar tutor si supera 1.5m de altura']
   },
   {
-    id:'lavanda', emoji:'💜', name:'Lavanda', scientific:'Lavandula angustifolia',
+    id:'lavanda', emoji:'💜', img:'https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&h=400&fit=crop', name:'Lavanda', scientific:'Lavandula angustifolia',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:7, waterMl:150, tempMin:12, tempMax:30, soil:'Arenoso, alcalino, pH 6.5-7.5',
     seasons:['summer'], seasonLabel:'Verano',
@@ -2260,7 +2343,7 @@ const FLOWERS = [
     plantingSteps:['Elegir sitio soleado con excelente drenaje','Mezclar tierra con arena y grava (30%)','Plantar con 40-60cm de separación','NO abonar en exceso (prefiere suelo pobre)','Regar solo cuando tierra esté muy seca','Cosechar flores cuando se abran los primeros botones']
   },
   {
-    id:'gardenia', emoji:'🤍', name:'Gardenia', scientific:'Gardenia jasminoides',
+    id:'gardenia', emoji:'🤍', img:'https://images.unsplash.com/photo-1596438459194-f275f413d6ff?w=400&h=400&fit=crop', name:'Gardenia', scientific:'Gardenia jasminoides',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:3, waterMl:250, tempMin:16, tempMax:24, soil:'Ácido pH 5-6, rico en humus',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2279,7 +2362,7 @@ const FLOWERS = [
     plantingSteps:['Usar sustrato ácido (turba + perlita + corteza)','Maceta con excelente drenaje','Ubicar en luz brillante sin sol directo del mediodía','Mantener humedad ambiental alta (bandeja con piedras y agua)','Regar con agua de lluvia o filtrada (sin cal)','No mover durante la floración']
   },
   {
-    id:'jazmin', emoji:'🌼', name:'Jazmín', scientific:'Jasminum officinale',
+    id:'jazmin', emoji:'🌼', img:'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=400&h=400&fit=crop', name:'Jazmín', scientific:'Jasminum officinale',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:300, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2297,7 +2380,7 @@ const FLOWERS = [
     plantingSteps:['Plantar en primavera junto a soporte/enrejado','Hoyo 2x el tamaño del cepellón','Mezclar tierra con composta madura','Regar abundantemente tras plantar','Guiar tallos hacia el soporte','Acolchar base con corteza para retener humedad']
   },
   {
-    id:'hortensia', emoji:'💠', name:'Hortensia', scientific:'Hydrangea macrophylla',
+    id:'hortensia', emoji:'💠', img:'https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&h=400&fit=crop', name:'Hortensia', scientific:'Hydrangea macrophylla',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:3, waterMl:400, tempMin:12, tempMax:25, soil:'Ácido pH 5.5, húmedo',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2316,7 +2399,7 @@ const FLOWERS = [
     plantingSteps:['Ubicar en semi-sombra (sol de mañana ideal)','Suelo ácido rico en materia orgánica','Plantar al nivel del cepellón, no más profundo','Regar abundantemente — necesitan mucha agua','Acolchar con corteza de pino (acidifica)','Para flores azules: añadir sulfato de aluminio al riego']
   },
   {
-    id:'lirio', emoji:'🪷', name:'Lirio', scientific:'Lilium spp.',
+    id:'lirio', emoji:'🪷', img:'https://images.unsplash.com/photo-1530092285049-1c42085fd395?w=400&h=400&fit=crop', name:'Lirio', scientific:'Lilium spp.',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:5, waterMl:250, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2334,7 +2417,7 @@ const FLOWERS = [
     plantingSteps:['Plantar bulbos en otoño a 15-20cm de profundidad','Ubicar con sol en copa y sombra en raíces','Tierra con buen drenaje — poner grava debajo del bulbo','Espaciar 20-30cm entre bulbos','Regar al plantar, luego moderadamente','Tallos altos pueden necesitar tutor']
   },
   {
-    id:'margarita', emoji:'🌼', name:'Margarita', scientific:'Bellis perennis',
+    id:'margarita', emoji:'🌼', img:'https://images.unsplash.com/photo-1606041011872-596597976b25?w=400&h=400&fit=crop', name:'Margarita', scientific:'Bellis perennis',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:200, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2352,7 +2435,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en superficie (necesitan luz)','Mantener húmedo hasta germinar (7-14 días)','Trasplantar cuando tengan 4 hojas verdaderas','Sol pleno o semi-sombra','Espaciar 15-20cm','Florece el primer año si se siembra temprano']
   },
   {
-    id:'clavel', emoji:'🌺', name:'Clavel', scientific:'Dianthus caryophyllus',
+    id:'clavel', emoji:'🌺', img:'https://images.unsplash.com/photo-1562690868-60bbe7293e94?w=400&h=400&fit=crop', name:'Clavel', scientific:'Dianthus caryophyllus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:200, tempMin:12, tempMax:24, soil:'Franco, ligeramente alcalino',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2370,7 +2453,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en febrero-marzo en interior','Trasplantar cuando pasen heladas','Sol pleno mínimo 5 horas','Suelo bien drenado (añadir arena si es arcilloso)','Espaciar 20-25cm','Pinzar primera yema para planta más ramificada']
   },
   {
-    id:'violeta', emoji:'💜', name:'Violeta', scientific:'Viola odorata',
+    id:'violeta', emoji:'💜', img:'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop&q=80', name:'Violeta', scientific:'Viola odorata',
     difficulty:1, sunlight:'shade', sunlightLabel:'Sombra',
     waterDays:3, waterMl:150, tempMin:8, tempMax:20, soil:'Rico en materia orgánica, pH 6-7',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
@@ -2388,7 +2471,7 @@ const FLOWERS = [
     plantingSteps:['Elegir lugar sombreado o semi-sombreado','Enriquecer suelo con composta','Plantar a 15cm de separación','Regar regularmente — le gusta humedad constante','Cubrir con mantillo orgánico','Se expande sola por estolones — controlar si necesario']
   },
   {
-    id:'geranio', emoji:'🌺', name:'Geranio', scientific:'Pelargonium spp.',
+    id:'geranio', emoji:'🌺', img:'https://images.unsplash.com/photo-1598187083667-d557de5e5bdc?w=400&h=400&fit=crop', name:'Geranio', scientific:'Pelargonium spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:5, waterMl:250, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2407,7 +2490,7 @@ const FLOWERS = [
     plantingSteps:['Plantar después de heladas en maceta o jardín','Sol directo mínimo 5 horas','Sustrato: tierra + perlita + composta','Maceta con buen drenaje (odia encharcamiento)','Regar cuando tierra esté seca al tacto','Proteger de heladas en invierno (meter al interior)']
   },
   {
-    id:'petunia', emoji:'🌸', name:'Petunia', scientific:'Petunia × hybrida',
+    id:'petunia', emoji:'🌸', img:'https://images.unsplash.com/photo-1597826368522-9f4cb5a6571a?w=400&h=400&fit=crop', name:'Petunia', scientific:'Petunia × hybrida',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:2, waterMl:200, tempMin:15, tempMax:30, soil:'Franco, bien drenado, fértil',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2425,7 +2508,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en superficie en febrero-marzo (interior)','Necesitan luz para germinar — no cubrir','Trasplantar a maceta o jardín tras heladas','Sol pleno todo el día','Regar frecuentemente — macetas se secan rápido','Fertilizar semanalmente para floración continua']
   },
   {
-    id:'cempasuchil', emoji:'🏵️', name:'Cempasúchil', scientific:'Tagetes erecta',
+    id:'cempasuchil', emoji:'🏵️', img:'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400&h=400&fit=crop', name:'Cempasúchil', scientific:'Tagetes erecta',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:3, waterMl:300, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
     seasons:['summer','fall'], seasonLabel:'Verano - Otoño',
@@ -2864,11 +2947,18 @@ function renderCatalog() {
   const dayIdx = Math.floor(Date.now() / 86400000) % FLOWERS.length;
   const pod = FLOWERS[dayIdx];
   const podEl = document.getElementById('plantOfDay');
-  if (podEl) { podEl.innerHTML = `<div class="pod-emoji">${pod.emoji}</div><div class="pod-info"><div class="pod-badge">✨ Planta del día</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
+  if (podEl) { podEl.innerHTML = `${pod.img ? `<div class="plant-photo-wrapper"><img src="${pod.img}" alt="${pod.name}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="plant-emoji-badge">${pod.emoji}</span><div style="display:none;font-size:48px">${pod.emoji}</div></div>` : `<div class="pod-emoji">${pod.emoji}</div>`}<div class="pod-info"><div class="pod-badge">✨ Planta del día</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
 
   grid.innerHTML = flowers.map(f => `
     <div class="flower-card" data-id="${f.id}">
-      <div class="card-emoji">${f.emoji}</div>
+      ${f.img ? `
+        <div class="plant-photo-wrapper" style="text-align:center">
+          <img src="${f.img}" alt="${f.name}" class="plant-photo" loading="lazy"
+            onerror="this.style.display='none';this.parentElement.querySelector('.plant-emoji-fallback').style.display='block'">
+          <span class="plant-emoji-badge">${f.emoji}</span>
+          <div class="plant-emoji-fallback">${f.emoji}</div>
+        </div>
+      ` : `<div class="card-emoji">${f.emoji}</div>`}
       <div class="difficulty-leaves">
         ${[1,2,3].map(d => `<span class="difficulty-leaf${d <= f.difficulty ? ' filled' : ''}">🌿</span>`).join('')}
       </div>
@@ -2911,7 +3001,12 @@ function openFlowerDetail(id) {
   if (!selectedFlower) return;
   const f = selectedFlower;
 
-  document.getElementById('modalEmoji').textContent = f.emoji;
+  const modalEmojiEl = document.getElementById('modalEmoji');
+  if (f.img) {
+    modalEmojiEl.innerHTML = `<img src="${f.img}" alt="${f.name}" class="modal-plant-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:80px">${f.emoji}</span>`;
+  } else {
+    modalEmojiEl.textContent = f.emoji;
+  }
   document.getElementById('modalName').textContent = f.name;
   document.getElementById('modalScientific').textContent = f.scientific;
   document.getElementById('modalFunFact').textContent = f.fact;
@@ -3052,7 +3147,14 @@ function renderGarden() {
     return `
       <div class="garden-card${isWaterReminder ? ' water-reminder-pulse' : ''}" data-index="${i}">
         <div class="gc-urgency-dot ${urgency}"></div>
-        <div class="gc-emoji">${f.emoji}</div>
+        ${f.img ? `
+        <div class="plant-photo-wrapper" style="align-self:center;flex-shrink:0">
+          <img src="${f.img}" alt="${f.name}" class="plant-photo" loading="lazy"
+            onerror="this.style.display='none';this.parentElement.querySelector('.plant-emoji-fallback').style.display='block'">
+          <span class="plant-emoji-badge">${f.emoji}</span>
+          <div class="plant-emoji-fallback" style="font-size:48px">${f.emoji}</div>
+        </div>
+        ` : `<div class="gc-emoji">${f.emoji}</div>`}
         <div class="gc-info">
           <div class="gc-name">${f.name}</div>
           <div class="gc-status ${statusInfo.class}">${statusInfo.label}</div>
@@ -3111,7 +3213,12 @@ function openGardenEdit(index) {
   const f = FLOWERS.find(fl => fl.id === g.flowerId);
   if (!f) return;
 
-  document.getElementById('gmEmoji').textContent = f.emoji;
+  const gmEmojiEl = document.getElementById('gmEmoji');
+  if (f.img) {
+    gmEmojiEl.innerHTML = `<img src="${f.img}" alt="${f.name}" class="modal-plant-photo" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span style="display:none;font-size:80px">${f.emoji}</span>`;
+  } else {
+    gmEmojiEl.textContent = f.emoji;
+  }
   document.getElementById('gmName').textContent = f.name;
   document.getElementById('gmNotes').value = g.notes || '';
 
