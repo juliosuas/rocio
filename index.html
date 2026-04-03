@@ -3297,12 +3297,14 @@ document.getElementById('gmSaveBtn').addEventListener('click', () => {
 document.getElementById('gmDeleteBtn').addEventListener('click', () => {
   if (editingGardenItem === null) return;
   const f = FLOWERS.find(fl => fl.id === garden[editingGardenItem].flowerId);
+  const plantName = f ? f.name : 'esta planta';
+  if (!confirm(`¿Segura que quieres quitar ${plantName} de tu jardín? 🥺`)) return;
   garden.splice(editingGardenItem, 1);
   saveGarden();
   updateBadge();
   document.getElementById('gardenModal').classList.remove('show');
   renderGarden();
-  showToast('🗑 ' + (f ? f.name : 'Planta') + ' removida del jardín');
+  showToast('🗑 ' + plantName + ' removida del jardín');
 });
 
 /* ═══════════════════════════════════════════
@@ -3476,14 +3478,22 @@ fileInput.addEventListener('change', () => {
     document.getElementById('srConfidence').textContent = confidence + '% de coincidencia';
     scanResult.classList.add('show');
 
-    // Reset after a while
-    setTimeout(() => {
-      uploadZone.style.display = '';
-      scanResult.classList.remove('show');
-      fileInput.value = '';
-    }, 5000);
+    // Add a "scan again" button instead of auto-hiding
+    scanResult.innerHTML += `<button onclick="resetTipScanner()" style="margin-top:12px;padding:10px 20px;border-radius:var(--radius-full);background:var(--primary);color:#fff;font-size:13px;font-weight:600;">📸 Escanear otra</button>`;
   }, 2500);
 });
+
+function resetTipScanner() {
+  uploadZone.style.display = '';
+  scanResult.classList.remove('show');
+  scanResult.innerHTML = `
+    <div class="sr-emoji" id="srEmoji"></div>
+    <div class="sr-name" id="srName"></div>
+    <div class="sr-scientific" id="srScientific"></div>
+    <div class="sr-confidence" id="srConfidence"></div>
+  `;
+  fileInput.value = '';
+}
 
 /* ═══════════════════════════════════════════
    DARK MODE
