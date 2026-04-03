@@ -3092,7 +3092,7 @@ document.getElementById('modalAddBtn').addEventListener('click', () => {
   garden.push({
     flowerId: selectedFlower.id,
     addedAt: new Date().toISOString(),
-    lastWatered: null,
+    lastWatered: new Date().toISOString(),
     status: 'healthy',
     notes: ''
   });
