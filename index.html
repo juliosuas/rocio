@@ -3117,6 +3117,23 @@ document.getElementById('modalAddBtn').addEventListener('click', () => {
 /* ═══════════════════════════════════════════
    MI JARDÍN
    ═══════════════════════════════════════════ */
+function getWateringStreak() {
+  const start = new Date();
+  start.setHours(0,0,0,0);
+  let streak = 0;
+  // Check each day backwards: did user water at least one plant?
+  for (let d = 0; d < 365; d++) {
+    const checkDate = new Date(start);
+    checkDate.setDate(start.getDate() - d);
+    const dayStr = checkDate.toISOString().slice(0, 10);
+    const watered = garden.some(g => g.lastWatered && g.lastWatered.slice(0, 10) === dayStr);
+    if (d === 0 && !watered) continue; // today hasn't happened yet, skip
+    if (watered) streak++;
+    else break;
+  }
+  return streak;
+}
+
 function renderGarden() {
   const list = document.getElementById('gardenList');
   const empty = document.getElementById('gardenEmpty');
@@ -3128,7 +3145,35 @@ function renderGarden() {
   }
   empty.style.display = 'none';
 
-  list.innerHTML = garden.map((g, i) => {
+  // Sort by urgency: overdue first, then soon, then good
+  const urgencyOrder = { overdue: 0, soon: 1, good: 2 };
+  const sorted = garden.map((g, i) => ({ g, i, urgency: getUrgency(g) }));
+  sorted.sort((a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]);
+
+  // Watering streak
+  const streak = getWateringStreak();
+  const overdueCount = sorted.filter(s => s.urgency === 'overdue').length;
+  const streakHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:16px;">
+      <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
+        <div style="font-size:28px;margin-bottom:4px;">${streak > 0 ? '🔥' : '💤'}</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${streak}</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Días seguidos</div>
+      </div>
+      <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
+        <div style="font-size:28px;margin-bottom:4px;">🌸</div>
+        <div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${garden.length}</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Plantas</div>
+      </div>
+      <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
+        <div style="font-size:28px;margin-bottom:4px;">${overdueCount > 0 ? '⚠️' : '✅'}</div>
+        <div style="font-size:22px;font-weight:800;color:${overdueCount > 0 ? 'var(--overdue)' : 'var(--good)'};">${overdueCount}</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Necesitan agua</div>
+      </div>
+    </div>
+  `;
+
+  list.innerHTML = streakHTML + sorted.map(({ g, i }) => {
     const f = FLOWERS.find(fl => fl.id === g.flowerId);
     if (!f) return '';
     const urgency = getUrgency(g);
