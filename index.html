@@ -3335,16 +3335,38 @@ function renderCalendar() {
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    tasks.innerHTML = todayItems.map(item => `
+    tasks.innerHTML = todayItems.map(item => {
+      const gardenIdx = garden.indexOf(item.gardenItem);
+      return `
       <div class="task-item">
         <div class="task-emoji">${item.flower.emoji}</div>
         <div class="task-info">
           <div class="task-name">${item.flower.name}</div>
           <div class="task-desc">${item.urgency === 'overdue' ? '⚠️ Necesita agua — ' + item.days + ' días sin regar' : '💧 Regar hoy'}</div>
         </div>
-        <div class="task-urgency" style="background:var(--${item.urgency})"></div>
+        <button class="gc-action-btn task-water-btn" data-index="${gardenIdx}" title="Regar ahora" style="flex-shrink:0;width:40px;height:40px;font-size:18px;">💧</button>
       </div>
-    `).join('');
+    `;
+    }).join('');
+
+    // Attach water handlers to calendar task buttons
+    tasks.querySelectorAll('.task-water-btn').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.index);
+        if (idx < 0 || idx >= garden.length) return;
+        garden[idx].lastWatered = new Date().toISOString();
+        if (garden[idx].status === 'needs-water') garden[idx].status = 'healthy';
+        saveGarden();
+        updateBadge();
+        const rect = btn.getBoundingClientRect();
+        showWaterDrops(rect.left + rect.width/2, rect.top);
+        const f = FLOWERS.find(fl => fl.id === garden[idx].flowerId);
+        showToast('💧 ' + (f ? f.name : 'Planta') + ' regada con amor');
+        showConfetti();
+        setTimeout(() => renderCalendar(), 400);
+      });
+    });
   }
 }
 
