@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#8fbc8f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -2830,9 +2832,56 @@ const STATUS_OPTIONS = [
 ];
 
 /* ═══════════════════════════════════════════
+   SAFE STORAGE
+   Keeps Rocío opening even if an old/corrupt WebView cache or
+   privacy mode blocks localStorage/sessionStorage.
+   ═══════════════════════════════════════════ */
+function safeStorageArea(name) {
+  try {
+    return window[name];
+  } catch (e) {
+    return null;
+  }
+}
+
+const rocioLocalStorage = safeStorageArea('localStorage');
+const rocioSessionStorage = safeStorageArea('sessionStorage');
+
+function safeStorageGet(storage, key, fallback = null) {
+  try {
+    const value = storage && storage.getItem(key);
+    return value == null ? fallback : value;
+  } catch (e) {
+    return fallback;
+  }
+}
+
+function safeStorageSet(storage, key, value) {
+  try {
+    if (storage) storage.setItem(key, value);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function safeJSONGet(storage, key, fallback) {
+  const raw = safeStorageGet(storage, key, null);
+  if (!raw) return fallback;
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(fallback) && !Array.isArray(parsed) ? fallback : parsed;
+  } catch (e) {
+    // Corrupt saved data should never brick the app. Reset just that key.
+    safeStorageSet(storage, key, JSON.stringify(fallback));
+    return fallback;
+  }
+}
+
+/* ═══════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════ */
-let garden = JSON.parse(localStorage.getItem('rocio_garden') || '[]');
+let garden = safeJSONGet(rocioLocalStorage, 'rocio_garden', []);
 let currentPage = 'pageCatalog';
 let currentFilter = 'all';
 let searchQuery = '';
@@ -2843,7 +2892,7 @@ let calWeekOffset = 0;
 /* ═══════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════ */
-function saveGarden() { localStorage.setItem('rocio_garden', JSON.stringify(garden)); }
+function saveGarden() { safeStorageSet(rocioLocalStorage, 'rocio_garden', JSON.stringify(garden)); }
 
 function showToast(msg) {
   const c = document.getElementById('toastContainer');
@@ -3499,7 +3548,7 @@ function resetTipScanner() {
    DARK MODE
    ═══════════════════════════════════════════ */
 const themeToggle = document.getElementById('themeToggle');
-let isDark = localStorage.getItem('rocio_theme') === 'dark';
+let isDark = safeStorageGet(rocioLocalStorage, 'rocio_theme') === 'dark';
 
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -3509,7 +3558,7 @@ function applyTheme() {
 
 themeToggle.addEventListener('click', () => {
   isDark = !isDark;
-  localStorage.setItem('rocio_theme', isDark ? 'dark' : 'light');
+  safeStorageSet(rocioLocalStorage, 'rocio_theme', isDark ? 'dark' : 'light');
   applyTheme();
 });
 applyTheme();
@@ -3538,11 +3587,11 @@ document.getElementById('obBtn').addEventListener('click', () => {
   if (obStep < 2) { obStep++; renderOnboarding(); }
   else {
     onboarding.classList.add('hidden');
-    localStorage.setItem('rocio_onboarded', '1');
+    safeStorageSet(rocioLocalStorage, 'rocio_onboarded', '1');
   }
 });
 
-if (localStorage.getItem('rocio_onboarded')) {
+if (safeStorageGet(rocioLocalStorage, 'rocio_onboarded')) {
   onboarding.classList.add('hidden');
 } else {
   renderOnboarding();
@@ -3797,8 +3846,8 @@ window.addEventListener('offline', () => document.getElementById('offlineBanner'
 // Cache data in localStorage
 function cacheAllData() {
   try {
-    localStorage.setItem('rocio_flowers_cache', JSON.stringify(FLOWERS));
-    localStorage.setItem('rocio_cached_at', Date.now().toString());
+    safeStorageSet(rocioLocalStorage, 'rocio_flowers_cache', JSON.stringify(FLOWERS));
+    safeStorageSet(rocioLocalStorage, 'rocio_cached_at', Date.now().toString());
   } catch(e) {}
 }
 
@@ -3912,10 +3961,10 @@ function identifyPlant(canvas) {
 
 // Scanner state
 let scannerStream = null;
-let scanHistory = JSON.parse(localStorage.getItem('rocio_scan_history') || '[]');
+let scanHistory = safeJSONGet(rocioLocalStorage, 'rocio_scan_history', []);
 
 function saveScanHistory() {
-  localStorage.setItem('rocio_scan_history', JSON.stringify(scanHistory));
+  safeStorageSet(rocioLocalStorage, 'rocio_scan_history', JSON.stringify(scanHistory));
 }
 
 // Generate particles
@@ -4246,10 +4295,10 @@ function renderScanHistory() {
    ═══════════════════════════════════════════ */
 (function() {
   const splash = document.getElementById('splashScreen');
-  if (sessionStorage.getItem('rocio_splash_shown')) {
+  if (safeStorageGet(rocioSessionStorage, 'rocio_splash_shown')) {
     splash.style.display = 'none';
   } else {
-    sessionStorage.setItem('rocio_splash_shown', '1');
+    safeStorageSet(rocioSessionStorage, 'rocio_splash_shown', '1');
     setTimeout(() => {
       splash.classList.add('hide');
       setTimeout(() => splash.style.display = 'none', 600);
