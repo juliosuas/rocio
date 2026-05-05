@@ -8,6 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#8fbc8f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%B8%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#7a9b57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -664,6 +666,20 @@ img { display: block; max-width: 100%; }
 }
 .identifier-section h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
 .identifier-section p { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; }
+.identifier-tools {
+  display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+  margin: -6px 0 16px;
+}
+.identifier-chip {
+  border: 1px solid rgba(143,188,143,0.28);
+  background: rgba(143,188,143,0.09);
+  color: var(--text-secondary);
+  border-radius: var(--radius-full);
+  padding: 7px 12px;
+  font-size: 11px; font-weight: 700;
+  cursor: pointer;
+}
+.identifier-chip.active { background: rgba(143,188,143,0.18); color: var(--primary-dark); }
 
 .upload-zone {
   border: 2px dashed var(--primary-light);
@@ -1927,7 +1943,7 @@ img { display: block; max-width: 100%; }
 <div class="water-drops" id="waterDrops"></div>
 
 <!-- OFFLINE BANNER -->
-<div class="offline-banner" id="offlineBanner">📡 Sin conexión — Todo funciona offline</div>
+<div class="offline-banner" id="offlineBanner">📡 Sin conexión — Rocío guardó lo esencial para seguir cuidando tus plantas</div>
 
 <!-- MAIN CONTENT -->
 <main class="page-container">
@@ -1937,11 +1953,11 @@ img { display: block; max-width: 100%; }
     <div class="hero-section" id="heroSection">
       <div class="hero-petals" id="heroPetals"></div>
       <div class="hero-photo-mosaic">
-        <img src="https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&h=400&fit=crop" alt="Lavanda" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1524386416438-98b9b2d4b433?w=400&h=400&fit=crop" alt="Tulipán" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop" alt="Rosa" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop" alt="Girasol" loading="lazy">
-        <img src="https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&h=400&fit=crop" alt="Hortensia" loading="lazy">
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2256%22%20fill%3D%22%23d8c7ff%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22150%22%3E%F0%9F%92%9C%3C/text%3E%3C/svg%3E" alt="Lavanda" loading="lazy">
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2256%22%20fill%3D%22%23ffd1dc%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22150%22%3E%F0%9F%8C%B7%3C/text%3E%3C/svg%3E" alt="Tulipán" loading="lazy">
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2256%22%20fill%3D%22%23f4b7c1%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22150%22%3E%F0%9F%8C%B9%3C/text%3E%3C/svg%3E" alt="Rosa" loading="lazy">
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2256%22%20fill%3D%22%23ffe58a%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22150%22%3E%F0%9F%8C%BB%3C/text%3E%3C/svg%3E" alt="Girasol" loading="lazy">
+        <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20400%20400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20rx%3D%2256%22%20fill%3D%22%23cfe7ff%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2255%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22150%22%3E%F0%9F%92%A0%3C/text%3E%3C/svg%3E" alt="Hortensia" loading="lazy">
       </div>
       <div class="hero-title">Descubre & Cultiva</div>
       <div class="hero-subtitle">Tu guía botánica personal con amor 💚</div>
@@ -2075,8 +2091,12 @@ img { display: block; max-width: 100%; }
 
     <!-- Plant Identifier -->
     <div class="identifier-section" id="identifierSection">
-      <h3>📸 Identificador de Plantas</h3>
-      <p>Sube una foto de una flor y te diremos cuál es</p>
+      <h3>📸 Identificador experimental</h3>
+      <p>Sube una foto de una flor y te mostraremos posibles coincidencias para confirmar</p>
+      <div class="identifier-tools">
+        <button class="identifier-chip" id="plantNetConfigBtn" type="button">🔬 Conectar PlantNet</button>
+        <span class="identifier-chip" id="plantNetStatus">Modo local experimental</span>
+      </div>
       <div class="upload-zone" id="uploadZone">
         <div class="upload-icon">🌺</div>
         <p>Toca para subir una foto</p>
@@ -2106,7 +2126,7 @@ img { display: block; max-width: 100%; }
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-top-bar">
     <button class="scanner-close" id="scannerClose">✕</button>
-    <span class="scanner-title">🌿 Plant Scanner</span>
+    <span class="scanner-title">🌿 Identificador de Plantas</span>
     <button class="scanner-history-btn" id="scannerHistoryBtn">📷 Historial</button>
   </div>
   <div class="scanner-viewfinder" id="scannerViewfinder">
@@ -2126,7 +2146,7 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="scanner-particles" id="scannerParticles"></div>
     <div class="scanner-capture-area" id="scannerCaptureArea">
-      <button class="scanner-capture-btn" id="scannerCaptureBtn"></button>
+      <button class="scanner-capture-btn" id="scannerCaptureBtn" aria-label="Tomar foto para identificar planta"></button>
     </div>
     <!-- Upload fallback (no camera) -->
     <div class="scanner-upload-fallback" id="scannerUploadFallback">
@@ -2162,6 +2182,7 @@ img { display: block; max-width: 100%; }
       <button class="scanner-btn-detail" id="scannerBtnDetail">🌿 Ver ficha completa</button>
       <button class="scanner-btn-retry" id="scannerBtnRetry">📸 Escanear otra</button>
     </div>
+    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Identificación experimental: confirma la planta antes de guardarla.</p>
   </div>
 </div>
 
@@ -2251,9 +2272,14 @@ img { display: block; max-width: 100%; }
 /* ═══════════════════════════════════════════
    FLOWER DATABASE
    ═══════════════════════════════════════════ */
+
+function rocioFlowerImage(emoji, bg = '#f8d7df') {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400"><defs><radialGradient id="g" cx="50%" cy="42%" r="68%"><stop offset="0%" stop-color="#fff7f9"/><stop offset="100%" stop-color="${bg}"/></radialGradient></defs><rect width="400" height="400" rx="56" fill="url(#g)"/><circle cx="200" cy="200" r="122" fill="rgba(255,255,255,.38)"/><text x="50%" y="55%" text-anchor="middle" dominant-baseline="middle" font-size="150">${emoji}</text></svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
 const FLOWERS = [
   {
-    id:'rosa', emoji:'🌹', img:'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop', name:'Rosa', scientific:'Rosa spp.',
+    id:'rosa', emoji:'🌹', img:rocioFlowerImage('🌹','#f4b7c1'), name:'Rosa', scientific:'Rosa spp.',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:3, waterMl:300, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2272,7 +2298,7 @@ const FLOWERS = [
     plantingSteps:['Elige ubicación con 6+ horas de sol directo','Cava hoyo 40×40cm, mezcla tierra con composta','Remoja raíces 1 hora antes de plantar','Planta con injerto 5cm sobre nivel del suelo','Riega abundantemente y aplica acolchado','Primeras 2 semanas: riego diario ligero']
   },
   {
-    id:'tulipan', emoji:'🌷', img:'https://images.unsplash.com/photo-1524386416438-98b9b2d4b433?w=400&h=400&fit=crop', name:'Tulipán', scientific:'Tulipa spp.',
+    id:'tulipan', emoji:'🌷', img:rocioFlowerImage('🌷','#ffd1dc'), name:'Tulipán', scientific:'Tulipa spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:5, waterMl:150, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
     seasons:['spring'], seasonLabel:'Primavera',
@@ -2290,7 +2316,7 @@ const FLOWERS = [
     plantingSteps:['Plantar bulbos en octubre-noviembre (necesitan frío)','Cavar hoyos de 15cm profundidad','Colocar bulbo con punta hacia arriba','Espaciar 10cm entre bulbos','Cubrir con tierra y regar bien','Florecerán en primavera (marzo-abril)']
   },
   {
-    id:'orquidea', emoji:'🪻', img:'https://images.unsplash.com/photo-1566873535350-a3f5d4a804b7?w=400&h=400&fit=crop', name:'Orquídea', scientific:'Orchidaceae',
+    id:'orquidea', emoji:'🪻', img:rocioFlowerImage('🪻','#d9c8ff'), name:'Orquídea', scientific:'Orchidaceae',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:7, waterMl:100, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo sphagnum',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
@@ -2309,7 +2335,7 @@ const FLOWERS = [
     plantingSteps:['Usar maceta transparente con agujeros de drenaje','Sustrato: corteza de pino gruesa + carbón + perlita','NO usar tierra normal (mata las raíces)','Colocar en luz brillante indirecta (nunca sol directo)','Regar sumergiendo maceta 10 min en agua, escurrir bien','Temperatura nocturna 5°C menor que diurna estimula floración']
   },
   {
-    id:'girasol', emoji:'🌻', img:'https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop', name:'Girasol', scientific:'Helianthus annuus',
+    id:'girasol', emoji:'🌻', img:rocioFlowerImage('🌻','#ffe58a'), name:'Girasol', scientific:'Helianthus annuus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:400, tempMin:20, tempMax:35, soil:'Franco, fértil',
     seasons:['summer'], seasonLabel:'Verano',
@@ -2327,7 +2353,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar después de última helada (abril-mayo)','Plantar semillas a 2.5cm de profundidad','Espaciar 30-45cm entre plantas','Lugar con 6-8 horas de sol directo','Regar bien al plantar, luego cada 3-4 días','Puede necesitar tutor si supera 1.5m de altura']
   },
   {
-    id:'lavanda', emoji:'💜', img:'https://images.unsplash.com/photo-1499002238440-d264edd596ec?w=400&h=400&fit=crop', name:'Lavanda', scientific:'Lavandula angustifolia',
+    id:'lavanda', emoji:'💜', img:rocioFlowerImage('💜','#d8c7ff'), name:'Lavanda', scientific:'Lavandula angustifolia',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:7, waterMl:150, tempMin:12, tempMax:30, soil:'Arenoso, alcalino, pH 6.5-7.5',
     seasons:['summer'], seasonLabel:'Verano',
@@ -2345,7 +2371,7 @@ const FLOWERS = [
     plantingSteps:['Elegir sitio soleado con excelente drenaje','Mezclar tierra con arena y grava (30%)','Plantar con 40-60cm de separación','NO abonar en exceso (prefiere suelo pobre)','Regar solo cuando tierra esté muy seca','Cosechar flores cuando se abran los primeros botones']
   },
   {
-    id:'gardenia', emoji:'🤍', img:'https://images.unsplash.com/photo-1596438459194-f275f413d6ff?w=400&h=400&fit=crop', name:'Gardenia', scientific:'Gardenia jasminoides',
+    id:'gardenia', emoji:'🤍', img:rocioFlowerImage('🤍','#f2eadf'), name:'Gardenia', scientific:'Gardenia jasminoides',
     difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:3, waterMl:250, tempMin:16, tempMax:24, soil:'Ácido pH 5-6, rico en humus',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2364,7 +2390,7 @@ const FLOWERS = [
     plantingSteps:['Usar sustrato ácido (turba + perlita + corteza)','Maceta con excelente drenaje','Ubicar en luz brillante sin sol directo del mediodía','Mantener humedad ambiental alta (bandeja con piedras y agua)','Regar con agua de lluvia o filtrada (sin cal)','No mover durante la floración']
   },
   {
-    id:'jazmin', emoji:'🌼', img:'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=400&h=400&fit=crop', name:'Jazmín', scientific:'Jasminum officinale',
+    id:'jazmin', emoji:'🌼', img:rocioFlowerImage('🌼','#fff1b8'), name:'Jazmín', scientific:'Jasminum officinale',
     difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:300, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2382,7 +2408,7 @@ const FLOWERS = [
     plantingSteps:['Plantar en primavera junto a soporte/enrejado','Hoyo 2x el tamaño del cepellón','Mezclar tierra con composta madura','Regar abundantemente tras plantar','Guiar tallos hacia el soporte','Acolchar base con corteza para retener humedad']
   },
   {
-    id:'hortensia', emoji:'💠', img:'https://images.unsplash.com/photo-1455659817273-f96807779a8a?w=400&h=400&fit=crop', name:'Hortensia', scientific:'Hydrangea macrophylla',
+    id:'hortensia', emoji:'💠', img:rocioFlowerImage('💠','#cfe7ff'), name:'Hortensia', scientific:'Hydrangea macrophylla',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:3, waterMl:400, tempMin:12, tempMax:25, soil:'Ácido pH 5.5, húmedo',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2401,7 +2427,7 @@ const FLOWERS = [
     plantingSteps:['Ubicar en semi-sombra (sol de mañana ideal)','Suelo ácido rico en materia orgánica','Plantar al nivel del cepellón, no más profundo','Regar abundantemente — necesitan mucha agua','Acolchar con corteza de pino (acidifica)','Para flores azules: añadir sulfato de aluminio al riego']
   },
   {
-    id:'lirio', emoji:'🪷', img:'https://images.unsplash.com/photo-1530092285049-1c42085fd395?w=400&h=400&fit=crop', name:'Lirio', scientific:'Lilium spp.',
+    id:'lirio', emoji:'🪷', img:rocioFlowerImage('🪷','#f8c8dd'), name:'Lirio', scientific:'Lilium spp.',
     difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
     waterDays:5, waterMl:250, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2419,7 +2445,7 @@ const FLOWERS = [
     plantingSteps:['Plantar bulbos en otoño a 15-20cm de profundidad','Ubicar con sol en copa y sombra en raíces','Tierra con buen drenaje — poner grava debajo del bulbo','Espaciar 20-30cm entre bulbos','Regar al plantar, luego moderadamente','Tallos altos pueden necesitar tutor']
   },
   {
-    id:'margarita', emoji:'🌼', img:'https://images.unsplash.com/photo-1606041011872-596597976b25?w=400&h=400&fit=crop', name:'Margarita', scientific:'Bellis perennis',
+    id:'margarita', emoji:'🌼', img:rocioFlowerImage('🌼','#fff4b0'), name:'Margarita', scientific:'Bellis perennis',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:200, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2437,7 +2463,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en superficie (necesitan luz)','Mantener húmedo hasta germinar (7-14 días)','Trasplantar cuando tengan 4 hojas verdaderas','Sol pleno o semi-sombra','Espaciar 15-20cm','Florece el primer año si se siembra temprano']
   },
   {
-    id:'clavel', emoji:'🌺', img:'https://images.unsplash.com/photo-1562690868-60bbe7293e94?w=400&h=400&fit=crop', name:'Clavel', scientific:'Dianthus caryophyllus',
+    id:'clavel', emoji:'🌺', img:rocioFlowerImage('🌺','#ffc0cb'), name:'Clavel', scientific:'Dianthus caryophyllus',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:4, waterMl:200, tempMin:12, tempMax:24, soil:'Franco, ligeramente alcalino',
     seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
@@ -2455,7 +2481,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en febrero-marzo en interior','Trasplantar cuando pasen heladas','Sol pleno mínimo 5 horas','Suelo bien drenado (añadir arena si es arcilloso)','Espaciar 20-25cm','Pinzar primera yema para planta más ramificada']
   },
   {
-    id:'violeta', emoji:'💜', img:'https://images.unsplash.com/photo-1490750967868-88aa4f44baee?w=400&h=400&fit=crop&q=80', name:'Violeta', scientific:'Viola odorata',
+    id:'violeta', emoji:'💜', img:rocioFlowerImage('💜','#c7b7ff'), name:'Violeta', scientific:'Viola odorata',
     difficulty:1, sunlight:'shade', sunlightLabel:'Sombra',
     waterDays:3, waterMl:150, tempMin:8, tempMax:20, soil:'Rico en materia orgánica, pH 6-7',
     seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
@@ -2473,7 +2499,7 @@ const FLOWERS = [
     plantingSteps:['Elegir lugar sombreado o semi-sombreado','Enriquecer suelo con composta','Plantar a 15cm de separación','Regar regularmente — le gusta humedad constante','Cubrir con mantillo orgánico','Se expande sola por estolones — controlar si necesario']
   },
   {
-    id:'geranio', emoji:'🌺', img:'https://images.unsplash.com/photo-1598187083667-d557de5e5bdc?w=400&h=400&fit=crop', name:'Geranio', scientific:'Pelargonium spp.',
+    id:'geranio', emoji:'🌺', img:rocioFlowerImage('🌺','#ffb7b7'), name:'Geranio', scientific:'Pelargonium spp.',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:5, waterMl:250, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2492,7 +2518,7 @@ const FLOWERS = [
     plantingSteps:['Plantar después de heladas en maceta o jardín','Sol directo mínimo 5 horas','Sustrato: tierra + perlita + composta','Maceta con buen drenaje (odia encharcamiento)','Regar cuando tierra esté seca al tacto','Proteger de heladas en invierno (meter al interior)']
   },
   {
-    id:'petunia', emoji:'🌸', img:'https://images.unsplash.com/photo-1597826368522-9f4cb5a6571a?w=400&h=400&fit=crop', name:'Petunia', scientific:'Petunia × hybrida',
+    id:'petunia', emoji:'🌸', img:rocioFlowerImage('🌸','#ffd6e7'), name:'Petunia', scientific:'Petunia × hybrida',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:2, waterMl:200, tempMin:15, tempMax:30, soil:'Franco, bien drenado, fértil',
     seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
@@ -2510,7 +2536,7 @@ const FLOWERS = [
     plantingSteps:['Sembrar semillas en superficie en febrero-marzo (interior)','Necesitan luz para germinar — no cubrir','Trasplantar a maceta o jardín tras heladas','Sol pleno todo el día','Regar frecuentemente — macetas se secan rápido','Fertilizar semanalmente para floración continua']
   },
   {
-    id:'cempasuchil', emoji:'🏵️', img:'https://images.unsplash.com/photo-1508610048659-a06b669e3321?w=400&h=400&fit=crop', name:'Cempasúchil', scientific:'Tagetes erecta',
+    id:'cempasuchil', emoji:'🏵️', img:rocioFlowerImage('🏵️','#ffc066'), name:'Cempasúchil', scientific:'Tagetes erecta',
     difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
     waterDays:3, waterMl:300, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
     seasons:['summer','fall'], seasonLabel:'Verano - Otoño',
@@ -2865,6 +2891,15 @@ function safeStorageSet(storage, key, value) {
   }
 }
 
+function safeStorageRemove(storage, key) {
+  try {
+    if (storage) storage.removeItem(key);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function safeJSONGet(storage, key, fallback) {
   const raw = safeStorageGet(storage, key, null);
   if (!raw) return fallback;
@@ -3147,6 +3182,9 @@ document.getElementById('modalAddBtn').addEventListener('click', () => {
   });
   saveGarden();
   updateBadge();
+  requestReminderPermission().then(granted => {
+    if (granted) showToast('🔔 Recordatorios de riego activados');
+  });
 
   const btn = document.getElementById('modalAddBtn');
   btn.innerHTML = '✅ Ya está en tu jardín';
@@ -3516,21 +3554,51 @@ fileInput.addEventListener('change', () => {
   scanAnim.classList.add('active');
   scanResult.classList.remove('show');
 
-  setTimeout(() => {
-    scanAnim.classList.remove('active');
-    // Pick a random flower
-    const flower = FLOWERS[Math.floor(Math.random() * FLOWERS.length)];
-    const confidence = (75 + Math.random() * 20).toFixed(1);
-    document.getElementById('srEmoji').textContent = flower.emoji;
-    document.getElementById('srName').textContent = flower.name;
-    document.getElementById('srScientific').textContent = flower.scientific;
-    document.getElementById('srConfidence').textContent = confidence + '% de coincidencia';
-    scanResult.classList.add('show');
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const maxSize = 720;
+    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    canvas.width = Math.max(1, Math.round(img.width * scale));
+    canvas.height = Math.max(1, Math.round(img.height * scale));
+    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
 
-    // Add a "scan again" button instead of auto-hiding
-    scanResult.innerHTML += `<button onclick="resetTipScanner()" style="margin-top:12px;padding:10px 20px;border-radius:var(--radius-full);background:var(--primary);color:#fff;font-size:13px;font-weight:600;">📸 Escanear otra</button>`;
-  }, 2500);
+    setTimeout(async () => {
+      scanAnim.classList.remove('active');
+      const result = await identifyPlantWithProvider(canvas);
+      const flower = FLOWERS.find(f => f.id === result.flowerId);
+      const candidates = (result.candidates || [])
+        .map(c => FLOWERS.find(f => f.id === c.flowerId))
+        .filter(Boolean)
+        .map(f => `${f.emoji} ${f.name}`)
+        .join(' · ');
+
+      document.getElementById('srEmoji').textContent = result.isUncertain ? '🤔' : flower.emoji;
+      document.getElementById('srName').textContent = result.isUncertain ? `Posible: ${flower.name}` : flower.name;
+      document.getElementById('srScientific').textContent = result.isUncertain ? `Confirma la flor antes de guardarla${result.provider ? ' · ' + result.provider : ''}` : (result.providerScientific || flower.scientific);
+      document.getElementById('srConfidence').textContent = result.isUncertain
+        ? `Opciones: ${candidates}`
+        : `${result.confidence}% de coincidencia${result.provider ? ' · ' + result.provider : ''}`;
+      scanResult.classList.add('show');
+
+      // Add a "scan again" button instead of auto-hiding
+      scanResult.innerHTML += `<button onclick="resetTipScanner()" style="margin-top:12px;padding:10px 20px;border-radius:var(--radius-full);background:var(--primary);color:#fff;font-size:13px;font-weight:600;">📸 Escanear otra</button>`;
+    }, 1800);
+  };
+  img.src = URL.createObjectURL(fileInput.files[0]);
 });
+
+document.getElementById('plantNetConfigBtn')?.addEventListener('click', () => {
+  const current = getPlantNetKey();
+  const next = prompt('Pega tu API key de PlantNet para activar identificación real. Deja vacío para volver al modo local experimental.', current);
+  if (next === null) return;
+  const value = next.trim();
+  if (value) safeStorageSet(rocioLocalStorage, 'rocio_plantnet_api_key', value);
+  else safeStorageRemove(rocioLocalStorage, 'rocio_plantnet_api_key');
+  updatePlantNetStatus();
+});
+
+updatePlantNetStatus();
 
 function resetTipScanner() {
   uploadZone.style.display = '';
@@ -3843,11 +3911,56 @@ function renderMoonSection() {
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
 
-// Cache data in localStorage
+// Cache data in localStorage + service worker shell cache
 function cacheAllData() {
   try {
     safeStorageSet(rocioLocalStorage, 'rocio_flowers_cache', JSON.stringify(FLOWERS));
     safeStorageSet(rocioLocalStorage, 'rocio_cached_at', Date.now().toString());
+  } catch(e) {}
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      console.warn('Service worker no disponible en este entorno');
+    });
+  });
+}
+
+async function requestReminderPermission() {
+  if (!('Notification' in window)) return false;
+  if (Notification.permission === 'granted') return true;
+  if (Notification.permission === 'denied') return false;
+  const permission = await Notification.requestPermission();
+  return permission === 'granted';
+}
+
+function showLocalPlantNotification(title, body) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return;
+  if (navigator.serviceWorker?.controller) {
+    navigator.serviceWorker.ready.then(reg => reg.showNotification(title, {
+      body,
+      icon: './icon-192.svg',
+      badge: './icon-192.svg',
+      tag: 'rocio-watering-reminder'
+    })).catch(() => new Notification(title, { body }));
+    return;
+  }
+  new Notification(title, { body });
+}
+
+function checkWateringNotifications() {
+  try {
+    if (!garden.length || !('Notification' in window) || Notification.permission !== 'granted') return;
+    const today = new Date().toISOString().slice(0, 10);
+    const lastShown = safeStorageGet(rocioLocalStorage, 'rocio_last_notification_day');
+    if (lastShown === today) return;
+    const due = garden
+      .map(g => ({ item: g, flower: FLOWERS.find(f => f.id === g.flowerId), urgency: getUrgency(g) }))
+      .filter(x => x.flower && x.urgency !== 'good');
+    if (!due.length) return;
+    showLocalPlantNotification('Rocío te recuerda regar 🌿', `${due[0].flower.name}${due.length > 1 ? ` y ${due.length - 1} planta(s) más` : ''} necesitan agua.`);
+    safeStorageSet(rocioLocalStorage, 'rocio_last_notification_day', today);
   } catch(e) {}
 }
 
@@ -3949,14 +4062,108 @@ function scoreFlowerMatch(samples, profileId) {
 
 function identifyPlant(canvas) {
   const samples = sampleImageColors(canvas);
-  let bestScore = -1, bestId = 'rosa';
-  for(const f of FLOWERS) {
-    const s = scoreFlowerMatch(samples, f.id);
-    if(s > bestScore) { bestScore = s; bestId = f.id; }
+  const maxScore = Math.max(1, samples.length * 3);
+  const ranked = FLOWERS.map(f => ({
+    flowerId: f.id,
+    score: scoreFlowerMatch(samples, f.id)
+  })).sort((a, b) => b.score - a.score);
+
+  const best = ranked[0] || { flowerId: 'rosa', score: 0 };
+  const second = ranked[1] || { score: 0 };
+  const separation = Math.max(0, best.score - second.score);
+  const rawConfidence = 35 + (best.score / maxScore) * 45 + Math.min(20, separation * 2);
+  const confidence = Math.min(95, Math.max(18, rawConfidence));
+
+  return {
+    flowerId: best.flowerId,
+    confidence: parseFloat(confidence.toFixed(1)),
+    isUncertain: confidence < 65 || separation < 2,
+    candidates: ranked.slice(0, 3).map(candidate => ({
+      flowerId: candidate.flowerId,
+      confidence: parseFloat(Math.min(95, Math.max(12, 35 + (candidate.score / maxScore) * 45)).toFixed(1))
+    })),
+    samples
+  };
+}
+
+function getPlantNetKey() {
+  return (safeStorageGet(rocioLocalStorage, 'rocio_plantnet_api_key') || '').trim();
+}
+
+function updatePlantNetStatus() {
+  const status = document.getElementById('plantNetStatus');
+  if (!status) return;
+  const hasKey = !!getPlantNetKey();
+  status.textContent = hasKey ? 'PlantNet real activado' : 'Modo local experimental';
+  status.classList.toggle('active', hasKey);
+}
+
+function mapPlantNetResultToFlower(item) {
+  const species = item?.species || {};
+  const sci = (species.scientificNameWithoutAuthor || species.scientificName || '').toLowerCase();
+  const common = (species.commonNames || []).join(' ').toLowerCase();
+  const haystack = `${sci} ${common}`;
+  return FLOWERS.find(f => {
+    const base = f.scientific.split(' ')[0].toLowerCase();
+    return haystack.includes(f.id) || haystack.includes(f.name.toLowerCase()) || (base.length > 3 && haystack.includes(base));
+  });
+}
+
+async function canvasToJpegBlob(canvas, quality = 0.82) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+}
+
+async function identifyPlantWithProvider(canvas) {
+  const key = getPlantNetKey();
+  if (!key) return identifyPlant(canvas);
+
+  try {
+    const blob = await canvasToJpegBlob(canvas);
+    if (!blob) throw new Error('No se pudo preparar la imagen');
+    const form = new FormData();
+    form.append('images', blob, 'rocio-flor.jpg');
+    form.append('organs', 'flower');
+    const response = await fetch(`https://my-api.plantnet.org/v2/identify/all?api-key=${encodeURIComponent(key)}`, {
+      method: 'POST',
+      body: form
+    });
+    if (!response.ok) throw new Error(`PlantNet ${response.status}`);
+    const data = await response.json();
+    const matches = (data.results || []).slice(0, 5);
+    const mapped = matches.map(item => {
+      const flower = mapPlantNetResultToFlower(item);
+      return flower ? {
+        flowerId: flower.id,
+        confidence: parseFloat(Math.min(98, Math.max(20, (item.score || 0) * 100)).toFixed(1)),
+        scientific: item.species?.scientificNameWithoutAuthor || item.species?.scientificName || flower.scientific,
+        source: 'PlantNet'
+      } : null;
+    }).filter(Boolean);
+
+    if (mapped.length) {
+      const best = mapped[0];
+      return {
+        flowerId: best.flowerId,
+        confidence: best.confidence,
+        isUncertain: best.confidence < 68,
+        candidates: mapped.slice(0, 3),
+        provider: 'PlantNet',
+        providerScientific: best.scientific
+      };
+    }
+
+    const fallback = identifyPlant(canvas);
+    fallback.provider = 'PlantNet sin coincidencia local';
+    fallback.isUncertain = true;
+    return fallback;
+  } catch (err) {
+    console.warn('PlantNet fallback:', err);
+    const fallback = identifyPlant(canvas);
+    fallback.provider = 'Modo local — PlantNet no disponible';
+    fallback.providerError = err.message;
+    fallback.isUncertain = true;
+    return fallback;
   }
-  // Confidence: 75-96% with some randomness
-  const confidence = Math.min(96, Math.max(75, 75 + (bestScore / (samples.length * 3)) * 21 + (Math.random() * 8 - 4))).toFixed(1);
-  return { flowerId: bestId, confidence: parseFloat(confidence), samples };
 }
 
 // Scanner state
@@ -4105,13 +4312,13 @@ function captureAndAnalyze(sourceCanvas) {
   });
 
   // Identify after animation
-  setTimeout(() => {
-    const result = identifyPlant(freezeCanvas);
+  setTimeout(async () => {
+    const result = await identifyPlantWithProvider(freezeCanvas);
     showScanResult(result, freezeCanvas);
   }, 3000);
 }
 
-function showScanResult(result, canvas) {
+function showScanResult(result, canvas, persist = true) {
   const flower = FLOWERS.find(f => f.id === result.flowerId);
   if(!flower) return;
 
@@ -4123,8 +4330,10 @@ function showScanResult(result, canvas) {
   const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
   tctx.drawImage(canvas, sx, sy, size, size, 0, 0, 70, 70);
 
-  document.getElementById('scannerResultName').textContent = flower.emoji + ' ' + flower.name;
-  document.getElementById('scannerResultScientific').textContent = flower.scientific;
+  document.getElementById('scannerResultName').textContent = (result.isUncertain ? '🤔 Posible: ' : '') + flower.emoji + ' ' + flower.name;
+  document.getElementById('scannerResultScientific').textContent = result.isUncertain
+    ? `No estoy completamente segura. ${result.provider ? result.provider + '. ' : ''}Confirma antes de agregarla a tu jardín.`
+    : (result.providerScientific || flower.scientific);
 
   // Animated confidence counter
   const confEl = document.getElementById('scannerConfVal');
@@ -4140,8 +4349,21 @@ function showScanResult(result, canvas) {
     confBar.style.width = confCurrent + '%';
   }, 30);
 
+  const candidateNames = (result.candidates || [])
+    .map(c => FLOWERS.find(f => f.id === c.flowerId))
+    .filter(Boolean)
+    .map(f => `${f.emoji} ${f.name}`)
+    .join(' · ');
+
   // Care info
-  document.getElementById('scannerResultCare').innerHTML = `
+  document.getElementById('scannerResultCare').innerHTML = result.isUncertain ? `
+    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Opciones</div><div class="src-value">${candidateNames}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">✅</div><div class="src-label">Corregir</div><div class="src-value">${(result.candidates || []).map(c => {
+      const f = FLOWERS.find(fl => fl.id === c.flowerId);
+      return f ? `<button class="scanner-candidate-btn" data-flower-id="${f.id}" style="margin:2px;padding:6px 8px;border:1px solid rgba(0,0,0,.08);border-radius:999px;background:#fff;font-size:11px">${f.emoji} ${f.name}</button>` : '';
+    }).join('')}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Toma otra foto centrando solo la flor</div></div>
+  ` : `
     <div class="scanner-result-care-item"><div class="src-icon">💧</div><div class="src-label">Riego</div><div class="src-value">${flower.waterMl}ml / ${flower.waterDays}d</div></div>
     <div class="scanner-result-care-item"><div class="src-icon">☀️</div><div class="src-label">Luz</div><div class="src-value">${flower.sunlightLabel}</div></div>
     <div class="scanner-result-care-item"><div class="src-icon">📊</div><div class="src-label">Dificultad</div><div class="src-value">${difficultyLabel(flower.difficulty)}</div></div>
@@ -4152,8 +4374,19 @@ function showScanResult(result, canvas) {
 
   // Show result card
   document.getElementById('scannerResult').classList.add('show');
+  document.querySelectorAll('.scanner-candidate-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const correctedFlower = FLOWERS.find(f => f.id === btn.dataset.flowerId);
+      if (!correctedFlower) return;
+      result.flowerId = correctedFlower.id;
+      result.confidence = Math.max(result.confidence, 68);
+      result.isUncertain = false;
+      showScanResult(result, canvas, false);
+    });
+  });
 
   // Save to history
+  if (!persist) return;
   const smallCanvas = document.createElement('canvas');
   smallCanvas.width = 100; smallCanvas.height = 100;
   const sctx = smallCanvas.getContext('2d');
@@ -4363,6 +4596,7 @@ assignCardIndices();
 updateBadge();
 renderDoctor();
 cacheAllData();
+checkWateringNotifications();
 if (!navigator.onLine) document.getElementById('offlineBanner').classList.add('show');
 </script>
 </body>
