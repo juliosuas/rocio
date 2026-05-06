@@ -13,7 +13,7 @@
 - **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
 - **Dark Mode** — Full dark theme with persisted preference.
 - **Experimental Plant Identifier** — Camera/file-upload flow now uses one shared identification pipeline, shows uncertainty, top candidates, and correction buttons instead of pretending to be perfect AI.
-- **Optional PlantNet Real-ID Path** — User can connect a PlantNet API key inside the identifier. If configured, Rocío resizes/compresses the flower image, sends it to PlantNet with Spanish result hints, maps recognized species through a stronger alias/genus table, and falls back gracefully to honest local experimental mode if the API is unavailable or does not map to the local catalog.
+- **Optional Plant.id Real-ID Path** — User can connect a Plant.id API key inside the identifier. If configured, Rocío resizes/compresses the flower image, sends it to Plant.id with Spanish result hints, maps recognized species through a stronger alias/genus table, and falls back gracefully to honest local experimental mode if the API is unavailable or does not map to the local catalog.
 - **Scan History** — Saves recent scans locally.
 - **Offline Shell** — `manifest.webmanifest` + `sw.js` cache the app shell and local flower assets for first-load offline support.
 - **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
@@ -23,9 +23,9 @@
 
 ## What Is Still Limited
 
-- **PlantNet requires a user API key** — Real recognition is available only after adding a PlantNet key. Without it, Rocío uses the local color-profile matcher.
+- **Plant.id requires a user API key** — Real recognition is available only after adding a Plant.id key. Without it, Rocío uses the local color-profile matcher.
 - **Local matcher is experimental** — It samples image colors and compares against hardcoded flower profiles. It is clearly labeled as uncertain and never presented as market-grade recognition.
-- **Only 15 catalog flowers are supported locally** — Unknown PlantNet species can be detected by the API but may not map to a local care card yet.
+- **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
 - **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
 - **No Weather Integration** — Watering calculator still uses manual climate input.
@@ -38,7 +38,7 @@ Add Web Push subscriptions plus a daily job that sends watering reminders even w
 
 ### 2. Hosted Plant Identification Proxy
 
-Move PlantNet calls behind a small backend so Rocío does not need to expose or manually store an API key in the browser. Add support for unknown species with generic care guidance.
+Move Plant.id calls behind a small backend so Rocío does not need to expose or manually store an API key in the browser. Add support for unknown species with generic care guidance.
 
 ### 3. Multi-Device Sync + Family Sharing
 

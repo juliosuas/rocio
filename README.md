@@ -10,7 +10,7 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 - **🌱 Mi Jardín** — Track your personal garden, watering schedule, and plant health
 - **📅 Calendario** — Weekly care schedule with color-coded urgency
 - **💡 Tips** — Seasonal gardening tips that rotate monthly
-- **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and optional PlantNet real-recognition API key
+- **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and optional Plant.id real-recognition API key
 - **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
 - **🌙 Dark Mode** — Beautiful dark theme toggle
 - **📱 Offline Ready** — Manifest + service worker shell cache for first-load offline support
@@ -27,7 +27,7 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 
 - Single `index.html` app
 - Zero framework dependencies
-- Optional PlantNet API integration
+- Optional Plant.id API integration
 - localStorage persistence
 - Pure vanilla JS + modern CSS
 - Works on iPhone Safari, Android Chrome, Desktop
