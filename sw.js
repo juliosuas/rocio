@@ -1,9 +1,24 @@
-const CACHE_NAME = 'rocio-shell-v1';
+const CACHE_NAME = 'rocio-shell-v2';
 const SHELL_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
-  './icon-192.svg'
+  './icon-192.svg',
+  './assets/flowers/cempasuchil.jpg',
+  './assets/flowers/clavel.jpg',
+  './assets/flowers/gardenia.jpg',
+  './assets/flowers/geranio.svg',
+  './assets/flowers/girasol.jpg',
+  './assets/flowers/hortensia.jpg',
+  './assets/flowers/jazmin.jpg',
+  './assets/flowers/lavanda.jpg',
+  './assets/flowers/lirio.jpg',
+  './assets/flowers/margarita.jpg',
+  './assets/flowers/orquidea.jpg',
+  './assets/flowers/petunia.svg',
+  './assets/flowers/rosa.svg',
+  './assets/flowers/tulipan.jpg',
+  './assets/flowers/violeta.svg'
 ];
 
 self.addEventListener('install', event => {

@@ -2,7 +2,7 @@
 
 ## What Works (Real, Functional)
 
-- **Flower Catalog** — 15 flowers with botanical care data (Rosa, Tulipán, Orquídea, Girasol, Lavanda, Gardenia, Jazmín, Hortensia, Lirio, Margarita, Clavel, Violeta, Geranio, Petunia, Cempasúchil).
+- **Flower Catalog** — 15 flowers with botanical care data and local app-owned image assets (Rosa, Tulipán, Orquídea, Girasol, Lavanda, Gardenia, Jazmín, Hortensia, Lirio, Margarita, Clavel, Violeta, Geranio, Petunia, Cempasúchil).
 - **Mi Jardín** — Add/remove plants, track watering, set status, write notes. Persisted in localStorage and sorted by urgency.
 - **Watering Tracker** — Tap to water with animation, last-watered tracking, urgency dots, streak, and stats dashboard.
 - **Weekly Calendar** — Shows which plants need water by day; tasks have water buttons directly inside the calendar.
@@ -13,9 +13,9 @@
 - **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
 - **Dark Mode** — Full dark theme with persisted preference.
 - **Experimental Plant Identifier** — Camera/file-upload flow now uses one shared identification pipeline, shows uncertainty, top candidates, and correction buttons instead of pretending to be perfect AI.
-- **Optional PlantNet Real-ID Path** — User can connect a PlantNet API key inside the identifier. If configured, Rocío sends the compressed flower image to PlantNet and maps recognized species back into the local catalog. If PlantNet fails or finds no local match, Rocío falls back to honest local experimental mode.
+- **Optional PlantNet Real-ID Path** — User can connect a PlantNet API key inside the identifier. If configured, Rocío resizes/compresses the flower image, sends it to PlantNet with Spanish result hints, maps recognized species through a stronger alias/genus table, and falls back gracefully to honest local experimental mode if the API is unavailable or does not map to the local catalog.
 - **Scan History** — Saves recent scans locally.
-- **Offline Shell** — `manifest.webmanifest` + `sw.js` cache the app shell and local SVG assets for first-load offline support.
+- **Offline Shell** — `manifest.webmanifest` + `sw.js` cache the app shell and local flower assets for first-load offline support.
 - **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
 - **Share** — Native share API or clipboard fallback for plant info cards.
 - **Onboarding** — 3-step welcome flow for first-time visitors.
@@ -24,7 +24,7 @@
 ## What Is Still Limited
 
 - **PlantNet requires a user API key** — Real recognition is available only after adding a PlantNet key. Without it, Rocío uses the local color-profile matcher.
-- **Local matcher is experimental** — It samples image colors and compares against hardcoded flower profiles. It is useful as a playful fallback, not as market-grade recognition.
+- **Local matcher is experimental** — It samples image colors and compares against hardcoded flower profiles. It is clearly labeled as uncertain and never presented as market-grade recognition.
 - **Only 15 catalog flowers are supported locally** — Unknown PlantNet species can be detected by the API but may not map to a local care card yet.
 - **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
