@@ -12,8 +12,7 @@
 - **Composting Guide** — Green/brown guide, DIY fertilizers, vermicomposting.
 - **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
 - **Dark Mode** — Full dark theme with persisted preference.
-- **Experimental Plant Identifier** — Camera/file-upload flow now uses one shared identification pipeline, shows uncertainty, top candidates, and correction buttons instead of pretending to be perfect AI.
-- **Optional Plant.id Real-ID Path** — User can connect a Plant.id API key inside the identifier. If configured, Rocío resizes/compresses the flower image, sends it to Plant.id with Spanish result hints, maps recognized species through a stronger alias/genus table, and falls back gracefully to honest local experimental mode if the API is unavailable or does not map to the local catalog.
+- **Plant.id Identifier via Supabase** — Camera/file-upload flow uses a Supabase Edge Function proxy so Plant.id secrets stay server-side. Rocío resizes/compresses the flower image, sends it to Supabase, maps Plant.id suggestions through the local flower catalog, shows uncertainty/top candidates, and falls back gracefully if the API is unavailable or does not map to a local care card.
 - **Scan History** — Saves recent scans locally.
 - **Offline Shell** — `manifest.webmanifest` + `sw.js` cache the app shell and local flower assets for first-load offline support.
 - **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
@@ -23,8 +22,8 @@
 
 ## What Is Still Limited
 
-- **Plant.id requires a user API key** — Real recognition is available only after adding a Plant.id key. Without it, Rocío uses the local color-profile matcher.
-- **Local matcher is experimental** — It samples image colors and compares against hardcoded flower profiles. It is clearly labeled as uncertain and never presented as market-grade recognition.
+- **Plant.id needs Supabase secret/deploy** — Real recognition requires deploying `identify-flower` and setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret.
+- **Local matcher is fallback only** — It samples image colors and compares against hardcoded flower profiles when Plant.id/Supabase is unavailable. It is clearly labeled as uncertain and never presented as market-grade recognition.
 - **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
 - **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
@@ -36,9 +35,9 @@
 
 Add Web Push subscriptions plus a daily job that sends watering reminders even when Rocío has not opened the app.
 
-### 2. Hosted Plant Identification Proxy
+### 2. Expand Plant.id Result Coverage
 
-Move Plant.id calls behind a small backend so Rocío does not need to expose or manually store an API key in the browser. Add support for unknown species with generic care guidance.
+The Supabase proxy is now the intended architecture. Next: add generic care guidance for Plant.id species that are outside the 15-flower local catalog.
 
 ### 3. Multi-Device Sync + Family Sharing
 

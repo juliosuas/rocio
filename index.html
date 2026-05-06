@@ -6,10 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación asistida con Plant.id opcional.">
+<meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación con IA vía Plant.id.">
 <meta name="author" content="Rocío">
 <meta property="og:title" content="Rocío — Cuida tus flores con amor">
-<meta property="og:description" content="Catálogo floral, recordatorios de riego e identificador honesto con modo local y Plant.id opcional.">
+<meta property="og:description" content="Catálogo floral, recordatorios de riego e identificador con IA protegida por Supabase.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="./icon-192.svg">
 <meta name="twitter:card" content="summary">
@@ -2101,8 +2101,7 @@ img { display: block; max-width: 100%; }
       <h3>📸 Identificador experimental</h3>
       <p>Sube una foto de una flor y te mostraremos posibles coincidencias para confirmar</p>
       <div class="identifier-tools">
-        <button class="identifier-chip" id="plantNetConfigBtn" type="button">🔬 Conectar Plant.id</button>
-        <span class="identifier-chip" id="plantNetStatus">Modo local experimental</span>
+        <span class="identifier-chip active" id="plantNetStatus">IA Plant.id activa</span>
       </div>
       <div class="upload-zone" id="uploadZone">
         <div class="upload-icon">🌺</div>
@@ -3599,16 +3598,6 @@ fileInput.addEventListener('change', () => {
   img.src = URL.createObjectURL(fileInput.files[0]);
 });
 
-document.getElementById('plantNetConfigBtn')?.addEventListener('click', () => {
-  const current = getPlantIdKey();
-  const next = prompt('Pega tu API key de Plant.id para activar identificación real. Deja vacío para volver al modo local experimental.', current);
-  if (next === null) return;
-  const value = next.trim();
-  if (value) safeStorageSet(rocioLocalStorage, 'rocio_plantid_api_key', value);
-  else safeStorageRemove(rocioLocalStorage, 'rocio_plantid_api_key');
-  updatePlantNetStatus();
-});
-
 updatePlantNetStatus();
 
 function resetTipScanner() {
@@ -4097,21 +4086,24 @@ function identifyPlant(canvas) {
   };
 }
 
+const ROCIO_SUPABASE_URL = 'https://gnumzynfewmurvykopxq.supabase.co';
+const ROCIO_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_wQoUmDVAmQ8GQjm_TTShOA_5fl1Lu00';
+const ROCIO_IDENTIFY_ENDPOINT = `${ROCIO_SUPABASE_URL}/functions/v1/identify-flower`;
+
 function getPlantIdKey() {
-  return (safeStorageGet(rocioLocalStorage, 'rocio_plantid_api_key') || '').trim();
+  // Legacy compatibility only. Plant.id secrets now live in Supabase, never in the browser.
+  return '';
 }
 
 function getPlantNetKey() {
-  // Backward compatibility for users who previously saved a PlantNet key.
-  return getPlantIdKey();
+  return '';
 }
 
 function updatePlantNetStatus() {
   const status = document.getElementById('plantNetStatus');
   if (!status) return;
-  const hasKey = !!getPlantIdKey();
-  status.textContent = hasKey ? 'Plant.id real activado' : 'Sin API key: modo local experimental';
-  status.classList.toggle('active', hasKey);
+  status.textContent = 'IA Plant.id activa';
+  status.classList.add('active');
 }
 
 const PLANT_PROVIDER_FLOWER_ALIASES = {
@@ -4173,45 +4165,36 @@ async function canvasToPlantIdImage(canvas) {
 }
 
 async function identifyPlantWithProvider(canvas) {
-  const key = getPlantIdKey();
-  if (!key) {
-    const fallback = identifyPlant(canvas);
-    fallback.provider = 'Modo local experimental';
-    fallback.isUncertain = true;
-    return fallback;
-  }
-
   try {
     const image = await canvasToPlantIdImage(canvas);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
-    const response = await fetch('https://plant.id/api/v3/identification', {
+    const timeout = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(ROCIO_IDENTIFY_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Api-Key': key
+        'apikey': ROCIO_SUPABASE_PUBLISHABLE_KEY,
+        'Authorization': `Bearer ${ROCIO_SUPABASE_PUBLISHABLE_KEY}`
       },
-      body: JSON.stringify({
-        images: [image],
-        similar_images: false,
-        classification_level: 'species',
-        health: 'auto'
-      }),
+      body: JSON.stringify({ image, health: 'auto' }),
       signal: controller.signal
     }).finally(() => clearTimeout(timeout));
 
-    if (!response.ok) throw new Error(`Plant.id ${response.status}`);
-    const data = await response.json();
-    const suggestions = (data?.result?.classification?.suggestions || [])
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.error) {
+      throw new Error(data.message || data.error || `Supabase identify ${response.status}`);
+    }
+
+    const suggestions = (data?.suggestions || [])
       .filter(item => Number(item.probability || 0) >= 0.02)
       .slice(0, 8);
 
     const mapped = suggestions.map(item => {
-      const flower = mapPlantIdSuggestionToFlower(item);
+      const flower = mapProviderTextToFlower(item.name || '', item.scientific_name || '', [item.common_names || [], item.synonyms || []].flat());
       return flower ? {
         flowerId: flower.id,
         confidence: parseFloat(Math.min(98, Math.max(18, Number(item.probability || 0) * 100)).toFixed(1)),
-        scientific: item.details?.scientific_name || flower.scientific,
+        scientific: item.scientific_name || flower.scientific,
         source: 'Plant.id'
       } : null;
     }).filter(Boolean);
@@ -4232,13 +4215,13 @@ async function identifyPlantWithProvider(canvas) {
     const top = suggestions[0];
     const fallback = identifyPlant(canvas);
     fallback.provider = top?.name ? `Plant.id detectó ${top.name}, sin ficha local` : 'Plant.id sin coincidencia local';
-    fallback.providerScientific = top?.details?.scientific_name || top?.name || '';
+    fallback.providerScientific = top?.scientific_name || top?.name || '';
     fallback.isUncertain = true;
     return fallback;
   } catch (err) {
-    console.warn('Plant.id fallback:', err);
+    console.warn('Plant.id proxy fallback:', err);
     const fallback = identifyPlant(canvas);
-    fallback.provider = navigator.onLine === false ? 'Modo local — sin conexión' : 'Modo local — Plant.id no disponible';
+    fallback.provider = navigator.onLine === false ? 'Modo local — sin conexión' : 'Modo local — IA no disponible';
     fallback.providerError = err.message;
     fallback.isUncertain = true;
     return fallback;
@@ -4356,7 +4339,7 @@ function captureAndAnalyze(sourceCanvas) {
 
   const statusMessages = [
     { text: 'Analizando colores...', pct: '25%', t: 0 },
-    { text: getPlantIdKey() ? 'Consultando Plant.id...' : 'Sin API key: comparando localmente...', pct: '50%', t: 800 },
+    { text: 'Consultando IA Plant.id...', pct: '50%', t: 800 },
     { text: 'Calculando coincidencias honestas...', pct: '75%', t: 1600 },
     { text: '¡Planta identificada!', pct: '100%', t: 2400 }
   ];
