@@ -1,61 +1,17 @@
-const CACHE_NAME = 'rocio-shell-v4';
-const SHELL_ASSETS = [
-  './',
-  './index.html',
-  './manifest.webmanifest',
-  './icon-192.svg',
-  './assets/flowers/cempasuchil.jpg',
-  './assets/flowers/clavel.jpg',
-  './assets/flowers/gardenia.jpg',
-  './assets/flowers/geranio.jpg',
-  './assets/flowers/girasol.jpg',
-  './assets/flowers/hortensia.jpg',
-  './assets/flowers/jazmin.jpg',
-  './assets/flowers/lavanda.jpg',
-  './assets/flowers/lirio.jpg',
-  './assets/flowers/margarita.jpg',
-  './assets/flowers/orquidea.jpg',
-  './assets/flowers/petunia.jpg',
-  './assets/flowers/rosa.jpg',
-  './assets/flowers/tulipan.jpg',
-  './assets/flowers/violeta.jpg'
-];
+const LEGACY_CACHE_PREFIX = 'rocio-shell';
 
 self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-    )).then(() => self.clients.claim())
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(key => key.startsWith(LEGACY_CACHE_PREFIX)).map(key => caches.delete(key))))
+      .then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET') return;
-
-  event.respondWith(
-    caches.match(request).then(cached => {
-      if (cached) return cached;
-      return fetch(request).then(response => {
-        const copy = response.clone();
-        if (response.ok && new URL(request.url).origin === self.location.origin) {
-          caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
-        }
-        return response;
-      }).catch(() => caches.match('./index.html'));
-    })
-  );
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-  event.waitUntil(clients.openWindow('./'));
+self.addEventListener('fetch', () => {
+  // Online-first: do not intercept requests.
 });

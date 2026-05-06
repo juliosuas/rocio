@@ -13,7 +13,7 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 - **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and optional Plant.id real-recognition API key
 - **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
 - **🌙 Dark Mode** — Beautiful dark theme toggle
-- **🌐 Online-first IA** — Plant identification runs through Supabase + Plant.id with a local fallback only if the network/API fails
+- **🌐 Online-first IA** — Plant identification runs through Supabase + Plant.id with an honest local fallback only if the API fails
 
 ## 🎨 Design
 
