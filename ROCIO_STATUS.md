@@ -14,7 +14,6 @@
 - **Dark Mode** — Full dark theme with persisted preference.
 - **Plant.id Identifier via Supabase** — Camera/file-upload flow uses a Supabase Edge Function proxy so Plant.id secrets stay server-side. Rocío resizes/compresses the flower image, sends it to Supabase, maps Plant.id suggestions through the local flower catalog, shows uncertainty/top candidates, and falls back gracefully if the API is unavailable or does not map to a local care card.
 - **Scan History** — Saves recent scans locally.
-- **Offline Shell** — `manifest.webmanifest` + `sw.js` cache the app shell and local flower assets for first-load offline support.
 - **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
 - **Share** — Native share API or clipboard fallback for plant info cards.
 - **Onboarding** — 3-step welcome flow for first-time visitors.
@@ -45,4 +44,4 @@ Add optional sign-in and shared garden access so Julio/Rocío can manage the sam
 
 ---
 
-*Built with love for Rocío Calderón. A single index.html, zero dependencies, offline-ready shell, and a clear path from charming MVP to real plant-care product.*
+*Built with love for Rocío Calderón. A single index.html, zero dependencies, online-first plant ID through Supabase, and a clear path from charming MVP to real plant-care product.*

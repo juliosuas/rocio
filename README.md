@@ -2,7 +2,7 @@
 
 **Cuida tus flores con amor**
 
-Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web app focused on flowers. Built with pure HTML, CSS, and JavaScript — no frameworks, no dependencies.
+Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web app focused on flowers. Built with pure HTML, CSS, and JavaScript — no frameworks, no dependencies, now connected to a secure Supabase identification proxy.
 
 ## ✨ Features
 
@@ -13,7 +13,7 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 - **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and optional Plant.id real-recognition API key
 - **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
 - **🌙 Dark Mode** — Beautiful dark theme toggle
-- **📱 Offline Ready** — Manifest + service worker shell cache for first-load offline support
+- **🌐 Online-first IA** — Plant identification runs through Supabase + Plant.id with a local fallback only if the network/API fails
 
 ## 🎨 Design
 

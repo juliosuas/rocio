@@ -299,8 +299,9 @@ img { display: block; max-width: 100%; }
 .flower-card {
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.72);
   transition: transform 0.3s var(--bounce), box-shadow 0.4s ease;
   cursor: pointer;
   position: relative;
@@ -445,8 +446,9 @@ img { display: block; max-width: 100%; }
 .garden-card {
   background: var(--bg-card);
   border-radius: var(--radius);
-  padding: 16px;
+  padding: 14px;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(255,255,255,0.72);
   display: flex; gap: 14px;
   margin-bottom: 12px;
   transition: transform 0.3s var(--bounce), box-shadow 0.4s ease, background var(--transition);
@@ -1262,7 +1264,7 @@ img { display: block; max-width: 100%; }
 .plant-of-day .pod-fact { font-size: 12px; color: var(--text-secondary); margin-top: 4px; line-height: 1.4; }
 
 /* ═══════════════════════════════════════════
-   OFFLINE BANNER
+   CONNECTION BANNER
    ═══════════════════════════════════════════ */
 .offline-banner {
   position: fixed; top: calc(var(--header-height) + var(--safe-top));
@@ -1491,19 +1493,29 @@ img { display: block; max-width: 100%; }
   display: inline-block;
 }
 .plant-photo {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
   object-fit: cover;
-  border: 3px solid var(--primary-light);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 3px solid rgba(255,255,255,0.92);
+  box-shadow: 0 10px 26px rgba(45,58,45,0.16);
   transition: transform 0.3s var(--bounce);
 }
 .plant-photo:hover {
   transform: scale(1.1);
 }
 .flower-card .plant-photo {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  width: 100%;
+  height: 132px;
+}
+.flower-card .plant-photo-wrapper {
+  display: block;
+  width: 100%;
+}
+.flower-card .plant-emoji-badge {
+  right: 8px;
+  bottom: 14px;
 }
 .plant-emoji-badge {
   position: absolute;
@@ -1949,8 +1961,8 @@ img { display: block; max-width: 100%; }
 <!-- WATER DROPS CONTAINER -->
 <div class="water-drops" id="waterDrops"></div>
 
-<!-- OFFLINE BANNER -->
-<div class="offline-banner" id="offlineBanner">📡 Sin conexión — Rocío guardó lo esencial para seguir cuidando tus plantas</div>
+<!-- CONNECTION BANNER -->
+<div class="offline-banner" id="offlineBanner">📡 Sin conexión — la identificación con IA necesita internet</div>
 
 <!-- MAIN CONTENT -->
 <main class="page-container">
@@ -2098,8 +2110,8 @@ img { display: block; max-width: 100%; }
 
     <!-- Plant Identifier -->
     <div class="identifier-section" id="identifierSection">
-      <h3>📸 Identificador experimental</h3>
-      <p>Sube una foto de una flor y te mostraremos posibles coincidencias para confirmar</p>
+      <h3>📸 Identificador con IA</h3>
+      <p>Sube una foto clara de tu flor y Rocío consultará Plant.id de forma segura</p>
       <div class="identifier-tools">
         <span class="identifier-chip active" id="plantNetStatus">IA Plant.id activa</span>
       </div>
@@ -2188,7 +2200,7 @@ img { display: block; max-width: 100%; }
       <button class="scanner-btn-detail" id="scannerBtnDetail">🌿 Ver ficha completa</button>
       <button class="scanner-btn-retry" id="scannerBtnRetry">📸 Escanear otra</button>
     </div>
-    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Identificación experimental: confirma la planta antes de guardarla.</p>
+    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Identificación asistida: confirma la planta antes de guardarla.</p>
   </div>
 </div>
 
@@ -2280,7 +2292,7 @@ img { display: block; max-width: 100%; }
    ═══════════════════════════════════════════ */
 
 const FLOWER_ASSET_EXT = {
-  rosa:'svg', tulipan:'jpg', orquidea:'jpg', girasol:'jpg', lavanda:'jpg', gardenia:'jpg', jazmin:'jpg', hortensia:'jpg', lirio:'jpg', margarita:'jpg', clavel:'jpg', violeta:'svg', geranio:'svg', petunia:'svg', cempasuchil:'jpg'
+  rosa:'jpg', tulipan:'jpg', orquidea:'jpg', girasol:'jpg', lavanda:'jpg', gardenia:'jpg', jazmin:'jpg', hortensia:'jpg', lirio:'jpg', margarita:'jpg', clavel:'jpg', violeta:'jpg', geranio:'jpg', petunia:'jpg', cempasuchil:'jpg'
 };
 
 function rocioFlowerImage(id) {
@@ -3906,12 +3918,12 @@ function renderMoonSection() {
 }
 
 /* ═══════════════════════════════════════════
-   OFFLINE SUPPORT
+   CONNECTION STATUS
    ═══════════════════════════════════════════ */
 window.addEventListener('online', () => document.getElementById('offlineBanner').classList.remove('show'));
 window.addEventListener('offline', () => document.getElementById('offlineBanner').classList.add('show'));
 
-// Cache data in localStorage + service worker shell cache
+// Persist app data in localStorage; service worker keeps basic shell resilience, but Rocío is positioned online-first.
 function cacheAllData() {
   try {
     safeStorageSet(rocioLocalStorage, 'rocio_flowers_cache', JSON.stringify(FLOWERS));
