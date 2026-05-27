@@ -3914,8 +3914,13 @@ function clearLegacyAppCache() {
 
   if ('caches' in window) {
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key.startsWith('rocio-shell')).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.map(key => caches.delete(key))))
       .catch(() => {});
+  }
+
+  if (new URLSearchParams(window.location.search).has('reset')) {
+    safeStorageRemove(rocioSessionStorage, 'rocio_splash_shown');
+    safeStorageRemove(rocioLocalStorage, 'rocio_onboarded');
   }
 }
 
