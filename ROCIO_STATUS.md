@@ -12,7 +12,7 @@
 - **Composting Guide** — Green/brown guide, DIY fertilizers, vermicomposting.
 - **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
 - **Dark Mode** — Full dark theme with persisted preference.
-- **Plant.id Identifier via Supabase** — Camera/file-upload flow uses a Supabase Edge Function proxy so Plant.id secrets stay server-side. Rocío resizes/compresses the flower image, sends it to Supabase, maps Plant.id suggestions through the local flower catalog, shows uncertainty/top candidates, and falls back gracefully if the API is unavailable or does not map to a local care card.
+- **Local Plant Identifier** — Camera/file-upload flow now uses the local flower matcher by default. Rocío resizes/compresses the flower image, compares it against the local flower catalog, shows uncertainty/top candidates, and avoids depending on the old Supabase project while it is unavailable.
 - **Scan History** — Saves recent scans locally.
 - **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
 - **Share** — Native share API or clipboard fallback for plant info cards.
@@ -21,7 +21,7 @@
 
 ## What Is Still Limited
 
-- **Plant.id needs Supabase secret/deploy** — Real recognition requires deploying `identify-flower` and setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret.
+- **Plant.id needs a new/healthy Supabase deploy** — Real recognition requires restoring or replacing the old `rocio` Supabase project, deploying `identify-flower`, setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret, and then re-enabling the public URL/key in `index.html`.
 - **Local matcher is fallback only** — It samples image colors and compares against hardcoded flower profiles when Plant.id/Supabase is unavailable. It is clearly labeled as uncertain and never presented as market-grade recognition.
 - **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
 - **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
@@ -44,4 +44,4 @@ Add optional sign-in and shared garden access so Julio/Rocío can manage the sam
 
 ---
 
-*Built with love for Rocío Calderón. A single index.html, zero dependencies, online-first plant ID through Supabase, and a clear path from charming MVP to real plant-care product.*
+*Built with love for Rocío Calderón. A single index.html, zero dependencies, local-first plant identification, and a clear path from charming MVP to real plant-care product.*

@@ -6,10 +6,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación con IA vía Plant.id.">
+<meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación local asistida.">
 <meta name="author" content="Rocío">
 <meta property="og:title" content="Rocío — Cuida tus flores con amor">
-<meta property="og:description" content="Catálogo floral, recordatorios de riego e identificador con IA protegida por Supabase.">
+<meta property="og:description" content="Catálogo floral, recordatorios de riego e identificador local asistido.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="./icon-192.svg">
 <meta name="twitter:card" content="summary">
@@ -2093,9 +2093,9 @@ img { display: block; max-width: 100%; }
     <!-- Plant Identifier -->
     <div class="identifier-section" id="identifierSection">
       <h3>📸 Identificador con IA</h3>
-      <p>Sube una foto clara de tu flor y Rocío consultará Plant.id de forma segura</p>
+      <p>Sube una foto clara de tu flor y Rocío hará una comparación local honesta</p>
       <div class="identifier-tools">
-        <span class="identifier-chip active" id="plantNetStatus">IA Plant.id activa</span>
+        <span class="identifier-chip active" id="plantNetStatus">Modo local activo</span>
       </div>
       <div class="upload-zone" id="uploadZone">
         <div class="upload-icon">🌺</div>
@@ -3592,8 +3592,6 @@ fileInput.addEventListener('change', () => {
   img.src = URL.createObjectURL(fileInput.files[0]);
 });
 
-updatePlantNetStatus();
-
 function resetTipScanner() {
   uploadZone.style.display = '';
   scanResult.classList.remove('show');
@@ -4080,8 +4078,8 @@ function identifyPlant(canvas) {
   };
 }
 
-const ROCIO_SUPABASE_URL = 'https://gnumzynfewmurvykopxq.supabase.co';
-const ROCIO_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_wQoUmDVAmQ8GQjm_TTShOA_5fl1Lu00';
+const ROCIO_SUPABASE_URL = '';
+const ROCIO_SUPABASE_PUBLISHABLE_KEY = '';
 const ROCIO_IDENTIFY_ENDPOINT = `${ROCIO_SUPABASE_URL}/functions/v1/identify-flower`;
 
 function getPlantIdKey() {
@@ -4096,9 +4094,13 @@ function getPlantNetKey() {
 function updatePlantNetStatus() {
   const status = document.getElementById('plantNetStatus');
   if (!status) return;
-  status.textContent = 'IA Plant.id activa';
+  status.textContent = ROCIO_SUPABASE_URL && ROCIO_SUPABASE_PUBLISHABLE_KEY
+    ? 'IA Plant.id activa'
+    : 'Modo local activo';
   status.classList.add('active');
 }
+
+updatePlantNetStatus();
 
 const PLANT_PROVIDER_FLOWER_ALIASES = {
   rosa:['rosa','rose','rosal','rosa spp','rosa '],
@@ -4159,6 +4161,13 @@ async function canvasToPlantIdImage(canvas) {
 }
 
 async function identifyPlantWithProvider(canvas) {
+  if (!ROCIO_SUPABASE_URL || !ROCIO_SUPABASE_PUBLISHABLE_KEY) {
+    const fallback = identifyPlant(canvas);
+    fallback.provider = 'Modo local';
+    fallback.isUncertain = true;
+    return fallback;
+  }
+
   try {
     const image = await canvasToPlantIdImage(canvas);
     const controller = new AbortController();
@@ -4333,7 +4342,7 @@ function captureAndAnalyze(sourceCanvas) {
 
   const statusMessages = [
     { text: 'Analizando colores...', pct: '25%', t: 0 },
-    { text: 'Consultando IA Plant.id...', pct: '50%', t: 800 },
+    { text: ROCIO_SUPABASE_URL ? 'Consultando IA Plant.id...' : 'Comparando con catálogo local...', pct: '50%', t: 800 },
     { text: 'Calculando coincidencias honestas...', pct: '75%', t: 1600 },
     { text: '¡Planta identificada!', pct: '100%', t: 2400 }
   ];
