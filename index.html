@@ -6,6 +6,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación local asistida.">
 <meta name="author" content="Rocío">
 <meta property="og:title" content="Rocío — Cuida tus flores con amor">
@@ -21,6 +24,21 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
 <title>Rocío — Cuida tus flores con amor 🌸</title>
+<script>
+(function() {
+  function releaseSplash() {
+    var splash = document.getElementById('splashScreen');
+    if (!splash) return;
+    splash.classList.add('hide');
+    setTimeout(function() { splash.style.display = 'none'; }, 700);
+  }
+  window.rocioReleaseSplash = releaseSplash;
+  window.addEventListener('error', function() { setTimeout(releaseSplash, 500); });
+  window.addEventListener('unhandledrejection', function() { setTimeout(releaseSplash, 500); });
+  window.addEventListener('pageshow', function() { setTimeout(releaseSplash, 3200); });
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(releaseSplash, 3200); });
+})();
+</script>
 <style>
 /* ═══════════════════════════════════════════
    CSS CUSTOM PROPERTIES
@@ -1291,10 +1309,19 @@ img { display: block; max-width: 100%; }
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
   transition: opacity 0.6s ease, transform 0.6s ease;
+  animation: splashFailsafeRelease 0.7s ease 3.5s forwards;
 }
 .splash-screen.hide {
   opacity: 0; transform: scale(1.1);
   pointer-events: none;
+}
+@keyframes splashFailsafeRelease {
+  to {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: scale(1.1);
+  }
 }
 .splash-logo {
   font-size: 56px; font-family: var(--font-heading);
@@ -4603,6 +4630,10 @@ function renderScanHistory() {
   } else {
     safeStorageSet(rocioSessionStorage, 'rocio_splash_shown', '1');
     setTimeout(() => {
+      if (window.rocioReleaseSplash) {
+        window.rocioReleaseSplash();
+        return;
+      }
       splash.classList.add('hide');
       setTimeout(() => splash.style.display = 'none', 600);
     }, 2000);

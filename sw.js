@@ -1,4 +1,4 @@
-const ROCIO_RECOVERY_VERSION = '2026-05-27-2';
+const ROCIO_RECOVERY_VERSION = '2026-05-27-3';
 
 self.addEventListener('install', event => {
   event.waitUntil(self.skipWaiting());
