@@ -3605,8 +3605,10 @@ fileInput.addEventListener('change', () => {
         .join(' · ');
 
       document.getElementById('srEmoji').textContent = result.isUncertain ? '🤔' : flower.emoji;
-      document.getElementById('srName').textContent = result.isUncertain ? `Posible: ${flower.name}` : flower.name;
-      document.getElementById('srScientific').textContent = result.isUncertain ? `Confirma la flor antes de guardarla${result.provider ? ' · ' + result.provider : ''}` : (result.providerScientific || flower.scientific);
+      document.getElementById('srName').textContent = result.noClearFlower ? 'Flor no detectada claramente' : (result.isUncertain ? `Posible: ${flower.name}` : flower.name);
+      document.getElementById('srScientific').textContent = result.noClearFlower
+        ? `Centra una flor abierta antes de guardarla${result.provider ? ' · ' + result.provider : ''}`
+        : result.isUncertain ? `Confirma la flor antes de guardarla${result.provider ? ' · ' + result.provider : ''}` : (result.providerScientific || flower.scientific);
       document.getElementById('srConfidence').textContent = result.isUncertain
         ? `Opciones: ${candidates}`
         : `${result.confidence}% de coincidencia${result.provider ? ' · ' + result.provider : ''}`;
@@ -4012,20 +4014,20 @@ document.addEventListener('click', e => {
    ═══════════════════════════════════════════ */
 const FLOWER_COLOR_PROFILES = {
   rosa:       { hues: [[340,360],[0,15]], sats: [0.3,1], lits: [0.3,0.75], weights: {red:3,pink:3} },
-  tulipan:    { hues: [[0,18],[25,60]], sats: [0.45,1], lits: [0.35,0.78], weights: {red:2,yellow:2,orange:3} },
+  tulipan:    { hues: [[0,18],[25,50]], sats: [0.45,1], lits: [0.35,0.78], weights: {red:3,yellow:1,orange:2} },
   orquidea:   { hues: [[270,310],[0,0]], sats: [0.2,0.8], lits: [0.4,0.8], weights: {purple:3,white:2,pink:2} },
   girasol:    { hues: [[42,68]], sats: [0.45,1], lits: [0.42,0.78], weights: {brightYellow:4,yellow:3,darkBrown:2} },
   lavanda:    { hues: [[250,295]], sats: [0.18,0.8], lits: [0.35,0.78], weights: {purple:3} },
-  gardenia:   { hues: [[40,60],[80,160]], sats: [0,0.3], lits: [0.7,1], weights: {white:4,cream:2,darkGreen:1} },
-  jazmin:     { hues: [[60,160]], sats: [0,0.4], lits: [0.7,1], weights: {white:4,lightGreen:2} },
+  gardenia:   { hues: [[40,60],[80,160]], sats: [0,0.55], lits: [0.35,1], weights: {white:4,cream:2,darkGreen:5} },
+  jazmin:     { hues: [[40,160]], sats: [0,0.55], lits: [0.45,1], weights: {white:5,lightGreen:5} },
   hortensia:  { hues: [[200,260],[280,330]], sats: [0.2,0.8], lits: [0.4,0.7], weights: {blue:3,purple:2,pink:2} },
-  lirio:      { hues: [[18,45]], sats: [0.12,0.85], lits: [0.45,0.92], weights: {white:2,cream:2,orange:3} },
-  margarita:  { hues: [[45,68]], sats: [0,0.65], lits: [0.58,1], weights: {white:3,yellow:4,brightYellow:2} },
+  lirio:      { hues: [[18,35]], sats: [0.18,0.75], lits: [0.48,0.92], weights: {white:4,cream:1,orange:6} },
+  margarita:  { hues: [[45,68]], sats: [0,1], lits: [0.55,1], weights: {white:3,yellow:4,brightYellow:4} },
   clavel:     { hues: [[340,360],[0,15]], sats: [0.3,0.9], lits: [0.4,0.8], weights: {red:2,pink:3,white:1} },
   violeta:    { hues: [[260,290]], sats: [0.3,0.9], lits: [0.2,0.5], weights: {deepPurple:4,blue:2} },
-  geranio:    { hues: [[0,18],[330,360]], sats: [0.4,1], lits: [0.28,0.68], weights: {red:3,pink:1} },
+  geranio:    { hues: [[0,18],[330,360]], sats: [0.4,1], lits: [0.28,0.68], weights: {red:4,pink:1,darkGreen:2,lightGreen:2} },
   petunia:    { hues: [[270,330]], sats: [0.3,0.8], lits: [0.3,0.7], weights: {purple:3,pink:2,white:1} },
-  cempasuchil:{ hues: [[20,45]], sats: [0.7,1], lits: [0.4,0.7], weights: {deepOrange:4,yellow:2} }
+  cempasuchil:{ hues: [[18,48]], sats: [0.65,1], lits: [0.35,0.72], weights: {deepOrange:5,orange:2,yellow:3} }
 };
 
 function rgbToHsl(r,g,b) {
@@ -4071,15 +4073,18 @@ function sampleImageColors(canvas) {
     if(fcnt>0) samples.push(rgbToHsl(fr/fcnt, fg/fcnt, fb/fcnt));
     else if(cnt>0) {
       const sample = rgbToHsl(tr/cnt, tg/cnt, tb/cnt);
-      if (!(sample[0] >= 70 && sample[0] <= 170 && sample[1] > 0.18)) samples.push(sample);
+      samples.push(sample);
     }
   }
   return samples;
 }
 
 function flowerColorCategory(h, s, l) {
+  if (s < 0.5 && l > 0.86) return 'white';
   if (s < 0.18 && l > 0.72) return 'white';
   if (h >= 25 && h <= 70 && s < 0.35 && l > 0.62) return 'cream';
+  if (h >= 80 && h <= 165 && s > 0.18 && l < 0.42) return 'darkGreen';
+  if (h >= 70 && h <= 170 && s > 0.18) return 'lightGreen';
   if (h >= 15 && h < 35 && s > 0.55) return l < 0.5 ? 'deepOrange' : 'orange';
   if (h >= 35 && h <= 72 && s > 0.35) return s > 0.65 && l > 0.48 ? 'brightYellow' : 'yellow';
   if ((h <= 18 || h >= 340) && s > 0.35) return 'red';
@@ -4145,11 +4150,16 @@ function createCanvasDescriptor(canvas) {
     return values.map(value => value / total);
   }
 
+  const categoryKeys = Object.keys(category);
+  const normalizedCategory = normalize(Object.values(category));
+  const categoryMap = Object.fromEntries(categoryKeys.map((key, index) => [key, normalizedCategory[index] || 0]));
+
   return {
     hue: normalize(hueBins),
     sat: normalize(satBins),
     lit: normalize(litBins),
-    category: normalize(Object.values(category)),
+    category: normalizedCategory,
+    categoryMap,
     samples: source ? sampleImageColors(canvas) : []
   };
 }
@@ -4171,6 +4181,24 @@ function descriptorSimilarity(a, b) {
     cosineSimilarity(a.lit, b.lit) * 0.12 +
     cosineSimilarity(a.sat, b.sat) * 0.10
   );
+}
+
+function scanHasClearFlowerSignal(descriptor, ranked = []) {
+  const c = descriptor.categoryMap || {};
+  const flowerColor =
+    (c.red || 0) + (c.yellow || 0) + (c.blue || 0) + (c.purple || 0) +
+    (c.pink || 0) + (c.white || 0);
+  const woodyWarm = (c.brown || 0) + Math.max(0, (c.orange || 0) - 0.08);
+  const leafAndBackground = (c.green || 0) + woodyWarm + (c.dark || 0);
+  const best = ranked[0] || { score: 0 };
+  const second = ranked[1] || { score: 0 };
+  const separation = Math.max(0, best.score - second.score);
+
+  if (best.score > 0.94 && separation > 0.14) return true;
+  if (((c.brown || 0) + (c.orange || 0)) > 0.50 && flowerColor < 0.06) return false;
+  if ((c.green || 0) > 0.24 && flowerColor < 0.20 && leafAndBackground > 0.50) return false;
+  if ((best.flowerId === 'lirio' || best.flowerId === 'tulipan') && (c.green || 0) > 0.18 && flowerColor < 0.16 && separation < 0.065) return false;
+  return true;
 }
 
 function loadImageAsCanvas(src) {
@@ -4228,8 +4256,18 @@ function scoreFlowerMatch(samples, profileId) {
   if(profileId === 'lirio') {
     const orangeEvidence = (categoryCounts.orange || 0) + (categoryCounts.deepOrange || 0);
     const whiteEvidence = (categoryCounts.white || 0) + (categoryCounts.cream || 0);
-    if(!orangeEvidence) score *= 0.35;
-    else if(!whiteEvidence && orangeEvidence < 2) score *= 0.65;
+    const greenEvidence = (categoryCounts.lightGreen || 0) + (categoryCounts.darkGreen || 0);
+    const deepOrangeEvidence = categoryCounts.deepOrange || 0;
+    const yellowEvidence = (categoryCounts.yellow || 0) + (categoryCounts.brightYellow || 0);
+    if(!orangeEvidence || !whiteEvidence) score *= 0.22;
+    else if(greenEvidence >= whiteEvidence) score *= 0.42;
+    else if(yellowEvidence >= orangeEvidence) score *= 0.32;
+    else if(orangeEvidence < 7) score *= 0.62;
+    else if(deepOrangeEvidence >= orangeEvidence / 2) score *= 0.55;
+    else if(orangeEvidence < 2 || whiteEvidence < 2) score *= 0.55;
+  } else if(profileId === 'gardenia' || profileId === 'jazmin') {
+    const orangeEvidence = (categoryCounts.orange || 0) + (categoryCounts.deepOrange || 0);
+    if(orangeEvidence >= 2) score *= 0.45;
   }
   return score;
 }
@@ -4245,11 +4283,13 @@ function identifyPlant(canvas) {
     const second = ranked[1] || { score: 0 };
     const separation = Math.max(0, best.score - second.score);
     const confidence = Math.min(95, Math.max(20, 25 + best.score * 55 + Math.min(15, separation * 120)));
+    const hasClearFlower = scanHasClearFlowerSignal(descriptor, ranked);
 
     return {
       flowerId: best.flowerId,
       confidence: parseFloat(confidence.toFixed(1)),
-      isUncertain: confidence < 68 || separation < 0.035,
+      noClearFlower: !hasClearFlower,
+      isUncertain: !hasClearFlower || confidence < 68 || separation < 0.035,
       candidates: ranked.slice(0, 3).map(candidate => ({
         flowerId: candidate.flowerId,
         confidence: parseFloat(Math.min(95, Math.max(12, 25 + candidate.score * 55)).toFixed(1))
@@ -4600,8 +4640,12 @@ function showScanResult(result, canvas, persist = true) {
   const sx = (canvas.width - size) / 2, sy = (canvas.height - size) / 2;
   tctx.drawImage(canvas, sx, sy, size, size, 0, 0, 70, 70);
 
-  document.getElementById('scannerResultName').textContent = (result.isUncertain ? '🤔 Posible: ' : '') + flower.emoji + ' ' + flower.name;
-  document.getElementById('scannerResultScientific').textContent = result.isUncertain
+  document.getElementById('scannerResultName').textContent = result.noClearFlower
+    ? '🤔 Flor no detectada claramente'
+    : (result.isUncertain ? '🤔 Posible: ' : '') + flower.emoji + ' ' + flower.name;
+  document.getElementById('scannerResultScientific').textContent = result.noClearFlower
+    ? `Veo mucha hoja o fondo. ${result.provider ? result.provider + '. ' : ''}Centra una flor abierta para identificarla.`
+    : result.isUncertain
     ? `No estoy completamente segura. ${result.provider ? result.provider + '. ' : ''}Confirma antes de agregarla a tu jardín.`
     : (result.providerScientific || flower.scientific);
 
@@ -4626,7 +4670,11 @@ function showScanResult(result, canvas, persist = true) {
     .join(' · ');
 
   // Care info
-  document.getElementById('scannerResultCare').innerHTML = result.isUncertain ? `
+  document.getElementById('scannerResultCare').innerHTML = result.noClearFlower ? `
+    <div class="scanner-result-care-item"><div class="src-icon">🌿</div><div class="src-label">Lectura</div><div class="src-value">Predomina hoja/fondo, no flor</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Opciones</div><div class="src-value">${candidateNames || 'Sin coincidencia confiable'}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Acércate a una flor abierta, con fondo limpio y luz natural</div></div>
+  ` : result.isUncertain ? `
     <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Opciones</div><div class="src-value">${candidateNames}</div></div>
     <div class="scanner-result-care-item"><div class="src-icon">✅</div><div class="src-label">Corregir</div><div class="src-value">${(result.candidates || []).map(c => {
       const f = FLOWERS.find(fl => fl.id === c.flowerId);
@@ -4641,6 +4689,9 @@ function showScanResult(result, canvas, persist = true) {
 
   // Store matched flower id for detail button
   document.getElementById('scannerBtnDetail').dataset.flowerId = flower.id;
+  document.getElementById('scannerBtnDetail').disabled = !!result.noClearFlower;
+  document.getElementById('scannerBtnDetail').style.opacity = result.noClearFlower ? '0.45' : '';
+  document.getElementById('scannerBtnDetail').style.pointerEvents = result.noClearFlower ? 'none' : '';
 
   // Show result card
   document.getElementById('scannerResult').classList.add('show');
@@ -4668,6 +4719,7 @@ function showScanResult(result, canvas, persist = true) {
     flowerId: flower.id,
     confidence: targetConf,
     thumb: thumbDataUrl,
+    noClearFlower: !!result.noClearFlower,
     date: new Date().toISOString()
   });
   if(scanHistory.length > 10) scanHistory.pop();
