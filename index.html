@@ -4011,19 +4011,19 @@ document.addEventListener('click', e => {
    AI PLANT SCANNER
    ═══════════════════════════════════════════ */
 const FLOWER_COLOR_PROFILES = {
-  rosa:       { hues: [[340,360],[0,15]], sats: [0.3,1], lits: [0.3,0.7], weights: {red:3,pink:3,deepGreen:1} },
-  tulipan:    { hues: [[0,15],[30,60]], sats: [0.5,1], lits: [0.4,0.7], weights: {red:2,yellow:2,orange:3} },
+  rosa:       { hues: [[340,360],[0,15]], sats: [0.3,1], lits: [0.3,0.75], weights: {red:3,pink:3} },
+  tulipan:    { hues: [[0,18],[25,60]], sats: [0.45,1], lits: [0.35,0.78], weights: {red:2,yellow:2,orange:3} },
   orquidea:   { hues: [[270,310],[0,0]], sats: [0.2,0.8], lits: [0.4,0.8], weights: {purple:3,white:2,pink:2} },
-  girasol:    { hues: [[45,65]], sats: [0.6,1], lits: [0.5,0.7], weights: {brightYellow:4,darkBrown:2} },
-  lavanda:    { hues: [[260,290]], sats: [0.2,0.7], lits: [0.4,0.7], weights: {purple:3,lightGreen:1} },
+  girasol:    { hues: [[42,68]], sats: [0.45,1], lits: [0.42,0.78], weights: {brightYellow:4,yellow:3,darkBrown:2} },
+  lavanda:    { hues: [[250,295]], sats: [0.18,0.8], lits: [0.35,0.78], weights: {purple:3} },
   gardenia:   { hues: [[40,60],[80,160]], sats: [0,0.3], lits: [0.7,1], weights: {white:4,cream:2,darkGreen:1} },
   jazmin:     { hues: [[60,160]], sats: [0,0.4], lits: [0.7,1], weights: {white:4,lightGreen:2} },
   hortensia:  { hues: [[200,260],[280,330]], sats: [0.2,0.8], lits: [0.4,0.7], weights: {blue:3,purple:2,pink:2} },
-  lirio:      { hues: [[20,45],[80,160]], sats: [0.1,0.7], lits: [0.5,0.9], weights: {white:3,orange:2,green:1} },
-  margarita:  { hues: [[45,65]], sats: [0,0.6], lits: [0.6,1], weights: {white:3,yellow:3} },
+  lirio:      { hues: [[18,45]], sats: [0.12,0.85], lits: [0.45,0.92], weights: {white:2,cream:2,orange:3} },
+  margarita:  { hues: [[45,68]], sats: [0,0.65], lits: [0.58,1], weights: {white:3,yellow:4,brightYellow:2} },
   clavel:     { hues: [[340,360],[0,15]], sats: [0.3,0.9], lits: [0.4,0.8], weights: {red:2,pink:3,white:1} },
   violeta:    { hues: [[260,290]], sats: [0.3,0.9], lits: [0.2,0.5], weights: {deepPurple:4,blue:2} },
-  geranio:    { hues: [[0,15],[90,150]], sats: [0.4,1], lits: [0.3,0.6], weights: {red:3,brightGreen:2} },
+  geranio:    { hues: [[0,18],[330,360]], sats: [0.4,1], lits: [0.28,0.68], weights: {red:3,pink:1} },
   petunia:    { hues: [[270,330]], sats: [0.3,0.8], lits: [0.3,0.7], weights: {purple:3,pink:2,white:1} },
   cempasuchil:{ hues: [[20,45]], sats: [0.7,1], lits: [0.4,0.7], weights: {deepOrange:4,yellow:2} }
 };
@@ -4056,13 +4056,155 @@ function sampleImageColors(canvas) {
     const blockSize = Math.max(4, Math.floor(Math.min(w,h)*0.04));
     const imgData = ctx.getImageData(Math.max(0,cx-blockSize), Math.max(0,cy-blockSize), blockSize*2, blockSize*2);
     let tr=0,tg=0,tb=0,cnt=0;
+    let fr=0,fg=0,fb=0,fcnt=0;
     for(let i=0;i<imgData.data.length;i+=4){
-      tr+=imgData.data[i]; tg+=imgData.data[i+1]; tb+=imgData.data[i+2]; cnt++;
+      const r = imgData.data[i], g = imgData.data[i+1], b = imgData.data[i+2];
+      const [h,s,l] = rgbToHsl(r,g,b);
+      const isWhitePetal = s < 0.22 && l > 0.68;
+      const isSaturatedPetal = s > 0.24 && l > 0.18 && l < 0.92 && !(h >= 70 && h <= 170);
+      const isCreamOrYellowPetal = h >= 25 && h <= 70 && s > 0.12 && l > 0.55;
+      if (isWhitePetal || isSaturatedPetal || isCreamOrYellowPetal) {
+        fr+=r; fg+=g; fb+=b; fcnt++;
+      }
+      tr+=r; tg+=g; tb+=b; cnt++;
     }
-    if(cnt>0) samples.push(rgbToHsl(tr/cnt, tg/cnt, tb/cnt));
+    if(fcnt>0) samples.push(rgbToHsl(fr/fcnt, fg/fcnt, fb/fcnt));
+    else if(cnt>0) {
+      const sample = rgbToHsl(tr/cnt, tg/cnt, tb/cnt);
+      if (!(sample[0] >= 70 && sample[0] <= 170 && sample[1] > 0.18)) samples.push(sample);
+    }
   }
   return samples;
 }
+
+function flowerColorCategory(h, s, l) {
+  if (s < 0.18 && l > 0.72) return 'white';
+  if (h >= 25 && h <= 70 && s < 0.35 && l > 0.62) return 'cream';
+  if (h >= 15 && h < 35 && s > 0.55) return l < 0.5 ? 'deepOrange' : 'orange';
+  if (h >= 35 && h <= 72 && s > 0.35) return s > 0.65 && l > 0.48 ? 'brightYellow' : 'yellow';
+  if ((h <= 18 || h >= 340) && s > 0.35) return 'red';
+  if ((h >= 300 && h < 340) && s > 0.25) return 'pink';
+  if (h >= 200 && h < 255 && s > 0.25) return 'blue';
+  if (h >= 255 && h < 310 && s > 0.18) return l < 0.42 ? 'deepPurple' : 'purple';
+  if (h >= 20 && h <= 55 && s > 0.2 && l < 0.34) return 'darkBrown';
+  return 'other';
+}
+
+let LOCAL_FLOWER_REFERENCE_DESCRIPTORS = null;
+let localFlowerReferencePromise = null;
+
+function createCanvasDescriptor(canvas) {
+  const source = canvas.getContext('2d');
+  const size = 80;
+  const normalized = document.createElement('canvas');
+  normalized.width = size;
+  normalized.height = size;
+  const nctx = normalized.getContext('2d', { willReadFrequently: true });
+  nctx.drawImage(canvas, 0, 0, size, size);
+  const data = nctx.getImageData(0, 0, size, size).data;
+  const hueBins = Array(24).fill(0);
+  const satBins = Array(5).fill(0);
+  const litBins = Array(5).fill(0);
+  const category = {
+    red: 0, orange: 0, yellow: 0, green: 0, cyan: 0, blue: 0,
+    purple: 0, pink: 0, white: 0, dark: 0, brown: 0
+  };
+  let count = 0;
+
+  for (let y = 0; y < size; y += 2) {
+    for (let x = 0; x < size; x += 2) {
+      const dx = (x + 0.5) / size - 0.5;
+      const dy = (y + 0.5) / size - 0.5;
+      const centerWeight = Math.max(0.35, 1 - Math.sqrt(dx * dx + dy * dy) * 1.6);
+      const idx = (y * size + x) * 4;
+      const [h, s, l] = rgbToHsl(data[idx], data[idx + 1], data[idx + 2]);
+      const chromaWeight = 0.35 + s * 0.9;
+      const weight = centerWeight * chromaWeight;
+
+      hueBins[Math.min(23, Math.floor(h / 15))] += weight;
+      satBins[Math.min(4, Math.floor(s * 5))] += weight;
+      litBins[Math.min(4, Math.floor(l * 5))] += weight;
+
+      if (l < 0.18) category.dark += weight;
+      else if (s < 0.16 && l > 0.68) category.white += weight;
+      else if (h < 15 || h >= 345) category.red += weight;
+      else if (h < 45) category.orange += weight;
+      else if (h < 70) category.yellow += weight;
+      else if (h < 170) category.green += weight;
+      else if (h < 200) category.cyan += weight;
+      else if (h < 255) category.blue += weight;
+      else if (h < 295) category.purple += weight;
+      else if (h < 345) category.pink += weight;
+      if (h >= 15 && h < 45 && s > 0.25 && l < 0.55) category.brown += weight * 0.7;
+      count += weight;
+    }
+  }
+
+  function normalize(values) {
+    const total = values.reduce((sum, value) => sum + value, 0) || 1;
+    return values.map(value => value / total);
+  }
+
+  return {
+    hue: normalize(hueBins),
+    sat: normalize(satBins),
+    lit: normalize(litBins),
+    category: normalize(Object.values(category)),
+    samples: source ? sampleImageColors(canvas) : []
+  };
+}
+
+function cosineSimilarity(a, b) {
+  let dot = 0, magA = 0, magB = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+  return dot / ((Math.sqrt(magA) * Math.sqrt(magB)) || 1);
+}
+
+function descriptorSimilarity(a, b) {
+  return (
+    cosineSimilarity(a.hue, b.hue) * 0.48 +
+    cosineSimilarity(a.category, b.category) * 0.30 +
+    cosineSimilarity(a.lit, b.lit) * 0.12 +
+    cosineSimilarity(a.sat, b.sat) * 0.10
+  );
+}
+
+function loadImageAsCanvas(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width;
+      canvas.height = img.naturalHeight || img.height;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      resolve(canvas);
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function warmLocalFlowerReferenceDescriptors() {
+  if (localFlowerReferencePromise) return localFlowerReferencePromise;
+  localFlowerReferencePromise = Promise.all(FLOWERS.map(async flower => {
+    const canvas = await loadImageAsCanvas(flower.img);
+    return { flowerId: flower.id, descriptor: createCanvasDescriptor(canvas) };
+  })).then(descriptors => {
+    LOCAL_FLOWER_REFERENCE_DESCRIPTORS = descriptors;
+    return descriptors;
+  }).catch(err => {
+    console.warn('Local flower references unavailable:', err);
+    LOCAL_FLOWER_REFERENCE_DESCRIPTORS = null;
+    return null;
+  });
+  return localFlowerReferencePromise;
+}
+
+warmLocalFlowerReferenceDescriptors();
 
 function scoreFlowerMatch(samples, profileId) {
   const profile = FLOWER_COLOR_PROFILES[profileId];
@@ -4075,16 +4217,39 @@ function scoreFlowerMatch(samples, profileId) {
     }
     const satMatch = s >= (profile.sats[0]||0) && s <= (profile.sats[1]||1);
     const litMatch = l >= (profile.lits[0]||0) && l <= (profile.lits[1]||1);
+    const category = flowerColorCategory(h, s, l);
     if(hueMatch && satMatch && litMatch) score += 3;
     else if(hueMatch && (satMatch || litMatch)) score += 2;
     else if(hueMatch) score += 1;
-    // Bonus for white detection (high lightness, low saturation)
-    if(s < 0.15 && l > 0.75 && profile.weights.white) score += profile.weights.white * 0.3;
+    if(profile.weights[category]) score += profile.weights[category] * 0.45;
   }
   return score;
 }
 
 function identifyPlant(canvas) {
+  if (LOCAL_FLOWER_REFERENCE_DESCRIPTORS && LOCAL_FLOWER_REFERENCE_DESCRIPTORS.length) {
+    const descriptor = createCanvasDescriptor(canvas);
+    const ranked = LOCAL_FLOWER_REFERENCE_DESCRIPTORS.map(reference => ({
+      flowerId: reference.flowerId,
+      score: descriptorSimilarity(descriptor, reference.descriptor)
+    })).sort((a, b) => b.score - a.score);
+    const best = ranked[0] || { flowerId: 'rosa', score: 0 };
+    const second = ranked[1] || { score: 0 };
+    const separation = Math.max(0, best.score - second.score);
+    const confidence = Math.min(95, Math.max(20, 25 + best.score * 55 + Math.min(15, separation * 120)));
+
+    return {
+      flowerId: best.flowerId,
+      confidence: parseFloat(confidence.toFixed(1)),
+      isUncertain: confidence < 68 || separation < 0.035,
+      candidates: ranked.slice(0, 3).map(candidate => ({
+        flowerId: candidate.flowerId,
+        confidence: parseFloat(Math.min(95, Math.max(12, 25 + candidate.score * 55)).toFixed(1))
+      })),
+      samples: descriptor.samples
+    };
+  }
+
   const samples = sampleImageColors(canvas);
   const maxScore = Math.max(1, samples.length * 3);
   const ranked = FLOWERS.map(f => ({
