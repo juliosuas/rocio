@@ -4210,6 +4210,7 @@ function scoreFlowerMatch(samples, profileId) {
   const profile = FLOWER_COLOR_PROFILES[profileId];
   if(!profile) return 0;
   let score = 0;
+  const categoryCounts = {};
   for(const [h,s,l] of samples) {
     let hueMatch = false;
     for(const [hMin,hMax] of profile.hues) {
@@ -4218,10 +4219,17 @@ function scoreFlowerMatch(samples, profileId) {
     const satMatch = s >= (profile.sats[0]||0) && s <= (profile.sats[1]||1);
     const litMatch = l >= (profile.lits[0]||0) && l <= (profile.lits[1]||1);
     const category = flowerColorCategory(h, s, l);
+    categoryCounts[category] = (categoryCounts[category] || 0) + 1;
     if(hueMatch && satMatch && litMatch) score += 3;
     else if(hueMatch && (satMatch || litMatch)) score += 2;
     else if(hueMatch) score += 1;
     if(profile.weights[category]) score += profile.weights[category] * 0.45;
+  }
+  if(profileId === 'lirio') {
+    const orangeEvidence = (categoryCounts.orange || 0) + (categoryCounts.deepOrange || 0);
+    const whiteEvidence = (categoryCounts.white || 0) + (categoryCounts.cream || 0);
+    if(!orangeEvidence) score *= 0.35;
+    else if(!whiteEvidence && orangeEvidence < 2) score *= 0.65;
   }
   return score;
 }
