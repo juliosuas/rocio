@@ -39,6 +39,16 @@ Rocio is not App Store-ready yet. It is a strong MVP, but it is currently a web 
 8. QA is too narrow.
    - Existing classifier harness is good. Need CI, smoke tests, and native build checks once iOS exists.
 
+## Garry Tan Tooling Context
+
+The requested helper stack is external tooling, not app code:
+
+- `garrytan/gstack` can guide planning, review, QA, shipping, and security workflows when installed in the agent environment.
+- `garrytan/gbrain` can provide long-term memory/retrieval if we choose to deploy or connect it later.
+- `garrytan/gbrain-evals` is useful context for evaluating GBrain itself, not a Rocio test suite.
+
+Rocio's own project memory lives in `ROCIO_BRAIN.md` until a real GBrain integration exists.
+
 ## Launch Architecture Decision
 
 Recommended path:
@@ -56,7 +66,7 @@ Goal: make the project reviewable before native work begins.
 
 Acceptance criteria:
 
-- `GBRAIN.md` exists and defines product/technical decisions.
+- `ROCIO_BRAIN.md` exists and defines product/technical decisions without conflating Rocio with `garrytan/gbrain`.
 - `APP_STORE_LAUNCH_PLAN.md` exists and lists blockers.
 - `AGENTS.md` exists with PR/review standards.
 - GitHub Actions runs the existing strict classifier QA on PRs.

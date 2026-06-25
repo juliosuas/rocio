@@ -8,8 +8,18 @@ Rocio is moving from a PWA MVP toward an App Store-ready iOS app. Agents working
 - Local assets: `assets/flowers/`.
 - Plant.id proxy: `supabase/functions/identify-flower/index.ts`.
 - QA harnesses: `qa/`.
-- Project brain: `GBRAIN.md`.
+- Rocio project brain: `ROCIO_BRAIN.md`.
 - Launch plan: `APP_STORE_LAUNCH_PLAN.md`.
+
+## External Agent Tooling
+
+The user wants this work informed by Garry Tan's helper repos:
+
+- `garrytan/gstack` for AI-assisted planning, review, QA, security, shipping, and retros when available in the agent environment.
+- `garrytan/gbrain` for long-term memory/retrieval if a real GBrain setup is installed or connected later.
+- `garrytan/gbrain-evals` as context for evaluating GBrain itself.
+
+Do not describe Rocio's own docs as GBrain, and do not claim those repos are integrated unless a PR actually installs/configures them.
 
 ## Required Local Checks
 
@@ -64,6 +74,6 @@ Use a central handoff route. Do not add one intent per tab unless there is a cle
 
 - Prefer branch names starting with `fsociaty/`.
 - Keep PRs small and reviewable.
-- Update `GBRAIN.md` or `APP_STORE_LAUNCH_PLAN.md` when a decision changes.
+- Update `ROCIO_BRAIN.md` or `APP_STORE_LAUNCH_PLAN.md` when a decision changes.
 - Include test notes in every PR.
 - Do not approve a PR if launch/privacy risk is unresolved.
