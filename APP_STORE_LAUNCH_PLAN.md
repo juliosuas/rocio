@@ -80,7 +80,7 @@ Acceptance criteria:
 
 - Flower catalog data is moved from inline JS into structured JSON or a small module.
 - Local storage keys and data shapes are documented.
-- User can delete garden data and scan history from the UI.
+- PWA users can export a local JSON copy and delete garden data plus scan history from the UI; native iOS must keep the same control.
 - Supabase/Plant.id configuration is documented without exposing secrets.
 - QA covers the catalog data shape and classifier fallback.
 
