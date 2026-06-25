@@ -461,6 +461,52 @@ img { display: block; max-width: 100%; }
 /* ═══════════════════════════════════════════
    MI JARDÍN
    ═══════════════════════════════════════════ */
+.data-controls {
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(143,188,143,0.24);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin: 0 0 16px;
+  box-shadow: var(--shadow-sm);
+}
+.data-controls-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--primary-dark);
+  margin-bottom: 4px;
+}
+.data-controls-copy {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.data-control-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.data-control-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(143,188,143,0.14);
+  color: var(--primary-dark);
+  font-size: 12px;
+  font-weight: 800;
+}
+.data-control-btn.danger {
+  background: rgba(232,112,112,0.1);
+  color: var(--overdue);
+}
+.data-control-btn:active { transform: scale(0.98); }
+@media (max-width: 380px) {
+  .data-control-actions { grid-template-columns: 1fr; }
+}
+
 .garden-card {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -2020,6 +2066,14 @@ img { display: block; max-width: 100%; }
   <section class="page" id="pageGarden">
     <h1 class="page-title">Mi Jardín 🌱</h1>
     <p class="page-subtitle">Tu colección personal de flores</p>
+    <div class="data-controls" id="dataControls" aria-label="Controles de datos locales">
+      <div class="data-controls-title">Tus datos viven en este dispositivo</div>
+      <div class="data-controls-copy">Exporta una copia JSON o borra tu jardín e historial de escaneos cuando quieras.</div>
+      <div class="data-control-actions">
+        <button class="data-control-btn" id="exportDataBtn" type="button">⬇️ Exportar datos</button>
+        <button class="data-control-btn danger" id="clearLocalDataBtn" type="button">🗑 Borrar datos</button>
+      </div>
+    </div>
     <div id="gardenList"></div>
     <div class="empty-state" id="gardenEmpty" style="display:none;">
       <div class="empty-art">
@@ -2903,6 +2957,9 @@ function safeStorageArea(name) {
 
 const rocioLocalStorage = safeStorageArea('localStorage');
 const rocioSessionStorage = safeStorageArea('sessionStorage');
+const ROCIO_GARDEN_KEY = 'rocio_garden';
+const ROCIO_SCAN_HISTORY_KEY = 'rocio_scan_history';
+const ROCIO_LAST_NOTIFICATION_KEY = 'rocio_last_notification_day';
 
 function safeStorageGet(storage, key, fallback = null) {
   try {
@@ -2947,7 +3004,7 @@ function safeJSONGet(storage, key, fallback) {
 /* ═══════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════ */
-let garden = safeJSONGet(rocioLocalStorage, 'rocio_garden', []);
+let garden = safeJSONGet(rocioLocalStorage, ROCIO_GARDEN_KEY, []);
 let currentPage = 'pageCatalog';
 let currentFilter = 'all';
 let searchQuery = '';
@@ -2958,7 +3015,45 @@ let calWeekOffset = 0;
 /* ═══════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════ */
-function saveGarden() { safeStorageSet(rocioLocalStorage, 'rocio_garden', JSON.stringify(garden)); }
+function saveGarden() { safeStorageSet(rocioLocalStorage, ROCIO_GARDEN_KEY, JSON.stringify(garden)); }
+
+function buildLocalDataExport() {
+  return {
+    app: 'Rocio',
+    exportedAt: new Date().toISOString(),
+    dataStorage: 'local-only',
+    garden,
+    scanHistory
+  };
+}
+
+function downloadLocalDataExport() {
+  const payload = buildLocalDataExport();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `rocio-datos-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast('⬇️ Exportación lista');
+}
+
+function clearLocalUserData() {
+  if (!confirm('¿Borrar tu jardín y el historial de escaneos de este dispositivo? Esta acción no se puede deshacer.')) return;
+  garden = [];
+  scanHistory = [];
+  safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY);
+  renderGarden();
+  renderCalendar();
+  renderScanHistory();
+  updateBadge();
+  showToast('🗑 Datos locales eliminados');
+}
 
 function showToast(msg) {
   const c = document.getElementById('toastContainer');
@@ -3979,14 +4074,14 @@ function checkWateringNotifications() {
   try {
     if (!garden.length || !('Notification' in window) || Notification.permission !== 'granted') return;
     const today = new Date().toISOString().slice(0, 10);
-    const lastShown = safeStorageGet(rocioLocalStorage, 'rocio_last_notification_day');
+    const lastShown = safeStorageGet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY);
     if (lastShown === today) return;
     const due = garden
       .map(g => ({ item: g, flower: FLOWERS.find(f => f.id === g.flowerId), urgency: getUrgency(g) }))
       .filter(x => x.flower && x.urgency !== 'good');
     if (!due.length) return;
     showLocalPlantNotification('Rocío te recuerda regar 🌿', `${due[0].flower.name}${due.length > 1 ? ` y ${due.length - 1} planta(s) más` : ''} necesitan agua.`);
-    safeStorageSet(rocioLocalStorage, 'rocio_last_notification_day', today);
+    safeStorageSet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY, today);
   } catch(e) {}
 }
 
@@ -4478,10 +4573,10 @@ async function identifyPlantWithProvider(canvas) {
 
 // Scanner state
 let scannerStream = null;
-let scanHistory = safeJSONGet(rocioLocalStorage, 'rocio_scan_history', []);
+let scanHistory = safeJSONGet(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY, []);
 
 function saveScanHistory() {
-  safeStorageSet(rocioLocalStorage, 'rocio_scan_history', JSON.stringify(scanHistory));
+  safeStorageSet(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY, JSON.stringify(scanHistory));
 }
 
 // Generate particles
@@ -4727,6 +4822,8 @@ function showScanResult(result, canvas, persist = true) {
 }
 
 // Event listeners
+document.getElementById('exportDataBtn').addEventListener('click', downloadLocalDataExport);
+document.getElementById('clearLocalDataBtn').addEventListener('click', clearLocalUserData);
 document.getElementById('scannerFab').addEventListener('click', openScanner);
 document.getElementById('scannerClose').addEventListener('click', closeScanner);
 
