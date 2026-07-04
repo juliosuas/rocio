@@ -6,6 +6,8 @@ Date: 2026-07-04
 
 Local Xcode is still useful, but it is no longer the only gate. Because this machine has Command Line Tools active and no full Xcode selected, iOS build/test should be proven in GitHub Actions on `macos-latest`.
 
+The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
+
 Local Xcode remains optional until screenshots, simulator smoke testing, or Xcode Organizer upload are needed.
 
 ## Tomorrow Publish Gate

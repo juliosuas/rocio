@@ -1,6 +1,14 @@
 name: iOS Archive
 
 on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-archive.yml'
+  push:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios-archive.yml'
   workflow_dispatch:
 
 permissions:
