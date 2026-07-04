@@ -32,6 +32,29 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 - Pure vanilla JS + modern CSS
 - Works on iPhone Safari, Android Chrome, Desktop
 
+## 🚀 Launch Demo
+
+Run a local demo:
+
+```sh
+python3 -m http.server 3002
+```
+
+Open:
+
+- Landing: `http://localhost:3002/launch.html`
+- App: `http://localhost:3002/index.html`
+- Privacy: `http://localhost:3002/privacy.html`
+- Support: `http://localhost:3002/support.html`
+
+Launch materials live in:
+
+- `DEMO_RUNBOOK.md`
+- `APP_STORE_METADATA.md`
+- `APP_STORE_PRIVACY_ANSWERS.md`
+- `MARKETING_LAUNCH_KIT.md`
+- `APPLE_DEVELOPER_RUNBOOK.md`
+
 ## 📸 Screenshots
 
 <!-- Add screenshots here -->

@@ -1,0 +1,36 @@
+name: iOS Archive
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    name: Archive Rocio iOS
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Archive unsigned release build
+        run: |
+          xcodebuild \
+            -project ios/Rocio.xcodeproj \
+            -scheme Rocio \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Rocio.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Upload archive artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Rocio.xcarchive
+          path: ${{ runner.temp }}/Rocio.xcarchive
+          if-no-files-found: error

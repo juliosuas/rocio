@@ -1,6 +1,6 @@
 # Rocio Project Brain
 
-Last updated: 2026-06-25
+Last updated: 2026-06-28
 
 This is the project brain for turning Rocio from a lovable MVP into an App Store-ready product. It is not Garry Tan's GBrain project. When this repo refers to GBrain or gstack, it means the external repositories `garrytan/gbrain` and `garrytan/gstack` may be used as supporting agent tooling.
 
@@ -25,7 +25,8 @@ Rocio is a Spanish-first flower-care companion for people who want a gentle, pra
 - The catalog has 15 flowers with care data and local image assets.
 - Plant identification has a local fallback classifier. Plant.id is architected through Supabase Edge Functions, but the public Supabase URL/key are disabled in `index.html` right now.
 - Notifications are local/browser notifications and only work when browser conditions allow them. They are not reliable scheduled iOS reminders yet.
-- There is no Xcode project, iOS bundle id, SwiftUI app, App Intents target, widget target, TestFlight setup, privacy policy, App Store metadata, or release CI.
+- A native SwiftUI iOS track now exists under `ios/` with catalog, garden, calendar, scanner, settings, local notifications, App Intents, a privacy manifest, and iOS CI workflow.
+- Remaining App Store gaps: full Xcode validation, Apple Developer Team/signing, App Store Connect app record, privacy policy URL, support URL, final icon review, screenshots, metadata, TestFlight upload, and release review notes.
 
 ## How To Use Garry Tan's Tooling Here
 
@@ -35,6 +36,40 @@ Use the tools as tools, not as branding:
 - Use `gbrain` only if we deliberately set up a real memory layer for Rocio decisions, user research, launch notes, review history, and App Store evidence.
 - Keep Rocio's own memory in this file until a real GBrain integration exists.
 - Do not vendor `garrytan/gstack` or `garrytan/gbrain` into this app repo unless there is a clear reason and a separate PR.
+
+For Rocio, `gstack` means the smallest launch stack that lets us ship repeatedly without losing discipline:
+
+- GitHub repo as the operating system for source, PRs, issues, CI, and review history.
+- Codex agents for implementation, App Store launch audits, and daily project follow-up.
+- CodeRabbit for independent PR review when a real diff is available.
+- Supabase Edge Functions only for server-side secrets and provider calls such as Plant.id.
+- Apple-native surface for the store app: SwiftUI, App Intents, local notifications, and later widgets.
+- Keep the MVP web app usable while migrating the highest-value flows into native code.
+
+Operating cadence:
+
+1. Agent implements one small shippable App Store outcome.
+2. Agent records privacy/App Store impact in docs or PR notes.
+3. CI proves the changed surface where possible.
+4. Critical launch review blocks thin-wrapper, privacy, metadata, signing, or build gaps.
+5. Merge only after the next smallest TestFlight risk is lower than before.
+
+Daily subagent loop:
+
+1. CEO/Product agent: pick the one highest-leverage App Store risk to reduce today.
+2. Engineering agent: define the smallest native change and its tests.
+3. Design agent: inspect user-facing copy, layout, permissions, screenshots, and App Store polish.
+4. QA agent: run local/CI checks, simulator/device smoke, and regression checks.
+5. Security/Privacy agent: audit data flow, secrets, permissions, privacy manifest, and review notes.
+6. Release agent: prepare PR notes, merge readiness, TestFlight/app-store checklist, and next-session handoff.
+
+## Rocio Brain Rules
+
+- Be critical before being clever.
+- No PR gets approved if it weakens privacy, stores secrets in the browser, breaks the local MVP, or makes the scanner sound more certain than it is.
+- Prefer small PRs with one shippable outcome.
+- Every launch PR must update this file or the launch plan when it changes scope, risk, or sequencing.
+- Keep App Store work grounded in Apple's review reality: a plain WebView clone is high risk; native value must be visible.
 
 ## First Native App Intents Surface
 

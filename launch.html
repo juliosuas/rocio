@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Rocio es una app iOS privada y en español para cuidar flores: jardín local, recordatorios, catálogo y scanner experimental honesto.">
+  <title>Rocio - Cuida tus flores en español</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --leaf: #2f6b4f;
+      --moss: #6e7f4f;
+      --rose: #b94f65;
+      --ink: #1f2822;
+      --muted: #5d685f;
+      --paper: #fffaf2;
+      --line: rgba(31, 40, 34, 0.16);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.45;
+    }
+
+    a { color: inherit; }
+
+    .hero {
+      min-height: 88svh;
+      display: grid;
+      align-items: end;
+      background:
+        linear-gradient(180deg, rgba(16, 20, 17, 0.12) 0%, rgba(16, 20, 17, 0.56) 62%, rgba(16, 20, 17, 0.78) 100%),
+        url("assets/flowers/lavanda.jpg") center / cover no-repeat;
+      color: white;
+      padding: 28px;
+    }
+
+    .nav {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 18px 28px;
+      color: white;
+    }
+
+    .brand {
+      font-weight: 800;
+      letter-spacing: 0;
+      font-size: 1.05rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 14px;
+      font-size: 0.94rem;
+      color: rgba(255, 255, 255, 0.88);
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+
+    .nav-links a:hover { border-color: currentColor; }
+
+    .hero-content {
+      width: min(760px, 100%);
+      padding: 96px 0 36px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(3.2rem, 9vw, 7rem);
+      line-height: 0.92;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      max-width: 680px;
+      margin: 0 0 26px;
+      font-size: clamp(1.14rem, 2vw, 1.5rem);
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .button {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.38);
+      background: rgba(255, 255, 255, 0.94);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 750;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: white;
+    }
+
+    main { overflow: hidden; }
+
+    section {
+      padding: 72px 28px;
+      border-top: 1px solid var(--line);
+    }
+
+    .section-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: clamp(2rem, 4vw, 3.5rem);
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .section-copy {
+      max-width: 700px;
+      margin: 0 0 34px;
+      color: var(--muted);
+      font-size: 1.08rem;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .feature {
+      min-height: 188px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 22px;
+      background: rgba(255, 255, 255, 0.62);
+    }
+
+    .feature strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.06rem;
+    }
+
+    .feature p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .showcase {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 34px;
+      align-items: center;
+    }
+
+    .showcase img {
+      width: 100%;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    .list {
+      display: grid;
+      gap: 14px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .list li {
+      padding: 16px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+    }
+
+    .list strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .pricing {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .price {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+      background: white;
+    }
+
+    .price h3 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+    }
+
+    .price p { color: var(--muted); }
+
+    footer {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 34px 28px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    footer a { color: var(--ink); }
+
+    @media (max-width: 820px) {
+      .hero { min-height: 86svh; padding: 22px; }
+      .nav { padding: 16px 22px; }
+      .nav-links { display: none; }
+      section { padding: 56px 22px; }
+      .features, .showcase, .pricing { grid-template-columns: 1fr; }
+      .hero-content { padding-bottom: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <nav class="nav" aria-label="Principal">
+      <div class="brand">Rocio</div>
+      <div class="nav-links">
+        <a href="index.html">Demo</a>
+        <a href="privacy.html">Privacidad</a>
+        <a href="support.html">Soporte</a>
+      </div>
+    </nav>
+
+    <div class="hero-content">
+      <h1>Rocio</h1>
+      <p class="lead">Cuida tus flores en español, sin complicarte: jardín privado, recordatorios de riego, catálogo práctico y scanner experimental honesto.</p>
+      <div class="actions">
+        <a class="button" href="index.html">Probar demo web</a>
+        <a class="button secondary" href="#launch">Ver plan App Store</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <div class="section-inner">
+        <h2>Hecha para jardín de casa</h2>
+        <p class="section-copy">Rocio no intenta parecer una enciclopedia universal ni prometer inteligencia artificial perfecta. La v1 se enfoca en el cuidado diario de flores comunes, con privacidad local y lenguaje claro.</p>
+        <div class="features">
+          <article class="feature">
+            <strong>Jardín local privado</strong>
+            <p>Las plantas guardadas viven en el dispositivo. La app permite exportar y borrar datos locales.</p>
+          </article>
+          <article class="feature">
+            <strong>Recordatorios simples</strong>
+            <p>Riego basado en las flores guardadas, activado solo cuando la persona lo pide.</p>
+          </article>
+          <article class="feature">
+            <strong>Scanner honesto</strong>
+            <p>La identificación local muestra incertidumbre y candidatos, sin prometer diagnóstico profesional.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-inner showcase">
+        <img src="assets/flowers/girasol.jpg" alt="Girasol fotografiado para el catálogo de Rocio">
+        <div>
+          <h2>Diferente a las apps genéricas</h2>
+          <p class="section-copy">Plant apps grandes compiten por bases enormes de especies, diagnósticos agresivos y paywalls rápidos. Rocio empieza por confianza: español primero, flores de casa, sin tracking y con cuidado práctico.</p>
+          <ul class="list">
+            <li><strong>Spanish-first</strong> Copy, catálogo y marketing pensados para México y LatAm desde el inicio.</li>
+            <li><strong>Privacidad como producto</strong> Sin cuentas, sin analytics y sin subida de fotos en la v1 nativa.</li>
+            <li><strong>Nativa donde importa</strong> App Intents, recordatorios locales, cámara/fotos y experiencia iPhone real.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="launch">
+      <div class="section-inner">
+        <h2>Ruta de lanzamiento</h2>
+        <p class="section-copy">La v1 será gratis para pasar review con menos riesgo. La monetización llega después con StoreKit si hay tracción.</p>
+        <div class="pricing">
+          <article class="price">
+            <h3>v1 gratis</h3>
+            <p>Catálogo, Mi Jardín, calendario, scanner local, privacidad/exportación, App Intents y TestFlight.</p>
+          </article>
+          <article class="price">
+            <h3>v1.1 premium</h3>
+            <p>Solo después de aceptación: funciones premium con StoreKit, sin pagos externos dentro de la app.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Rocio - Cuida tus flores en español.</span>
+    <span><a href="privacy.html">Privacidad</a> · <a href="support.html">Soporte</a> · <a href="index.html">Demo</a></span>
+  </footer>
+</body>
+</html>
