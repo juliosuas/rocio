@@ -1,0 +1,73 @@
+name: iOS
+
+on:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'ios/**'
+      - '.github/workflows/ios.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test Rocio iOS
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+
+      - name: Build app for iOS Simulator
+        run: |
+          xcodebuild \
+            -project ios/Rocio.xcodeproj \
+            -scheme Rocio \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Pick available iPhone simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          SIMULATOR_NAME="$(xcrun simctl list devices available | python3 -c 'import re,sys
+preferred = ["iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro", "iPhone 15"]
+names = []
+for line in sys.stdin:
+    m = re.match(r"^\s+(iPhone [^(]+) \(", line)
+    if m:
+        names.append(m.group(1).strip())
+for pref in preferred:
+    if pref in names:
+        print(pref)
+        break
+else:
+    print(names[0] if names else "")')"
+          if [ -z "$SIMULATOR_NAME" ]; then
+            echo "No available iPhone simulator found" >&2
+            exit 1
+          fi
+          echo "name=$SIMULATOR_NAME" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIMULATOR_NAME"
+
+      - name: Run unit tests on iOS Simulator
+        run: |
+          xcodebuild \
+            -project ios/Rocio.xcodeproj \
+            -scheme Rocio \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.name }}" \
+            CODE_SIGNING_ALLOWED=NO \
+            test

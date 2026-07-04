@@ -10,6 +10,20 @@ Rocio is moving from a PWA MVP toward an App Store-ready iOS app. Agents working
 - QA harnesses: `qa/`.
 - Rocio project brain: `ROCIO_BRAIN.md`.
 - Launch plan: `APP_STORE_LAUNCH_PLAN.md`.
+- Daily gstack plan: `GSTACK_APP_STORE_DAILY_PLAN.md`.
+
+## GStack Subagent Protocol
+
+Use the `garrytan/gstack` model as role discipline, adapted to Codex:
+
+- CEO/Product: choose the smallest task that most improves App Store readiness.
+- Engineering Manager: lock architecture, scope, data flow, edge cases, and tests before implementation.
+- Designer: review SwiftUI UX, Spanish copy, permission prompts, screenshots, and App Store polish.
+- QA Lead: run required checks and report exact pass/fail evidence.
+- Security/Privacy: block secrets, unclear data collection, overclaimed scanner accuracy, and permission misuse.
+- Release Manager: keep PRs small, update docs, prepare review notes, and hand off the next action.
+
+Each work session should state which role is active. For substantial changes, run at least Engineering, QA, and Security/Privacy review before calling work ready.
 
 ## External Agent Tooling
 
@@ -77,3 +91,23 @@ Use a central handoff route. Do not add one intent per tab unless there is a cle
 - Update `ROCIO_BRAIN.md` or `APP_STORE_LAUNCH_PLAN.md` when a decision changes.
 - Include test notes in every PR.
 - Do not approve a PR if launch/privacy risk is unresolved.
+
+## Daily App Store Loop
+
+Start every daily session by reading:
+
+1. `ROCIO_BRAIN.md`
+2. `GSTACK_APP_STORE_DAILY_PLAN.md`
+3. `APP_STORE_RELEASE_CHECKLIST.md`
+4. `git status --short --branch`
+5. Current GitHub PR/check status when network is available
+
+Then do one of:
+
+- unblock build/signing;
+- reduce one App Store review risk;
+- add one native feature/polish item with tests;
+- improve privacy/compliance materials;
+- prepare TestFlight/App Store metadata.
+
+End every daily session with a short next-session checklist and update `ROCIO_BRAIN.md` when a decision changes.

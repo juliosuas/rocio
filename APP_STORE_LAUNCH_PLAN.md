@@ -1,43 +1,43 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-06-25
+Date: 2026-06-28
 
 This plan starts from the current MVP in `juliosuas/rocio`: a working Spanish-first PWA for flower care with local garden tracking, flower catalog, scanner fallback, service worker, and Supabase/Plant.id proxy code.
 
 ## Brutally Honest Status
 
-Rocio is not App Store-ready yet. It is a strong MVP, but it is currently a web app, not an iOS app. The next phase is to make it reviewable, testable, privacy-complete, and meaningfully native.
+Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation in this working tree. The next phase is not more concept work; it is build validation, signing, metadata, privacy URLs, screenshots, and TestFlight hardening.
 
 ## Critical Blockers
 
-1. No iOS project exists.
-   - Need an Xcode project, bundle identifier, signing team, app icon set, launch screen, capabilities, and release scheme.
+1. Native build is not locally verified on this machine.
+   - Full Xcode is still required. Command Line Tools alone cannot run `xcodebuild` or `simctl`.
 
-2. App Store Review risk: thin wrapper.
-   - A simple WKWebView around `index.html` is likely too weak. The iOS version needs native value such as local notifications, App Intents, deep links, and eventually widgets.
+2. Signing and App Store Connect are not configured.
+   - Set Apple Developer Team, confirm bundle id `com.juliosuas.rocio`, create the App Store Connect app record, and produce an archive.
 
-3. Privacy materials are missing.
-   - Need privacy policy, support URL, data collection summary, camera/photo explanation, notification explanation, and account/deletion story even if the app stays local-first.
+3. Privacy materials are still missing.
+   - App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md`.
+   - Need live privacy policy URL and support URL before external TestFlight/App Store submission.
 
-4. Plant identification is not production-ready.
+4. Plant identification remains assistive only.
    - Supabase URL/key are currently blank in `index.html`.
    - Plant.id secret must stay server-side.
    - Scanner UX must keep uncertainty visible.
    - Review notes must explain that identification is assistive, not guaranteed.
 
-5. Reminder reliability is not enough for iOS.
-   - Browser notifications only fire under limited conditions.
-   - Native local notifications should schedule watering reminders even when the app is closed.
+5. Reminder reliability needs device testing.
+   - Native local notifications exist, but permission flow and scheduled delivery must be tested on a real simulator/device before TestFlight.
 
-6. Persistence is fragile for a store app.
-   - `localStorage` is acceptable for MVP, but App Store users need reset/export/delete and eventually migration to native persistence or cloud sync.
+6. Persistence is still local-only.
+   - The native app stores garden data in `UserDefaults` and now supports local export/delete. Cloud sync is out of scope for v1 unless product scope changes.
 
 7. Assets need release audit.
    - Photo attributions exist, but each image must be license-safe for App Store distribution.
    - Need App Store icon and screenshots.
 
-8. QA is too narrow.
-   - Existing classifier harness is good. Need CI, smoke tests, and native build checks once iOS exists.
+8. QA is still too narrow.
+   - Existing classifier harness is good. iOS CI exists for build, but native tests and a real-device smoke pass are still required before submission.
 
 ## Garry Tan Tooling Context
 
@@ -137,6 +137,13 @@ Acceptance criteria:
 - Marketing copy avoids overclaiming identification accuracy.
 - Release checklist is complete.
 
-## Recommended First Real Feature PR After This One
+## Current Smallest Shippable PR
 
-Create the iOS project skeleton and native App Intents routing stub. Do not wire Plant.id yet. The first native PR should prove the app builds and opens to the right destinations before adding provider/network complexity.
+Harden the native foundation for App Store review:
+
+- Keep the SwiftUI app native, not WebView-based.
+- Keep App Intents narrow: open garden, log watering, open scanner.
+- Add local export/delete controls for user data.
+- Prevent overdue watering reminders from scheduling in the past.
+- Refresh garden state when App Intents modify persistence while the app is inactive.
+- Update launch docs so every next agent starts from the current iOS reality.
