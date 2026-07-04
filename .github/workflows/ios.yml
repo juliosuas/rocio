@@ -42,19 +42,10 @@ jobs:
         id: simulator
         run: |
           set -euo pipefail
-          SIMULATOR_NAME="$(xcrun simctl list devices available | python3 -c 'import re,sys
-preferred = ["iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro", "iPhone 15"]
-names = []
-for line in sys.stdin:
-    m = re.match(r"^\s+(iPhone [^(]+) \(", line)
-    if m:
-        names.append(m.group(1).strip())
-for pref in preferred:
-    if pref in names:
-        print(pref)
-        break
-else:
-    print(names[0] if names else "")')"
+          SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone (16 Pro|16|15 Pro|15) \(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/')"
+          if [ -z "$SIMULATOR_NAME" ]; then
+            SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone .*\(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/')"
+          fi
           if [ -z "$SIMULATOR_NAME" ]; then
             echo "No available iPhone simulator found" >&2
             exit 1
