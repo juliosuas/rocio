@@ -40,10 +40,7 @@ jobs:
         id: simulator
         run: |
           set -euo pipefail
-          SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone (16 Pro|16|15 Pro|15) \(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/')"
-          if [ -z "$SIMULATOR_NAME" ]; then
-            SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone .*\(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/')"
-          fi
+          SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone .*\(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/' || true)"
           if [ -z "$SIMULATOR_NAME" ]; then
             echo "No available iPhone simulator found" >&2
             exit 1
