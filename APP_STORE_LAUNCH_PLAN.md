@@ -1,12 +1,12 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-06-28
+Date: 2026-07-05
 
 This plan starts from the current MVP in `juliosuas/rocio`: a working Spanish-first PWA for flower care with local garden tracking, flower catalog, scanner fallback, service worker, and Supabase/Plant.id proxy code.
 
 ## Brutally Honest Status
 
-Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation in this working tree. The next phase is not more concept work; it is build validation, signing, metadata, privacy URLs, screenshots, and TestFlight hardening.
+Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation in this working tree. The next phase is not more concept work; it is signing, App Store Connect setup, screenshots, simulator/device smoke testing, and TestFlight hardening.
 
 ## Critical Blockers
 
@@ -16,9 +16,11 @@ Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation
 2. Signing and App Store Connect are not configured.
    - Set Apple Developer Team, confirm bundle id `com.juliosuas.rocio`, create the App Store Connect app record, and produce an archive.
 
-3. Privacy materials are still missing.
+3. Privacy materials need final App Store Connect entry, not first publication.
    - App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md`.
-   - Need live privacy policy URL and support URL before external TestFlight/App Store submission.
+   - Live privacy policy URL: `https://juliosuas.github.io/rocio/privacy.html`.
+   - Live support URL: `https://juliosuas.github.io/rocio/support.html`.
+   - Recheck answers immediately before upload if analytics, crash reporting, sync, Supabase, Plant.id, or image upload behavior changes.
 
 4. Plant identification remains assistive only.
    - Supabase URL/key are currently blank in `index.html`.
@@ -119,7 +121,7 @@ Acceptance criteria:
 
 - Archive build succeeds.
 - TestFlight internal build uploaded.
-- Privacy policy and support URL are live.
+- Privacy policy and support URL are live and entered in App Store Connect.
 - App Store Connect metadata draft exists.
 - Screenshots captured on required devices.
 - Review notes explain camera, Plant.id, local reminders, and local-first data.

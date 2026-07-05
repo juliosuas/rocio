@@ -1,6 +1,6 @@
 # Rocio Project Brain
 
-Last updated: 2026-06-28
+Last updated: 2026-07-05
 
 This is the project brain for turning Rocio from a lovable MVP into an App Store-ready product. It is not Garry Tan's GBrain project. When this repo refers to GBrain or gstack, it means the external repositories `garrytan/gbrain` and `garrytan/gstack` may be used as supporting agent tooling.
 
@@ -26,7 +26,7 @@ Rocio is a Spanish-first flower-care companion for people who want a gentle, pra
 - Plant identification has a local fallback classifier. Plant.id is architected through Supabase Edge Functions, but the public Supabase URL/key are disabled in `index.html` right now.
 - Notifications are local/browser notifications and only work when browser conditions allow them. They are not reliable scheduled iOS reminders yet.
 - A native SwiftUI iOS track now exists under `ios/` with catalog, garden, calendar, scanner, settings, local notifications, App Intents, a privacy manifest, and iOS CI workflow.
-- Remaining App Store gaps: full Xcode validation, Apple Developer Team/signing, App Store Connect app record, privacy policy URL, support URL, final icon review, screenshots, metadata, TestFlight upload, and release review notes.
+- Remaining App Store gaps: full Xcode validation or trusted simulator smoke, Apple Developer Team/signing, App Store Connect app record, entering the live privacy/support URLs, final icon review, screenshots, metadata, TestFlight upload, and release review notes.
 
 ## How To Use Garry Tan's Tooling Here
 

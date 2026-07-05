@@ -1,6 +1,6 @@
 # Rocio App Store Privacy Answers Draft
 
-Date: 2026-07-02
+Date: 2026-07-05
 
 Use this as the working draft for App Store Connect App Privacy and App Review notes. Confirm the answers again after any backend provider, analytics, crash reporting, account, sync, or photo upload work is added.
 
@@ -63,9 +63,13 @@ Rocio is a Spanish-first flower-care app. The native iOS app stores the user's g
 
 No Plant.id or Supabase provider calls are enabled in the current native iOS release. Camera and selected photo input are analyzed locally on the device and are not uploaded or saved by the app.
 
+## Production URLs
+
+- Privacy policy: `https://juliosuas.github.io/rocio/privacy.html`
+- Support: `https://juliosuas.github.io/rocio/support.html`
+
 ## Still Required Before External TestFlight Or Submission
 
-- Publish a privacy policy URL that matches this draft.
-- Publish a support URL.
+- Enter the live privacy policy and support URLs in App Store Connect.
 - Recheck App Privacy answers after Xcode build validation and before upload.
 - Update this draft if any analytics, crash reporting, sync, account, Supabase, Plant.id, or image upload behavior is introduced.

@@ -1,6 +1,6 @@
 # Rocio App Store Release Checklist
 
-Date: 2026-07-04
+Date: 2026-07-05
 
 ## Current Build Strategy
 
@@ -22,7 +22,7 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - `DEVELOPMENT_TEAM` set in the Rocio target.
 - App runs on an iPhone simulator or device before external TestFlight.
 - Signed archive upload succeeds.
-- Privacy policy URL and support URL are live.
+- Privacy policy URL and support URL are live and entered in App Store Connect.
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
 - Final app icon and screenshots are ready.
 - App Store Connect metadata draft is filled.
@@ -50,3 +50,8 @@ Rocio is a Spanish-first flower-care app. The app stores the user's garden local
 Camera permission is used only when the user taps the scanner camera action. Photo library permission is used only when the user chooses a photo for local analysis. Notification permission is requested only from Settings when the user enables watering reminders.
 
 Detailed App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md` and must be rechecked before App Store Connect submission.
+
+Production URLs:
+
+- Privacy: `https://juliosuas.github.io/rocio/privacy.html`
+- Support: `https://juliosuas.github.io/rocio/support.html`
