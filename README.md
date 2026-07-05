@@ -4,6 +4,8 @@
 
 Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web app focused on flowers. Built with pure HTML, CSS, and JavaScript — no frameworks, no dependencies, now connected to a secure Supabase identification proxy.
 
+Rocio is also moving through a native iOS App Store launch track under `ios/`. The iOS version is SwiftUI, not a WebView wrapper, and is designed around local garden data, local notifications, App Intents, an honest local scanner, and privacy-first review notes.
+
 ## ✨ Features
 
 - **🌸 Catálogo** — Browse 15+ flowers with detailed care information (Spanish + scientific names)
@@ -25,12 +27,25 @@ Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web ap
 
 ## 🛠 Tech
 
+### Web MVP
+
 - Single `index.html` app
 - Zero framework dependencies
 - Optional Plant.id API integration
 - localStorage persistence
 - Pure vanilla JS + modern CSS
 - Works on iPhone Safari, Android Chrome, Desktop
+
+### Native iOS Track
+
+- SwiftUI app under `ios/`
+- Bundle id: `com.juliosuas.rocio`
+- Catalog, Garden, Calendar, Scanner, and Settings tabs
+- Native local notifications for watering reminders
+- App Intents for opening the garden, opening scanner, and logging watering
+- Local export/delete controls for user data
+- Privacy manifest and App Store privacy answers
+- GitHub Actions build/test/archive gates on macOS runners
 
 ## 🚀 Launch Demo
 
@@ -54,6 +69,41 @@ Launch materials live in:
 - `APP_STORE_PRIVACY_ANSWERS.md`
 - `MARKETING_LAUNCH_KIT.md`
 - `APPLE_DEVELOPER_RUNBOOK.md`
+- `APP_STORE_RELEASE_CHECKLIST.md`
+- `GSTACK_APP_STORE_DAILY_PLAN.md`
+- `ROCIO_BRAIN.md`
+
+## ✅ CI / Release Gates
+
+GitHub Actions currently validates:
+
+- PWA flower classifier QA
+- iOS simulator build and unit tests
+- Unsigned iOS Release archive
+- GitHub Pages deployment
+
+The local machine does not need full Xcode for the core build gate because iOS validation runs on GitHub macOS runners. Full Xcode is still useful later for local simulator screenshots, device smoke testing, and Xcode Organizer upload.
+
+## 🍎 App Store Status
+
+Ready in repo:
+
+- Native SwiftUI foundation
+- App Store metadata draft
+- Privacy answers draft
+- Privacy/support web pages
+- Launch/marketing kit
+- Apple Developer runbook
+- CI build/test/archive gates
+
+Still external/manual:
+
+- Apple Developer Program enrollment
+- App Store Connect app record
+- Bundle ID confirmation for `com.juliosuas.rocio`
+- Signing certificate/provisioning setup
+- TestFlight upload
+- Final screenshots and app icon review
 
 ## 📸 Screenshots
 
