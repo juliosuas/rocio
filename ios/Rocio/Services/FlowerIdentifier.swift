@@ -12,6 +12,45 @@ struct IdentificationResult: Identifiable, Equatable {
         let flower: Flower
         let confidence: Double
     }
+
+    var confidenceBand: IdentificationConfidenceBand {
+        IdentificationConfidenceBand(confidence: confidence, isUncertain: isUncertain)
+    }
+}
+
+enum IdentificationConfidenceBand: String, Equatable {
+    case experimental
+    case possible
+    case probable
+
+    init(confidence: Double, isUncertain: Bool) {
+        if isUncertain || confidence < 64 {
+            self = .experimental
+        } else if confidence < 82 {
+            self = .possible
+        } else {
+            self = .probable
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .experimental: "Experimental"
+        case .possible: "Posible"
+        case .probable: "Probable"
+        }
+    }
+
+    var reviewSafeCopy: String {
+        switch self {
+        case .experimental:
+            "Usa esto como pista, no como diagnostico."
+        case .possible:
+            "Compara candidatos antes de actuar."
+        case .probable:
+            "Coincide con senales visibles, verifica la ficha."
+        }
+    }
 }
 
 struct FlowerIdentifier {
@@ -152,4 +191,3 @@ private struct ImageColorSignature {
         self.blueRatio = blue / denom
     }
 }
-

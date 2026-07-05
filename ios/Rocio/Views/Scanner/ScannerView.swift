@@ -6,6 +6,7 @@ struct ScannerView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var result: IdentificationResult?
+    @State private var selectedFlower: Flower?
     @State private var isShowingCamera = false
     @State private var isProcessing = false
     @State private var cameraUnavailableMessage: String?
@@ -19,6 +20,8 @@ struct ScannerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
+                    ScannerPromiseCard()
+
                     if let selectedImage {
                         Image(uiImage: selectedImage)
                             .resizable()
@@ -62,7 +65,9 @@ struct ScannerView: View {
                     }
 
                     if let result {
-                        ScannerResultCard(result: result)
+                        ScannerResultCard(result: result) { flower in
+                            selectedFlower = flower
+                        }
                     }
 
                     Text("La identificacion local de Rocio es experimental. Usa color y senales simples de la foto; verifica siempre con la ficha antes de actuar.")
@@ -78,6 +83,9 @@ struct ScannerView: View {
                     selectedImage = image
                     analyze(image)
                 }
+            }
+            .sheet(item: $selectedFlower) { flower in
+                FlowerDetailView(flower: flower)
             }
             .onChange(of: selectedItem) { _, item in
                 Task { await load(item) }
@@ -116,8 +124,38 @@ struct ScannerView: View {
     }
 }
 
+private struct ScannerPromiseCard: View {
+    private var sampleFlower: Flower? {
+        FlowerCatalog.flower(id: "girasol")
+    }
+
+    var body: some View {
+        RocioCard {
+            HStack(spacing: 14) {
+                if let sampleFlower {
+                    FlowerImage(flower: sampleFlower, size: 76)
+                } else {
+                    Image(systemName: "camera.macro")
+                        .font(.title)
+                        .foregroundStyle(Color.rocioLeafDeep)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Scanner honesto")
+                        .font(.headline)
+                    Text("Rocio compara senales visibles y muestra candidatos. No promete diagnostico perfecto.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+        }
+    }
+}
+
 private struct ScannerResultCard: View {
     let result: IdentificationResult
+    let onSelectFlower: (Flower) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -128,27 +166,55 @@ private struct ScannerResultCard: View {
                         .font(.title3.bold())
                     Text(result.flower.scientific)
                         .foregroundStyle(.secondary)
-                    Text("\(Int(result.confidence.rounded()))% \(result.isUncertain ? "incierto" : "probable")")
+                    Label(result.confidenceBand.label, systemImage: "waveform.path.ecg")
                         .font(.caption.bold())
-                        .foregroundStyle(result.isUncertain ? .orange : Color.rocioLeaf)
+                        .foregroundStyle(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
                 }
             }
+
+            VStack(alignment: .leading, spacing: 8) {
+                ProgressView(value: min(100, max(0, result.confidence)), total: 100)
+                    .tint(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
+                HStack {
+                    Text("\(Int(result.confidence.rounded()))% coincidencia local")
+                    Spacer()
+                    Text(result.confidenceBand.reviewSafeCopy)
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            Button {
+                onSelectFlower(result.flower)
+            } label: {
+                Label("Ver ficha de \(result.flower.name)", systemImage: "doc.text")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
 
             VStack(alignment: .leading, spacing: 8) {
                 Text("Candidatos")
                     .font(.headline)
                 ForEach(result.candidates) { candidate in
-                    HStack {
-                        Text(candidate.flower.name)
-                        Spacer()
-                        Text("\(Int(candidate.confidence.rounded()))%")
-                            .foregroundStyle(.secondary)
+                    Button {
+                        onSelectFlower(candidate.flower)
+                    } label: {
+                        HStack {
+                            Text(candidate.flower.name)
+                            Spacer()
+                            Text("\(Int(candidate.confidence.rounded()))%")
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
         .padding()
-        .background(.background, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: .black.opacity(0.08), radius: 12, y: 6)
+        .background(.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.rocioLine)
+        )
     }
 }

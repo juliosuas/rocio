@@ -2,6 +2,10 @@
 
 Professional/real plant photos used by Rocío. Sources are credited here so the app can keep a polished visual layer without hiding provenance.
 
+## Release Audit Status
+
+Before App Store screenshots, every screenshot-visible image must have a concrete source URL and license. Images with generic "curated" notes below are acceptable for internal demo only until their exact file source/license is confirmed or replaced.
+
 - `assets/flowers/violeta.jpg` — Viola odorata flower close-up sourced from Wikimedia Commons search result. License: CC BY 2.0. Source: https://commons.wikimedia.org/
 - `assets/flowers/petunia.jpg` — Petunia hybrida (331691695) / File:Petunia hybrida (331691695).jpg. Author: Dinesh Valke from Thane, India. License: CC BY-SA 2.0 (https://creativecommons.org/licenses/by-sa/2.0). Source: https://commons.wikimedia.org/wiki/File%3APetunia_hybrida_%28331691695%29.jpg
 

@@ -41,6 +41,7 @@ Rocio is also moving through a native iOS App Store launch track under `ios/`. T
 - SwiftUI app under `ios/`
 - Bundle id: `com.juliosuas.rocio`
 - Catalog, Garden, Calendar, Scanner, and Settings tabs
+- Native onboarding, catalog filters, garden summary, and scanner confidence bands
 - Native local notifications for watering reminders
 - App Intents for opening the garden, opening scanner, and logging watering
 - Local export/delete controls for user data
@@ -67,6 +68,8 @@ Launch materials live in:
 - `DEMO_RUNBOOK.md`
 - `APP_STORE_METADATA.md`
 - `APP_STORE_PRIVACY_ANSWERS.md`
+- `APP_STORE_VISUAL_RELEASE_CHECKLIST.md`
+- `COMPETITIVE_BENCHMARK.md`
 - `MARKETING_LAUNCH_KIT.md`
 - `APPLE_DEVELOPER_RUNBOOK.md`
 - `APP_STORE_RELEASE_CHECKLIST.md`

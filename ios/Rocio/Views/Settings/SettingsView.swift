@@ -41,7 +41,7 @@ struct SettingsView: View {
                 Section("App Store") {
                     LabeledContent("Version", value: "1.0")
                     LabeledContent("Bundle", value: "com.juliosuas.rocio")
-                    Text("Pendiente antes de publicar: Apple Developer Team, icono final, capturas, politica de privacidad y TestFlight.")
+                    Text("Pendiente antes de publicar: Apple Developer Team, capturas finales, revision visual, politica de privacidad y TestFlight.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
@@ -59,26 +59,6 @@ struct SettingsView: View {
     }
 
     private var exportPayload: String {
-        let export = GardenExport(
-            exportedAt: Date(),
-            appVersion: "1.0",
-            bundleIdentifier: "com.juliosuas.rocio",
-            plants: gardenStore.plants
-        )
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        guard let data = try? encoder.encode(export),
-              let json = String(data: data, encoding: .utf8) else {
-            return "{}"
-        }
-        return json
+        GardenExport.payload(plants: gardenStore.plants)
     }
-}
-
-private struct GardenExport: Codable {
-    let exportedAt: Date
-    let appVersion: String
-    let bundleIdentifier: String
-    let plants: [GardenPlant]
 }

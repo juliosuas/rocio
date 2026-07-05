@@ -47,3 +47,31 @@ enum IntentHandoffStore {
     }
 }
 
+struct GardenExport: Codable, Equatable {
+    let exportedAt: Date
+    let appVersion: String
+    let bundleIdentifier: String
+    let plants: [GardenPlant]
+
+    static func payload(
+        plants: [GardenPlant],
+        exportedAt: Date = Date(),
+        appVersion: String = "1.0",
+        bundleIdentifier: String = "com.juliosuas.rocio"
+    ) -> String {
+        let export = GardenExport(
+            exportedAt: exportedAt,
+            appVersion: appVersion,
+            bundleIdentifier: bundleIdentifier,
+            plants: plants
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        guard let data = try? encoder.encode(export),
+              let json = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return json
+    }
+}

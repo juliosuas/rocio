@@ -210,6 +210,12 @@
       gap: 18px;
     }
 
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
     .price {
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -223,6 +229,24 @@
     }
 
     .price p { color: var(--muted); }
+
+    .cell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      background: white;
+      min-height: 132px;
+    }
+
+    .cell strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .cell span {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
 
     footer {
       display: flex;
@@ -242,7 +266,7 @@
       .nav { padding: 16px 22px; }
       .nav-links { display: none; }
       section { padding: 56px 22px; }
-      .features, .showcase, .pricing { grid-template-columns: 1fr; }
+      .features, .showcase, .pricing, .matrix { grid-template-columns: 1fr; }
       .hero-content { padding-bottom: 20px; }
     }
   </style>
@@ -263,7 +287,7 @@
       <p class="lead">Cuida tus flores en español, sin complicarte: jardín privado, recordatorios de riego, catálogo práctico y scanner experimental honesto.</p>
       <div class="actions">
         <a class="button" href="index.html">Probar demo web</a>
-        <a class="button secondary" href="#launch">Ver plan App Store</a>
+        <a class="button secondary" href="#launch">Ver ruta TestFlight</a>
       </div>
     </div>
   </header>
@@ -294,8 +318,8 @@
       <div class="section-inner showcase">
         <img src="assets/flowers/girasol.jpg" alt="Girasol fotografiado para el catálogo de Rocio">
         <div>
-          <h2>Diferente a las apps genéricas</h2>
-          <p class="section-copy">Plant apps grandes compiten por bases enormes de especies, diagnósticos agresivos y paywalls rápidos. Rocio empieza por confianza: español primero, flores de casa, sin tracking y con cuidado práctico.</p>
+          <h2>Diferente a las apps que cobran por ansiedad</h2>
+          <p class="section-copy">Planta, PictureThis y Plantum venden amplitud, AI y paywalls. Rocio compite por confianza: español primero, flores de casa, sin tracking y con cuidado práctico.</p>
           <ul class="list">
             <li><strong>Spanish-first</strong> Copy, catálogo y marketing pensados para México y LatAm desde el inicio.</li>
             <li><strong>Privacidad como producto</strong> Sin cuentas, sin analytics y sin subida de fotos en la v1 nativa.</li>
@@ -305,18 +329,43 @@
       </div>
     </section>
 
+    <section>
+      <div class="section-inner">
+        <h2>Benchmark competitivo</h2>
+        <p class="section-copy">Rocio no necesita ganar por tamaño de base de datos en la v1. Gana por foco, privacidad y claridad para principiantes que cuidan flores en casa.</p>
+        <div class="matrix">
+          <article class="cell">
+            <strong>Planta</strong>
+            <span>Cuidado recurrente, onboarding fuerte y suscripción anual. Benchmark principal para retención.</span>
+          </article>
+          <article class="cell">
+            <strong>PictureThis</strong>
+            <span>Scanner masivo y claims agresivos. Benchmark para ASO, pero Rocio evita prometer precisión falsa.</span>
+          </article>
+          <article class="cell">
+            <strong>Plantum</strong>
+            <span>AI plant doctor y upsells premium. Benchmark para pricing posterior a App Review.</span>
+          </article>
+          <article class="cell">
+            <strong>Rocio</strong>
+            <span>Flores, español, privacidad local, recordatorios simples y scanner honesto para México/LatAm.</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section id="launch">
       <div class="section-inner">
         <h2>Ruta de lanzamiento</h2>
-        <p class="section-copy">La v1 será gratis para pasar review con menos riesgo. La monetización llega después con StoreKit si hay tracción.</p>
+        <p class="section-copy">La v1 será gratis para pasar review con menos riesgo. La monetización llega después con StoreKit si hay tracción real.</p>
         <div class="pricing">
           <article class="price">
             <h3>v1 gratis</h3>
-            <p>Catálogo, Mi Jardín, calendario, scanner local, privacidad/exportación, App Intents y TestFlight.</p>
+            <p>Catálogo, Mi Jardín, calendario, onboarding nativo, scanner local, privacidad/exportación, App Intents y TestFlight.</p>
           </article>
           <article class="price">
-            <h3>v1.1 premium</h3>
-            <p>Solo después de aceptación: funciones premium con StoreKit, sin pagos externos dentro de la app.</p>
+            <h3>v1.1 Pro</h3>
+            <p>Después de aceptación: pago único sugerido de US$14.99 o anual de US$19.99 con StoreKit, sin pagos externos.</p>
           </article>
         </div>
       </div>

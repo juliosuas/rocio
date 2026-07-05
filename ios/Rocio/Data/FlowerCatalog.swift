@@ -352,5 +352,52 @@ enum FlowerCatalog {
     static func flower(id: String) -> Flower? {
         all.first { $0.id == id }
     }
+
+    static func filteredFlowers(searchText: String, filter: FlowerCatalogFilter) -> [Flower] {
+        let normalizedSearch = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return all.filter { flower in
+            let matchesSearch = normalizedSearch.isEmpty ||
+                flower.name.localizedCaseInsensitiveContains(normalizedSearch) ||
+                flower.scientific.localizedCaseInsensitiveContains(normalizedSearch) ||
+                flower.sunlightLabel.localizedCaseInsensitiveContains(normalizedSearch) ||
+                flower.seasonLabel.localizedCaseInsensitiveContains(normalizedSearch)
+
+            return matchesSearch && filter.includes(flower)
+        }
+    }
 }
 
+enum FlowerCatalogFilter: String, CaseIterable, Identifiable {
+    case all
+    case easy
+    case fullSun
+    case indoor
+    case mexico
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "Todas"
+        case .easy: "Faciles"
+        case .fullSun: "Sol"
+        case .indoor: "Interior"
+        case .mexico: "Mexico"
+        }
+    }
+
+    func includes(_ flower: Flower) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .easy:
+            flower.difficulty == 1
+        case .fullSun:
+            flower.sunlight == .fullSun
+        case .indoor:
+            flower.sunlight != .fullSun || flower.tempRange.lowerBound >= 15
+        case .mexico:
+            ["cempasuchil", "girasol", "geranio", "petunia", "clavel", "rosa"].contains(flower.id)
+        }
+    }
+}

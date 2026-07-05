@@ -65,7 +65,58 @@ final class GardenStore: ObservableObject {
         return Calendar.current.date(byAdding: .day, value: days, to: plant.lastWateredAt) ?? plant.lastWateredAt
     }
 
+    func summary(now: Date = Date()) -> GardenSummary {
+        var overdue = 0
+        var soon = 0
+        var nextDate: Date?
+
+        for plant in plants {
+            switch urgency(for: plant, now: now) {
+            case .overdue:
+                overdue += 1
+            case .soon:
+                soon += 1
+            case .good:
+                break
+            }
+
+            let candidate = nextWateringDate(for: plant)
+            if let currentNextDate = nextDate {
+                if candidate < currentNextDate {
+                    nextDate = candidate
+                }
+            } else {
+                nextDate = candidate
+            }
+        }
+
+        return GardenSummary(
+            plantCount: plants.count,
+            overdueCount: overdue,
+            soonCount: soon,
+            nextWateringDate: nextDate
+        )
+    }
+
     private func persist() {
         GardenPersistence.savePlants(plants)
+    }
+}
+
+struct GardenSummary: Equatable {
+    let plantCount: Int
+    let overdueCount: Int
+    let soonCount: Int
+    let nextWateringDate: Date?
+
+    var needsAttentionCount: Int {
+        overdueCount + soonCount
+    }
+
+    var statusLabel: String {
+        if plantCount == 0 { return "Sin plantas" }
+        if overdueCount > 0 { return "Toca regar" }
+        if soonCount > 0 { return "Revisa pronto" }
+        return "Al dia"
     }
 }
