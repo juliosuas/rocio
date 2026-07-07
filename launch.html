@@ -258,8 +258,8 @@
 
     .demo-strip {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
-      overflow: hidden;
       margin-top: 16px;
       color: var(--muted);
       font-weight: 700;
@@ -272,12 +272,6 @@
       border-radius: 999px;
       padding: 8px 12px;
       background: white;
-      animation: drift 14s linear infinite;
-    }
-
-    @keyframes drift {
-      from { transform: translateX(0); }
-      to { transform: translateX(-168px); }
     }
 
     .showcase img {
@@ -376,7 +370,6 @@
 
     @media (prefers-reduced-motion: reduce) {
       .hero-video, .demo-video { animation: none; }
-      .demo-strip span { animation: none; }
     }
   </style>
 </head>
@@ -389,19 +382,19 @@
     <nav class="nav" aria-label="Principal">
       <div class="brand">Rocio</div>
       <div class="nav-links">
-        <a href="index.html">Demo</a>
+        <a href="index.html?demo=1">Demo</a>
         <a href="privacy.html">Privacidad</a>
         <a href="support.html">Soporte</a>
       </div>
     </nav>
 
     <div class="hero-content">
-      <div class="eyebrow">Demo video listo para TestFlight</div>
+      <div class="eyebrow">Video real de la app funcionando</div>
       <h1>Rocio</h1>
       <p class="lead">Cuida tus flores en español, sin complicarte: jardín privado, recordatorios de riego, catálogo práctico y scanner experimental honesto.</p>
       <div class="actions">
         <a class="button" href="#demo">Ver demo en video</a>
-        <a class="button secondary" href="index.html">Probar demo web</a>
+        <a class="button secondary" href="index.html?demo=1">Probar demo con datos</a>
       </div>
       <div class="hero-stats" aria-label="Estado de lanzamiento">
         <div class="hero-stat"><strong>5</strong><span>pantallas clave</span></div>
@@ -424,15 +417,15 @@
             <span>Calendario</span>
             <span>Scanner honesto</span>
             <span>Privacidad local</span>
-            <span>Catalogo filtrable</span>
           </div>
         </div>
         <div>
-          <h2>La app se entiende en diez segundos</h2>
-          <p class="section-copy">El video muestra la historia que queremos vender: elegir flores, guardar tu jardín, regar a tiempo, usar un scanner honesto y controlar tus datos.</p>
+          <h2>Rocio funcionando, no maqueta</h2>
+          <p class="section-copy">El video está armado con capturas reales de la demo local: catálogo, Mi Jardín con datos, calendario y scanner experimental. Es producto visible, no un montaje genérico de flores.</p>
           <ul class="list">
-            <li><strong>Más atención arriba del fold</strong> El hero abre con movimiento real de producto, no solo texto.</li>
-            <li><strong>Listo para reemplazar por Higgsfield</strong> Cuando exportes un video más cinematográfico, solo cambia `assets/video/rocio-demo.mp4`.</li>
+            <li><strong>Más atención arriba del fold</strong> El hero abre con movimiento real de producto y copy comercial claro.</li>
+            <li><strong>Demo verificable</strong> Abre <a href="index.html?demo=1">la app con datos semilla</a> y compara las pantallas contra el video.</li>
+            <li><strong>Higgsfield-ready</strong> Si hacemos una versión más cinematográfica, debe respetar estas pantallas reales y reemplazar el mismo archivo MP4.</li>
             <li><strong>Review-safe</strong> El demo evita prometer identificación perfecta o diagnósticos profesionales.</li>
           </ul>
         </div>
@@ -520,7 +513,7 @@
 
   <footer>
     <span>Rocio - Cuida tus flores en español.</span>
-    <span><a href="privacy.html">Privacidad</a> · <a href="support.html">Soporte</a> · <a href="index.html">Demo</a></span>
+    <span><a href="privacy.html">Privacidad</a> · <a href="support.html">Soporte</a> · <a href="index.html?demo=1">Demo</a></span>
   </footer>
 </body>
 </html>

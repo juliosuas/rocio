@@ -480,10 +480,11 @@ img { display: block; max-width: 100%; }
   line-height: 1.5;
   color: var(--text-secondary);
   margin-bottom: 12px;
+  overflow-wrap: anywhere;
 }
 .data-control-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 .data-control-btn {
@@ -503,10 +504,6 @@ img { display: block; max-width: 100%; }
   color: var(--overdue);
 }
 .data-control-btn:active { transform: scale(0.98); }
-@media (max-width: 380px) {
-  .data-control-actions { grid-template-columns: 1fr; }
-}
-
 .garden-card {
   background: var(--bg-card);
   border-radius: var(--radius);
@@ -2068,7 +2065,7 @@ img { display: block; max-width: 100%; }
     <p class="page-subtitle">Tu colección personal de flores</p>
     <div class="data-controls" id="dataControls" aria-label="Controles de datos locales">
       <div class="data-controls-title">Tus datos viven en este dispositivo</div>
-      <div class="data-controls-copy">Exporta una copia JSON o borra tu jardín e historial de escaneos cuando quieras.</div>
+      <div class="data-controls-copy">Exporta una copia JSON o borra tu jardín cuando quieras.</div>
       <div class="data-control-actions">
         <button class="data-control-btn" id="exportDataBtn" type="button">⬇️ Exportar datos</button>
         <button class="data-control-btn danger" id="clearLocalDataBtn" type="button">🗑 Borrar datos</button>
@@ -3012,6 +3009,29 @@ let selectedFlower = null;
 let editingGardenItem = null;
 let calWeekOffset = 0;
 
+function demoDate(daysAgo) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString();
+}
+
+function seedDemoGardenIfRequested() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('demo') !== '1') return;
+
+  garden = [
+    { flowerId: 'rosa', addedAt: demoDate(42), lastWatered: demoDate(4), status: 'needs-water', notes: 'Riego profundo y poda ligera esta semana.' },
+    { flowerId: 'lavanda', addedAt: demoDate(36), lastWatered: demoDate(1), status: 'healthy', notes: 'Sol directo por la manana.' },
+    { flowerId: 'girasol', addedAt: demoDate(18), lastWatered: demoDate(3), status: 'needs-sun', notes: 'Mover a zona con mas luz.' },
+    { flowerId: 'cempasuchil', addedAt: demoDate(12), lastWatered: demoDate(2), status: 'healthy', notes: 'Perfecta para maceta exterior.' }
+  ];
+  safeStorageSet(rocioLocalStorage, ROCIO_GARDEN_KEY, JSON.stringify(garden));
+  safeStorageSet(rocioLocalStorage, 'rocio_onboarded', '1');
+  safeStorageSet(rocioSessionStorage, 'rocio_splash_shown', '1');
+}
+
+seedDemoGardenIfRequested();
+
 /* ═══════════════════════════════════════════
    HELPERS
    ═══════════════════════════════════════════ */
@@ -3106,20 +3126,24 @@ function updateBadge() {
 /* ═══════════════════════════════════════════
    NAVIGATION
    ═══════════════════════════════════════════ */
+function showPage(page) {
+  const targetPage = document.getElementById(page);
+  const targetNav = document.querySelector(`.nav-item[data-page="${page}"]`);
+  if (!targetPage || !targetNav) return;
+  if (page === currentPage && targetPage.classList.contains('active')) return;
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  targetNav.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  targetPage.classList.add('active');
+  currentPage = page;
+  if (page === 'pageGarden') renderGarden();
+  if (page === 'pageCalendar') { renderCalendar(); renderMoonSection(); }
+  if (page === 'pageDoctor') renderDoctor();
+  if (page === 'pageTips') renderTips();
+}
+
 document.querySelectorAll('.nav-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const page = btn.dataset.page;
-    if (page === currentPage) return;
-    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.getElementById(page).classList.add('active');
-    currentPage = page;
-    if (page === 'pageGarden') renderGarden();
-    if (page === 'pageCalendar') { renderCalendar(); renderMoonSection(); }
-    if (page === 'pageDoctor') renderDoctor();
-    if (page === 'pageTips') renderTips();
-  });
+  btn.addEventListener('click', () => showPage(btn.dataset.page));
 });
 
 /* ═══════════════════════════════════════════
@@ -3367,7 +3391,7 @@ function renderGarden() {
   const streak = getWateringStreak();
   const overdueCount = sorted.filter(s => s.urgency === 'overdue').length;
   const streakHTML = `
-    <div style="display:flex;gap:12px;margin-bottom:16px;">
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;">
       <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
         <div style="font-size:28px;margin-bottom:4px;">${streak > 0 ? '🔥' : '💤'}</div>
         <div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${streak}</div>
@@ -5018,6 +5042,17 @@ renderCatalog();
 assignCardIndices();
 updateBadge();
 renderDoctor();
+const initialDemoPage = new URLSearchParams(window.location.search).get('page');
+const demoPageMap = {
+  catalog: 'pageCatalog',
+  garden: 'pageGarden',
+  calendar: 'pageCalendar',
+  doctor: 'pageDoctor',
+  tips: 'pageTips'
+};
+if (initialDemoPage && demoPageMap[initialDemoPage]) {
+  showPage(demoPageMap[initialDemoPage]);
+}
 clearLegacyAppCache();
 checkWateringNotifications();
 </script>

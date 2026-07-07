@@ -1,6 +1,7 @@
 # Rocio Higgsfield Video Brief
 
 Use this brief to generate a higher-production video that can replace `assets/video/rocio-demo.mp4`.
+The current MP4 is built from real Rocio demo screenshots in `assets/video/frames/`; any Higgsfield version must preserve the actual app screens and product flow.
 
 ## Goal
 
@@ -10,17 +11,17 @@ Create a 10-12 second cinematic App Store landing video for Rocio, a Spanish-fir
 
 - Premium but warm, not futuristic.
 - Real flowers, morning light, Mexican/LatAm home garden feel.
-- iPhone app UI appears as a clean product overlay, not a sci-fi hologram.
+- iPhone app UI appears as a clean product overlay, using the real Rocio screens from `assets/video/frames/`, not a fake app UI.
 - Use natural camera motion: slow push-in, gentle parallax, crisp macro flower details.
 - Palette: leaf green, soft rose, ivory, natural soil brown.
 
 ## Shot Sequence
 
 1. Lavender and roses in morning light, text: "Rocio".
-2. iPhone UI: catalog filters, text: "Elige tus flores".
-3. iPhone UI: Mi Jardin summary, text: "Riega a tiempo".
-4. iPhone UI: scanner candidates, text: "Candidatos, no magia".
-5. iPhone UI: privacy/settings, text: "Tu jardin privado".
+2. Real Rocio catalog screen, text: "Elige tus flores".
+3. Real Rocio Mi Jardin screen, text: "Riega a tiempo".
+4. Real Rocio calendar screen, text: "Calendario simple".
+5. Real Rocio scanner/tips screen, text: "Candidatos, no magia".
 
 ## Copy Rules
 
