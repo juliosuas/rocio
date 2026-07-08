@@ -14,8 +14,11 @@ Before App Store screenshots, every screenshot-visible image must have a concret
 - `assets/flowers/rosa.jpg` — Curated botanical reference photo for Rosa gallica, sourced from Wikipedia/Wikimedia lead image (Wild_Rosa_gallica_Romania.jpg).
 - `assets/flowers/gardenia.jpg` — Curated botanical reference photo for Gardenia jasminoides, sourced from Wikipedia/Wikimedia lead image (Gardenia_jasminoides_flower_Argentina.jpg).
 - `assets/flowers/geranio.jpg` — Curated botanical reference photo for Pelargonium zonale, sourced from Wikipedia/Wikimedia lead image (Pelargonium_zonale_in_wild.jpg).
+- `assets/flowers/girasol.jpg` — `File:08-Common Sunflower-nX-5.jpg`, sunflower fields near La Fleche, France by PsamatheM. License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0). Source: https://commons.wikimedia.org/wiki/File:08-Common_Sunflower-nX-5.jpg
+- `assets/flowers/hortensia.jpg` — `File:Hydrangea macrophylla 2021.2.jpg`, Hydrangea macrophylla flowers in Dieng Plateau, Central Java, Indonesia by Syariful Msth. License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0). Source: https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla_2021.2.jpg
+- `assets/flowers/tulipan.jpg` — `File:Pink tulip flower.jpg`, pink tulip by Benjamin D. Esham / Wikimedia Commons. License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0). Source: https://commons.wikimedia.org/wiki/File:Pink_tulip_flower.jpg
 
-- `assets/flowers/cempasuchil.jpg` — Curated orange marigold / Tagetes-style flower reference from Wikimedia Commons search result `File:Marigold Flower in Bloom.jpg`.
+- `assets/flowers/cempasuchil.jpg` — `File:Marigold Flower in Bloom.jpg`, Tagetes erecta close-up by Navaneethpp. License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0). Source: https://commons.wikimedia.org/wiki/File:Marigold_Flower_in_Bloom.jpg
 - `assets/flowers/clavel.jpg` — Curated carnation reference from Wikimedia Commons `File:Carnation_flower.jpg`.
 - `assets/flowers/jazmin.jpg` — Curated jasmine reference from Wikimedia Commons `File:Jasminum_officinale.JPG`.
 - `assets/flowers/lavanda.jpg` — Curated lavender reference from Wikimedia Commons `File:Lavandula_angustifolia_01.JPG`.

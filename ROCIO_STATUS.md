@@ -8,7 +8,7 @@
 - **Weekly Calendar** — Shows which plants need water by day; tasks have water buttons directly inside the calendar.
 - **Moon Phase Calendar** — Real Conway-style moon phase algorithm with gardening recommendations.
 - **Seasonal Tips** — 36 tips across all 12 months, culturally relevant for Mexico.
-- **Plant Doctor** — Symptom categories, pest profiles, home remedies, and treatments.
+- **Plant Doctor** — Symptom categories, pest profiles, home remedies, and treatments, now labeled as PENDING botanical verification before App Store/commercial claims.
 - **Composting Guide** — Green/brown guide, DIY fertilizers, vermicomposting.
 - **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
 - **Dark Mode** — Full dark theme with persisted preference.
@@ -27,6 +27,11 @@
 - **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
 - **No Weather Integration** — Watering calculator still uses manual climate input.
+- **Disease/treatment evidence is not source-audited yet** — Existing symptom and treatment guidance is visible only as PENDING verification and must be checked against reliable horticultural sources before being sold as diagnosis or treatment advice.
+- **Photo assets pass the local App Store photo gate** — 15/15 catalog JPGs exist, all have attribution rows, none have pending license/source audit markers, and all meet the local 800px minimum-dimension threshold. Keep attribution visible and re-run `node qa/photo-asset-audit.mjs --app-store-ready` before using screenshots or metadata.
+- **Commercial/App Store claims are guarded but not verified** — `qa/commercial-claim-audit.mjs` checks that disease/treatment content stays labeled as PENDING botanical verification, scanner and README copy stay honest about local matching, and no Plant.id secret is present in the browser build.
+- **Botanical content coverage is guarded, not medically verified** — `qa/botanical-content-audit.mjs` verifies that every catalog flower has complete disease rows and every Plant Doctor symptom cause has complete guidance while still rendering treatment text behind PENDING verification and caveats.
+- **App Store/Lovable static readiness is guarded locally** — `qa/appstore-static-readiness-audit.mjs` verifies local privacy/support drafts, iOS/PWA metadata, manifest identity, App Store owner-action blocks, and Lovable no-publish/no-secret constraints while still reporting `appStoreSubmissionReady: false`.
 
 ## Top Next Steps to Make This Commercial
 

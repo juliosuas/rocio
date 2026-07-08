@@ -118,12 +118,18 @@ const scenarios = [
   {
     name: 'unknown_white_green_orange_mixed',
     expectedNot: 'lirio',
+    expectUncertain: true,
+    expectNoClearFlower: true,
+    maxConfidence: 60,
     note: 'Ambiguous non-lily stress case: similar palette but no shape evidence.',
     colors: [['white', 7], ['green', 7], ['orange', 7]],
   },
   {
     name: 'unknown_pale_green_white',
     expectedNot: 'lirio',
+    expectUncertain: true,
+    expectNoClearFlower: true,
+    maxConfidence: 60,
     note: 'Generic pale flower/leaf image; should be uncertain and not over-routed to lirio.',
     colors: [['cream', 6], ['white', 8], ['lightGreen', 7]],
   },
@@ -186,7 +192,12 @@ function makeSyntheticCanvas(colors) {
 
 function passStatus(scenario, result) {
   if (scenario.expected) return result.flowerId === scenario.expected;
-  if (scenario.expectedNot) return result.flowerId !== scenario.expectedNot;
+  if (scenario.expectedNot) {
+    return result.flowerId !== scenario.expectedNot &&
+      (!scenario.expectUncertain || result.isUncertain) &&
+      (!scenario.expectNoClearFlower || result.noClearFlower) &&
+      (!scenario.maxConfidence || result.confidence <= scenario.maxConfidence);
+  }
   return true;
 }
 
@@ -200,6 +211,7 @@ const results = scenarios.map(scenario => {
     actual: result.flowerId,
     confidence: result.confidence,
     uncertain: result.isUncertain,
+    noClearFlower: Boolean(result.noClearFlower),
     topCandidates,
     pass: passStatus(scenario, result),
     note: scenario.note,
