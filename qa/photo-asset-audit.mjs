@@ -38,12 +38,18 @@ function readJpegDimensions(filePath) {
       offset += 1;
       continue;
     }
+    if (offset + 3 >= buffer.length) {
+      break;
+    }
 
     const marker = buffer[offset + 1];
     const length = buffer.readUInt16BE(offset + 2);
     const isStartOfFrame = marker >= 0xc0 && marker <= 0xc3;
 
     if (isStartOfFrame) {
+      if (offset + 8 >= buffer.length) {
+        break;
+      }
       return {
         width: buffer.readUInt16BE(offset + 7),
         height: buffer.readUInt16BE(offset + 5),

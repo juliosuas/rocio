@@ -105,7 +105,7 @@ const blockers = [
   {
     id: 'appstore-photo-assets',
     blocked: /assets\/flowers\/.+\.jpg.+PENDING/i.test(photoAttributions),
-    evidence: 'Photo source/license rows have no PENDING markers in PHOTO_ATTRIBUTIONS.md.',
+    evidence: 'A catalog photo attribution row still contains a PENDING source or license marker.',
   },
 ];
 

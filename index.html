@@ -4429,6 +4429,15 @@ function summarizeSampleCategories(samples) {
   return counts;
 }
 
+const PALE_MIX_MIN_PALE_WARM = 4;
+const PALE_MIX_MIN_WHITE = 7;
+const PALE_MIX_MIN_GREEN = 6;
+const AMBIGUOUS_WARM_MIN_WHITE = 6;
+const AMBIGUOUS_WARM_MIN_GREEN = 6;
+const AMBIGUOUS_WARM_MIN_SIGNAL = 5;
+const FOLIAGE_MAX_COLOR_SIGNAL = 3;
+const FOLIAGE_MAX_SEPARATION = 8;
+
 function localFallbackNeedsReview(samples, ranked) {
   const counts = summarizeSampleCategories(samples);
   const best = ranked[0] || { flowerId: '', score: 0 };
@@ -4438,17 +4447,25 @@ function localFallbackNeedsReview(samples, ranked) {
   const greenEvidence = (counts.lightGreen || 0) + (counts.darkGreen || 0);
   const paleWarmEvidence = samples.filter(([h, _s, l]) => h >= 25 && h <= 70 && l > 0.60).length;
   const orangeEvidence = (counts.orange || 0) + (counts.deepOrange || 0);
+  const nonFlowerNoiseEvidence = (counts.darkBrown || 0) + (counts.other || 0);
   const colorEvidence =
     (counts.red || 0) + (counts.pink || 0) + (counts.orange || 0) +
     (counts.deepOrange || 0) + (counts.yellow || 0) + (counts.brightYellow || 0) +
     (counts.blue || 0) + (counts.purple || 0) + (counts.deepPurple || 0);
-  const paleMixed = paleWarmEvidence >= 4 && whiteEvidence >= 7 && greenEvidence >= 6 && orangeEvidence === 0;
-  const ambiguousWarmMix = whiteEvidence >= 6 && greenEvidence >= 6 && (orangeEvidence + paleWarmEvidence) >= 5;
-  const foliageHeavy = greenEvidence > whiteEvidence + colorEvidence && colorEvidence < 3;
+  const backgroundEvidence = greenEvidence + nonFlowerNoiseEvidence;
+  const paleMixed = paleWarmEvidence >= PALE_MIX_MIN_PALE_WARM &&
+    whiteEvidence >= PALE_MIX_MIN_WHITE &&
+    greenEvidence >= PALE_MIX_MIN_GREEN &&
+    orangeEvidence === 0;
+  const ambiguousWarmMix = whiteEvidence >= AMBIGUOUS_WARM_MIN_WHITE &&
+    greenEvidence >= AMBIGUOUS_WARM_MIN_GREEN &&
+    (orangeEvidence + paleWarmEvidence + nonFlowerNoiseEvidence) >= AMBIGUOUS_WARM_MIN_SIGNAL;
+  const foliageHeavy = backgroundEvidence > whiteEvidence + colorEvidence &&
+    colorEvidence < FOLIAGE_MAX_COLOR_SIGNAL;
 
   if (paleMixed && (best.flowerId === 'jazmin' || best.flowerId === 'gardenia')) return true;
   if (ambiguousWarmMix && (best.flowerId === 'lirio' || best.flowerId === 'tulipan')) return true;
-  if (foliageHeavy && separation < 8) return true;
+  if (foliageHeavy && separation < FOLIAGE_MAX_SEPARATION) return true;
   return false;
 }
 

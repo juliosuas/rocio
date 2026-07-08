@@ -76,7 +76,7 @@ Agregar textos humanos en `Info.plist`:
 - Plant.id plan/API debe permitir producción/comercial.
 - No vender el scanner como reconocimiento real hasta restaurar Supabase/Plant.id con secreto seguro y QA con fotos reales.
 - Enfermedades/tratamientos siguen PENDING hasta auditoría botánica con fuentes confiables.
-- Fotos del catálogo pasan el gate local de presencia, atribución, licencia no-PENDING y resolución mínima; revalidar antes de screenshots finales.
+- Fotos del catálogo pasan el gate local de presencia, atribución, licencia no-PENDING, resolución mínima de 800px y payload máximo de 1 MB por JPG; revalidar antes de screenshots finales.
 
 ## Definición de “funcional v1”
 - Instala como app iOS.
