@@ -16,6 +16,42 @@ Run it as a failing gate after a classifier fix:
 node qa/readonly-flower-classifier-harness.mjs --strict
 ```
 
+Audit App Store photo asset coverage:
+
+```sh
+node qa/photo-asset-audit.mjs
+```
+
+Gate App Store screenshot/metadata photo readiness:
+
+```sh
+node qa/photo-asset-audit.mjs --app-store-ready
+```
+
+Audit commercial/App Store claim safety:
+
+```sh
+node qa/commercial-claim-audit.mjs
+```
+
+Audit botanical content coverage and PENDING labels:
+
+```sh
+node qa/botanical-content-audit.mjs
+```
+
+Audit local App Store/Lovable static readiness without publishing:
+
+```sh
+node qa/appstore-static-readiness-audit.mjs
+```
+
+Audit mobile scanner readiness:
+
+```sh
+node qa/mobile-scanner-readiness-audit.mjs
+```
+
 ## What This Proves
 
 - It directly exercises the same `identifyPlant`, `sampleImageColors`, `rgbToHsl`, and `scoreFlowerMatch` logic used by the app.
@@ -52,6 +88,44 @@ Summary:
 - `nonLilyClassifiedAsLirio`: 0
 - palette sweep non-lily distributions classified as `lirio`: 0
 
+Photo asset audit:
+
+- `node qa/photo-asset-audit.mjs` exits `0`.
+- `node qa/photo-asset-audit.mjs --app-store-ready` currently exits `0`.
+- 15/15 catalog JPG assets are present.
+- 15/15 catalog JPG assets have an attribution row.
+- License/source attribution has no current PENDING rows for catalog JPGs.
+- App Store photo readiness is separately reported as blocked when an asset has pending license audit or either dimension is below 800px.
+- Current App Store photo blocker: none in the local photo gate. `girasol`, `tulipan`, and `hortensia` were replaced with audited high-resolution Wikimedia Commons assets, and no catalog photo is currently below the 800px minimum dimension threshold.
+
+Commercial claim audit:
+
+- `node qa/commercial-claim-audit.mjs` exits `0`.
+- Flower detail disease treatments must render behind `PENDING verificación botánica`.
+- Doctor symptom solutions must render behind `PENDING verificación botánica`.
+- The scanner must keep local matching copy honest when Plant.id/Supabase is unavailable.
+- README recognition copy must not present Supabase/Plant.id as currently active.
+- The browser build must not include Plant.id secrets.
+
+Botanical content audit:
+
+- `node qa/botanical-content-audit.mjs` exits `0`.
+- 15/15 catalog flowers have at least two complete disease rows.
+- Current catalog disease rows: 36.
+- Current Plant Doctor symptom rows: 5 symptom groups with 23 complete causes.
+- Flower disease and Doctor symptom solutions remain rendered behind `PENDING verificación botánica` plus professional/orientation caveats.
+
+App Store static readiness audit:
+
+- `node qa/appstore-static-readiness-audit.mjs` exits `0`.
+- Local privacy/support drafts, iOS/PWA metadata, manifest fields, App Store plan constraints, and Lovable prompt constraints are present.
+- The audit intentionally reports `appStoreSubmissionReady: false` until owner-only Apple Developer actions, public privacy/support URLs, and Plant.id/Supabase production setup are resolved.
+
+Mobile scanner readiness audit:
+
+- `node qa/mobile-scanner-readiness-audit.mjs` exits `0`.
+- Scanner entrypoints, local-mode honesty copy, no-clear-flower fallback, retake guidance, mobile touch target sizing, and bounded result sheet behavior are guarded.
+
 Important observed failures:
 
 - The original failing cases are now covered by the strict harness.
@@ -68,7 +142,7 @@ Important observed failures:
 - Jasmine-like white/light-green returns `jazmin`, not `lirio`.
 - Daisy-like white/yellow returns `margarita`, not `lirio`.
 - Marigold-like orange/yellow returns `cempasuchil`, not `lirio`.
-- Ambiguous white/green/orange and pale-green/white cases are either not `lirio` or are explicitly marked uncertain with `lirio` absent from the first result.
+- Ambiguous white/green/orange and pale-green/white cases are not `lirio`, stay under 60 confidence, and set both `isUncertain` and `noClearFlower`.
 - Any real-browser scanner smoke after the fix should show top candidates and uncertainty text for low-separation cases, not a confident single `Lirio`.
 
 ## Fix Direction To Prove Later

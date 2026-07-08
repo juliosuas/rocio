@@ -1767,6 +1767,22 @@ img { display: block; max-width: 100%; }
   text-shadow: 0 0 10px rgba(106,220,106,0.5), 0 1px 3px rgba(0,0,0,0.8);
   letter-spacing: 0.5px;
 }
+.scanner-photo-guide {
+  position: absolute; left: 18px; right: 18px; bottom: 27%;
+  z-index: 5;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+  color: rgba(255,255,255,0.88);
+  font-size: 11px; font-weight: 700; line-height: 1.25;
+  text-align: center;
+  pointer-events: none;
+}
+.scanner-photo-guide span {
+  padding: 7px 6px;
+  border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.42);
+  border: 1px solid rgba(255,255,255,0.16);
+  backdrop-filter: blur(8px);
+}
 
 /* Color sample dots */
 .scanner-sample-dot {
@@ -1847,6 +1863,12 @@ img { display: block; max-width: 100%; }
 .scanner-upload-fallback.active { display: flex; }
 .scanner-upload-icon { font-size: 64px; margin-bottom: 8px; }
 .scanner-upload-text { font-size: 15px; color: rgba(255,255,255,0.7); line-height: 1.5; }
+.scanner-upload-hint {
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.72);
+}
 .scanner-upload-btn {
   padding: 14px 32px; border-radius: var(--radius-full);
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
@@ -2219,6 +2241,11 @@ img { display: block; max-width: 100%; }
     </div>
     <div class="scanner-scanline" id="scannerScanline"></div>
     <div class="scanner-status" id="scannerStatus">Apunta a una planta...</div>
+    <div class="scanner-photo-guide" id="scannerPhotoGuide">
+      <span>Flor completa</span>
+      <span>Fondo limpio</span>
+      <span>Luz natural</span>
+    </div>
     <div class="scanner-progress" id="scannerProgress">
       <div class="scanner-progress-fill" id="scannerProgressFill"></div>
     </div>
@@ -2230,6 +2257,7 @@ img { display: block; max-width: 100%; }
     <div class="scanner-upload-fallback" id="scannerUploadFallback">
       <div class="scanner-upload-icon">📷</div>
       <div class="scanner-upload-text">Tu dispositivo no tiene cámara disponible.<br>Sube una foto para identificar la planta.</div>
+      <div class="scanner-upload-hint">Mejor resultado: flor abierta, completa y enfocada; evita varias flores mezcladas, hojas dominantes o fondos muy cargados.</div>
       <button class="scanner-upload-btn" id="scannerUploadBtn">📁 Subir foto</button>
       <input type="file" id="scannerFileInput" accept="image/*" style="display:none">
     </div>
@@ -2238,6 +2266,7 @@ img { display: block; max-width: 100%; }
       <div style="font-size:64px;margin-bottom:8px">🔒</div>
       <div style="font-size:18px;font-weight:700;margin-bottom:8px">Permiso de cámara necesario</div>
       <div class="scanner-upload-text">Para escanear plantas, necesitamos acceso a tu cámara. Ve a la configuración de tu navegador y permite el acceso a la cámara.</div>
+      <div class="scanner-upload-hint">Si subes foto, usa una sola flor centrada con luz natural y fondo limpio.</div>
       <button class="scanner-upload-btn" id="scannerPermUploadBtn" style="margin-top:8px">📁 O sube una foto</button>
     </div>
   </div>
@@ -3289,7 +3318,7 @@ function openFlowerDetail(id) {
 
   // Diseases
   if (f.diseases && f.diseases.length) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🦠</span> Enfermedades Comunes</div>${f.diseases.map(d => `<div style="margin-bottom:12px;padding:10px;background:rgba(232,112,112,0.05);border-radius:var(--radius-sm)"><strong style="font-size:13px">${d.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">Síntoma: ${d.symptom}</span><br><span style="font-size:12px;color:var(--primary-dark)">💊 ${d.treatment}</span></div>`).join('')}</div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🦠</span> Enfermedades Comunes</div>${f.diseases.map(d => `<div style="margin-bottom:12px;padding:10px;background:rgba(232,112,112,0.05);border-radius:var(--radius-sm)"><strong style="font-size:13px">${d.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">Síntoma: ${d.symptom}</span><br><span style="font-size:12px;color:var(--primary-dark)">💊 PENDING verificación botánica: ${d.treatment}</span><br><span style="font-size:11px;color:var(--text-muted)">No sustituye diagnóstico profesional; confirma antes de aplicar químicos o retirar plantas.</span></div>`).join('')}</div>`;
   }
 
   // Share button
@@ -3853,7 +3882,7 @@ function renderSymptoms() {
           <div class="remedy-card">
             <div class="rc-header"><div class="rc-title">${c.cause}</div></div>
             <div class="rc-body">${c.detail}</div>
-            <div class="rc-section"><div class="rc-section-title">Solución</div><div class="rc-body">${c.solution}</div></div>
+            <div class="rc-section"><div class="rc-section-title">Solución</div><div class="rc-body">PENDING verificación botánica: ${c.solution}</div><div class="rc-body" style="font-size:11px;color:var(--text-muted);margin-top:6px">Guía orientativa; confirma el diagnóstico antes de aplicar tratamientos.</div></div>
           </div>
         `).join('')}
       </div>
@@ -4391,6 +4420,55 @@ function scoreFlowerMatch(samples, profileId) {
   return score;
 }
 
+function summarizeSampleCategories(samples) {
+  const counts = {};
+  for (const [h, s, l] of samples) {
+    const category = flowerColorCategory(h, s, l);
+    counts[category] = (counts[category] || 0) + 1;
+  }
+  return counts;
+}
+
+const PALE_MIX_MIN_PALE_WARM = 4;
+const PALE_MIX_MIN_WHITE = 7;
+const PALE_MIX_MIN_GREEN = 6;
+const AMBIGUOUS_WARM_MIN_WHITE = 6;
+const AMBIGUOUS_WARM_MIN_GREEN = 6;
+const AMBIGUOUS_WARM_MIN_SIGNAL = 5;
+const FOLIAGE_MAX_COLOR_SIGNAL = 3;
+const FOLIAGE_MAX_SEPARATION = 8;
+
+function localFallbackNeedsReview(samples, ranked) {
+  const counts = summarizeSampleCategories(samples);
+  const best = ranked[0] || { flowerId: '', score: 0 };
+  const second = ranked[1] || { score: 0 };
+  const separation = Math.max(0, best.score - second.score);
+  const whiteEvidence = (counts.white || 0) + (counts.cream || 0);
+  const greenEvidence = (counts.lightGreen || 0) + (counts.darkGreen || 0);
+  const paleWarmEvidence = samples.filter(([h, _s, l]) => h >= 25 && h <= 70 && l > 0.60).length;
+  const orangeEvidence = (counts.orange || 0) + (counts.deepOrange || 0);
+  const nonFlowerNoiseEvidence = (counts.darkBrown || 0) + (counts.other || 0);
+  const colorEvidence =
+    (counts.red || 0) + (counts.pink || 0) + (counts.orange || 0) +
+    (counts.deepOrange || 0) + (counts.yellow || 0) + (counts.brightYellow || 0) +
+    (counts.blue || 0) + (counts.purple || 0) + (counts.deepPurple || 0);
+  const backgroundEvidence = greenEvidence + nonFlowerNoiseEvidence;
+  const paleMixed = paleWarmEvidence >= PALE_MIX_MIN_PALE_WARM &&
+    whiteEvidence >= PALE_MIX_MIN_WHITE &&
+    greenEvidence >= PALE_MIX_MIN_GREEN &&
+    orangeEvidence === 0;
+  const ambiguousWarmMix = whiteEvidence >= AMBIGUOUS_WARM_MIN_WHITE &&
+    greenEvidence >= AMBIGUOUS_WARM_MIN_GREEN &&
+    (orangeEvidence + paleWarmEvidence + nonFlowerNoiseEvidence) >= AMBIGUOUS_WARM_MIN_SIGNAL;
+  const foliageHeavy = backgroundEvidence > whiteEvidence + colorEvidence &&
+    colorEvidence < FOLIAGE_MAX_COLOR_SIGNAL;
+
+  if (paleMixed && (best.flowerId === 'jazmin' || best.flowerId === 'gardenia')) return true;
+  if (ambiguousWarmMix && (best.flowerId === 'lirio' || best.flowerId === 'tulipan')) return true;
+  if (foliageHeavy && separation < FOLIAGE_MAX_SEPARATION) return true;
+  return false;
+}
+
 function identifyPlant(canvas) {
   if (LOCAL_FLOWER_REFERENCE_DESCRIPTORS && LOCAL_FLOWER_REFERENCE_DESCRIPTORS.length) {
     const descriptor = createCanvasDescriptor(canvas);
@@ -4427,13 +4505,17 @@ function identifyPlant(canvas) {
   const best = ranked[0] || { flowerId: 'rosa', score: 0 };
   const second = ranked[1] || { score: 0 };
   const separation = Math.max(0, best.score - second.score);
+  const needsReview = localFallbackNeedsReview(samples, ranked);
   const rawConfidence = 35 + (best.score / maxScore) * 45 + Math.min(20, separation * 2);
-  const confidence = Math.min(95, Math.max(18, rawConfidence));
+  const confidence = needsReview
+    ? Math.min(55, Math.max(18, rawConfidence))
+    : Math.min(95, Math.max(18, rawConfidence));
 
   return {
     flowerId: best.flowerId,
     confidence: parseFloat(confidence.toFixed(1)),
-    isUncertain: confidence < 65 || separation < 2,
+    noClearFlower: needsReview,
+    isUncertain: needsReview || confidence < 65 || separation < 2,
     candidates: ranked.slice(0, 3).map(candidate => ({
       flowerId: candidate.flowerId,
       confidence: parseFloat(Math.min(95, Math.max(12, 35 + (candidate.score / maxScore) * 45)).toFixed(1))
