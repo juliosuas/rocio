@@ -10,6 +10,10 @@ const stringCatalogPath = path.join(iosRoot, 'Resources', 'Localizable.xcstrings
 const stringCatalog = fs.existsSync(stringCatalogPath)
   ? JSON.parse(fs.readFileSync(stringCatalogPath, 'utf8'))
   : { strings: {} };
+const appShortcutsCatalogPath = path.join(iosRoot, 'Resources', 'AppShortcuts.xcstrings');
+const appShortcutsCatalog = fs.existsSync(appShortcutsCatalogPath)
+  ? JSON.parse(fs.readFileSync(appShortcutsCatalogPath, 'utf8'))
+  : { strings: {} };
 const iconsDirectory = path.join(iosRoot, 'Resources', 'Assets.xcassets', 'AppIcon.appiconset');
 const iconFiles = fs.readdirSync(iconsDirectory).filter((name) => name.endsWith('.png'));
 
@@ -43,15 +47,22 @@ const requiredLocalizationKeys = [
   'settings.privacy.copy',
   'notification.watering.body',
   'Open My Garden',
-  'Open my garden in ${applicationName}',
-  'Show my garden in ${applicationName}',
-  'Log watering in ${applicationName}',
-  'Scan a flower with ${applicationName}',
-  'Identify a flower in ${applicationName}',
 ];
 const missingLocalizationKeys = requiredLocalizationKeys.filter((key) => !stringCatalog.strings[key]);
 const incompleteLocalizationKeys = requiredLocalizationKeys.filter((key) => {
   const localizations = stringCatalog.strings[key]?.localizations ?? {};
+  return !localizations.en?.stringUnit?.value || !localizations.es?.stringUnit?.value;
+});
+const requiredAppShortcutKeys = [
+  'Open my garden in ${applicationName}',
+  'Show my garden in ${applicationName}',
+  'Water a plant in ${applicationName}',
+  'Log watering in ${applicationName}',
+  'Scan a flower with ${applicationName}',
+  'Identify a flower in ${applicationName}',
+];
+const incompleteAppShortcutKeys = requiredAppShortcutKeys.filter((key) => {
+  const localizations = appShortcutsCatalog.strings[key]?.localizations ?? {};
   return !localizations.en?.stringUnit?.value || !localizations.es?.stringUnit?.value;
 });
 
@@ -65,6 +76,7 @@ const checks = [
   ['Spanish localization region', /knownRegions = \([\s\S]*\bes,/.test(projectFile)],
   ['string catalog included', projectFile.includes('Localizable.xcstrings') && fs.existsSync(stringCatalogPath)],
   ['catalog and critical copy localized EN/ES', missingLocalizationKeys.length === 0 && incompleteLocalizationKeys.length === 0],
+  ['App Shortcuts catalog localized EN/ES', projectFile.includes('AppShortcuts.xcstrings') && incompleteAppShortcutKeys.length === 0],
   ['localization helper included', projectFile.includes('Localization.swift') && fs.existsSync(path.join(iosRoot, 'Localization.swift'))],
   ['1024 marketing icon', fs.existsSync(path.join(iconsDirectory, 'AppIcon-1024.png'))],
   ['all app icons opaque', alphaIcons.length === 0],
@@ -84,6 +96,7 @@ console.log(JSON.stringify({
   alphaIcons,
   missingLocalizationKeys,
   incompleteLocalizationKeys,
+  incompleteAppShortcutKeys,
   unsignedReady: failed === 0,
   signedReady: failed === 0 && Boolean(configuredTeam),
   signingBlocker: configuredTeam ? null : 'DEVELOPMENT_TEAM is not configured',

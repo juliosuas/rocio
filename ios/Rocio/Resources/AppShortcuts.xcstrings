@@ -1,0 +1,48 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Identify a flower in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Identify a flower in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Identificar una flor en ${applicationName}" } }
+      }
+    },
+    "Log watering in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Log watering in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Registrar riego en ${applicationName}" } }
+      }
+    },
+    "Open my garden in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Open my garden in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Abrir mi jardín en ${applicationName}" } }
+      }
+    },
+    "Scan a flower with ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Scan a flower with ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Escanear una flor con ${applicationName}" } }
+      }
+    },
+    "Show my garden in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Show my garden in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Ver mi jardín en ${applicationName}" } }
+      }
+    },
+    "Water a plant in ${applicationName}": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": { "stringUnit": { "state": "translated", "value": "Water a plant in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Regar una planta en ${applicationName}" } }
+      }
+    }
+  },
+  "version": "1.0"
+}
