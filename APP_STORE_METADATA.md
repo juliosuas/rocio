@@ -1,75 +1,90 @@
-# Rocio App Store Metadata Draft
+# Rocio App Store Metadata
 
-Date: 2026-07-05
+Date: 2026-07-09
 
-## Product Page
+## English (Primary)
 
 Name: Rocio
 
-Subtitle:
-Cuida tus flores en español
+Subtitle: Flower care, made gentle
 
 Promotional text:
-Rocio te ayuda a cuidar tu jardín de flores con onboarding simple, recordatorios locales, fichas claras y un scanner experimental honesto.
+Build a private flower garden with clear care guides, local watering reminders, and an honest experimental scanner.
 
 Description:
-Rocio es una app de cuidado de flores pensada en español desde el inicio. Guarda tus flores en Mi Jardín, revisa cuándo toca regar, consulta fichas de cuidado y usa un scanner experimental que compara fotos localmente con el catálogo.
+Rocio helps you care for flowers without turning gardening into another complicated task. Save flowers to My Garden, see when watering is due, explore practical care guides, and use an experimental on-device scanner that shows possible matches with visible uncertainty.
 
-La v1 está diseñada para ser simple y privada:
+The free v1 is designed to be useful and private:
 
-- Onboarding nativo para empezar sin fricción.
-- Jardín guardado localmente en tu iPhone.
-- Recordatorios de riego activados por ti.
-- Catálogo filtrable de flores comunes con cuidados prácticos.
-- Scanner local con candidatos e incertidumbre visible.
-- Exportación y borrado de datos locales.
-- Atajos de Siri para abrir el jardín, registrar riego y abrir el scanner.
+- Native onboarding and a focused 15-flower catalog.
+- A private garden stored locally on your iPhone.
+- Watering reminders enabled only when you choose.
+- A weekly care calendar and simple watering status.
+- An experimental scanner with candidates and confidence guidance.
+- Local data export and deletion.
+- Siri and Shortcuts actions for your garden, watering, and scanner.
 
-Rocio no promete identificación perfecta ni diagnóstico profesional. El scanner es una ayuda experimental; verifica siempre la ficha de cuidado y usa tu criterio antes de actuar.
+Rocio does not promise perfect identification or professional diagnosis. Always verify the care guide before acting.
 
-## Keywords
+Keywords: flowers,plants,garden,watering,flower care,plant care,identify flowers,reminders
 
-flores, plantas, jardin, riego, cuidado de plantas, identificar flores, macetas, jardineria, recordatorios
+## Espanol
+
+Nombre: Rocio
+
+Subtitulo: Cuidado simple de flores
+
+Texto promocional:
+Crea un jardin privado con fichas claras, recordatorios locales y un scanner experimental honesto.
+
+Descripcion:
+Rocio te ayuda a cuidar flores sin convertir la jardineria en otra tarea complicada. Guarda flores en Mi Jardin, revisa cuando toca regar, consulta fichas practicas y usa un scanner experimental que muestra posibles coincidencias con incertidumbre visible.
+
+La v1 gratuita esta pensada para ser util y privada:
+
+- Onboarding nativo y un catalogo enfocado en 15 flores.
+- Jardin privado guardado localmente en tu iPhone.
+- Recordatorios de riego activados solo cuando tu decides.
+- Calendario semanal y estado de riego simple.
+- Scanner experimental con candidatos y guia de confianza.
+- Exportacion y borrado de datos locales.
+- Acciones de Siri y Atajos para jardin, riego y scanner.
+
+Rocio no promete identificacion perfecta ni diagnostico profesional. Verifica siempre la ficha antes de actuar.
+
+Palabras clave: flores,plantas,jardin,riego,cuidado de flores,macetas,identificar,recordatorios
 
 ## Category
 
 Primary: Lifestyle
+
 Secondary: Education
 
 ## Review Notes
 
-Rocio is a Spanish-first flower-care app. The native iOS app stores the user's garden locally on the device, schedules local watering reminders after user opt-in, and offers an experimental local flower identification helper using camera or photo input.
+Rocio is a bilingual English/Spanish native flower-care app and follows the user's iOS language. The app stores the user's garden locally, schedules local watering reminders after explicit opt-in, and offers an experimental on-device flower matching helper using camera or selected photo input.
 
-No Plant.id or Supabase provider calls are enabled in the current native iOS release. Camera and selected photo input are analyzed locally on the device and are not uploaded or saved by the app.
+No Plant.id or Supabase calls are enabled. Camera and selected photos are analyzed locally and are not uploaded or saved by the app. The app has no account, analytics, tracking, advertising, payment, or backend dependency in this release.
 
-Notification permission is requested only from Settings when the user taps the watering reminder action. The app has no account system, analytics, tracking, or backend dependency in this release.
+Notification permission is requested only in Settings after the user taps Enable Watering Reminders. Settings also provides data export and a destructive delete action that clears the garden and cancels pending reminders.
 
 ## Screenshots To Capture
 
-1. Catalogo: flower catalog with real images.
-2. Mi Jardin: saved plants, garden summary, and watering status.
-3. Calendario: weekly watering schedule.
-4. Scanner: experimental local candidates, confidence band, and uncertainty copy.
-5. Ajustes: reminders, privacy, export/delete local data.
+1. Catalog: real flower photos and practical filters.
+2. My Garden: saved plants, summary, and watering status.
+3. Calendar: weekly watering schedule.
+4. Scanner: experimental candidates, confidence band, and disclaimer.
+5. Settings: reminders, privacy, export, delete, privacy policy, and support.
+
+Capture the primary English set first. Capture a Spanish localized set only after the English screenshots pass the visual release checklist.
 
 ## URLs
 
-Production URLs:
-
-- Landing: `https://juliosuas.github.io/rocio/launch.html`
+- Landing: `https://rocio-flower-care.lovable.app`
+- Interactive demo: `https://juliosuas.github.io/rocio/index.html?demo=1`
 - Privacy: `https://juliosuas.github.io/rocio/privacy.html`
 - Support: `https://juliosuas.github.io/rocio/support.html`
 
-Local demo:
+## Monetization
 
-- Landing: `http://localhost:3002/launch.html`
-- Privacy: `http://localhost:3002/privacy.html`
-- Support: `http://localhost:3002/support.html`
-
-## Monetization Position
-
-v1 is free for App Review. Recommended v1.1 pricing after acceptance is Rocio Pro one-time unlock at US$14.99, or US$19.99/year only if recurring seasonal/weather/catalog value is added through StoreKit.
-
-## Internal Benchmark
-
-Primary internal benchmark is Planta for care habit, reminders, onboarding, and subscription framing. PictureThis and Plantum are secondary references for scanner/ASO/pricing. Do not mention competitor names in App Store metadata.
+v1 is free and contains no StoreKit products. Any future digital unlock must use StoreKit and requires updated metadata, privacy review, and tests before release.

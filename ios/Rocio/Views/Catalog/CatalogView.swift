@@ -16,16 +16,16 @@ struct CatalogView: View {
                 LazyVStack(spacing: 14) {
                     RocioCard {
                         VStack(alignment: .leading, spacing: 12) {
-                            Label("Flores para casa, balcon y jardin", systemImage: "sparkles")
+                            Label(L10n.text("catalog.hero.title", fallback: "Flowers for home, balcony, and garden"), systemImage: "sparkles")
                                 .font(.headline)
                                 .foregroundStyle(Color.rocioLeafDeep)
-                            Text("Filtra por cuidado facil, sol, interior o flores familiares en Mexico. Rocio prioriza fichas practicas antes que claims de AI.")
+                            Text(L10n.text("catalog.hero.copy", fallback: "Filter by easy care, sun, indoor growing, or flowers familiar across Mexico and Latin America."))
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                         }
                     }
 
-                    Picker("Filtro", selection: $selectedFilter) {
+                    Picker(L10n.text("catalog.filter", fallback: "Filter"), selection: $selectedFilter) {
                         ForEach(FlowerCatalogFilter.allCases) { filter in
                             Text(filter.title).tag(filter)
                         }
@@ -45,7 +45,7 @@ struct CatalogView: View {
                 .padding()
             }
             .navigationTitle("Rocio")
-            .searchable(text: $searchText, prompt: "Buscar flor")
+            .searchable(text: $searchText, prompt: Text(L10n.text("catalog.search", fallback: "Search flowers")))
             .sheet(item: $selectedFlower) { flower in
                 FlowerDetailView(flower: flower)
                     .environmentObject(gardenStore)
@@ -76,7 +76,7 @@ private struct CatalogFlowerCard: View {
                     if isInGarden {
                         Image(systemName: "checkmark.seal.fill")
                             .foregroundStyle(Color.rocioLeafDeep)
-                            .accessibilityLabel("En tu jardin")
+                            .accessibilityLabel(L10n.text("catalog.in.garden", fallback: "In your garden"))
                     }
                 }
 
@@ -85,7 +85,10 @@ private struct CatalogFlowerCard: View {
                     PillLabel(title: flower.sunlightLabel, systemImage: "sun.max")
                 }
 
-                Label("\(flower.waterMl) ml cada \(flower.waterDays) dias", systemImage: "drop")
+                Label(
+                    L10n.format("watering.interval", fallback: "%d ml every %d days", flower.waterMl, flower.waterDays),
+                    systemImage: "drop"
+                )
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

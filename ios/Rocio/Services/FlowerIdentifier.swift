@@ -35,20 +35,20 @@ enum IdentificationConfidenceBand: String, Equatable {
 
     var label: String {
         switch self {
-        case .experimental: "Experimental"
-        case .possible: "Posible"
-        case .probable: "Probable"
+        case .experimental: L10n.text("scanner.confidence.experimental", fallback: "Experimental")
+        case .possible: L10n.text("scanner.confidence.possible", fallback: "Possible")
+        case .probable: L10n.text("scanner.confidence.probable", fallback: "Probable")
         }
     }
 
     var reviewSafeCopy: String {
         switch self {
         case .experimental:
-            "Usa esto como pista, no como diagnostico."
+            L10n.text("scanner.confidence.experimental.copy", fallback: "Use this as a clue, not a diagnosis.")
         case .possible:
-            "Compara candidatos antes de actuar."
+            L10n.text("scanner.confidence.possible.copy", fallback: "Compare candidates before acting.")
         case .probable:
-            "Coincide con senales visibles, verifica la ficha."
+            L10n.text("scanner.confidence.probable.copy", fallback: "Visible traits match; verify the care guide.")
         }
     }
 }

@@ -46,7 +46,7 @@ private struct OnboardingView: View {
             VStack(spacing: 10) {
                 Text("Rocio")
                     .font(.largeTitle.bold())
-                Text("Cuida tus flores en espanol, privado y sin complicarte.")
+                Text(L10n.text("onboarding.subtitle", fallback: "Care for your flowers, privately and without the fuss."))
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -56,24 +56,24 @@ private struct OnboardingView: View {
             VStack(spacing: 12) {
                 OnboardingStep(
                     systemImage: "camera.macro",
-                    title: "Elige tus flores",
-                    copy: "Empieza con flores comunes y fichas claras para casa, balcon o jardin."
+                    title: L10n.text("onboarding.choose.title", fallback: "Choose your flowers"),
+                    copy: L10n.text("onboarding.choose.copy", fallback: "Start with familiar flowers and clear guides for your home, balcony, or garden.")
                 )
                 OnboardingStep(
                     systemImage: "bell.badge",
-                    title: "Activa recordatorios",
-                    copy: "Rocio usa notificaciones locales solo cuando las pides desde Ajustes."
+                    title: L10n.text("onboarding.reminders.title", fallback: "Enable reminders"),
+                    copy: L10n.text("onboarding.reminders.copy", fallback: "Rocio uses local notifications only after you enable them in Settings.")
                 )
                 OnboardingStep(
                     systemImage: "lock.shield",
-                    title: "Tu jardin privado",
-                    copy: "Tus plantas viven en este iPhone. Puedes exportar o borrar tus datos."
+                    title: L10n.text("onboarding.private.title", fallback: "Your private garden"),
+                    copy: L10n.text("onboarding.private.copy", fallback: "Your plants stay on this iPhone. You can export or delete your data.")
                 )
             }
             .padding(.horizontal)
 
             Button(action: onFinish) {
-                Label("Empezar con el catalogo", systemImage: "leaf")
+                Label(L10n.text("onboarding.start", fallback: "Explore the catalog"), systemImage: "leaf")
             }
             .buttonStyle(RocioPrimaryButtonStyle())
             .padding(.horizontal)

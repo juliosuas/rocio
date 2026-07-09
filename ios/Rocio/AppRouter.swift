@@ -11,11 +11,11 @@ enum AppTab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .catalog: "Catalogo"
-        case .garden: "Jardin"
-        case .calendar: "Calendario"
-        case .scanner: "Scanner"
-        case .settings: "Ajustes"
+        case .catalog: L10n.text("tab.catalog", fallback: "Catalog")
+        case .garden: L10n.text("tab.garden", fallback: "Garden")
+        case .calendar: L10n.text("tab.calendar", fallback: "Calendar")
+        case .scanner: L10n.text("tab.scanner", fallback: "Scanner")
+        case .settings: L10n.text("tab.settings", fallback: "Settings")
         }
     }
 
@@ -60,4 +60,3 @@ final class AppRouter: ObservableObject {
         }
     }
 }
-

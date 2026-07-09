@@ -35,19 +35,19 @@ struct ScannerView: View {
                     HStack {
                         Button {
                             guard canUseCamera else {
-                                cameraUnavailableMessage = "La camara no esta disponible en este dispositivo. Puedes elegir una foto."
+                                cameraUnavailableMessage = L10n.text("scanner.camera.unavailable", fallback: "The camera is unavailable on this device. You can choose a photo instead.")
                                 return
                             }
                             cameraUnavailableMessage = nil
                             isShowingCamera = true
                         } label: {
-                            Label("Tomar foto", systemImage: "camera")
+                            Label(L10n.text("scanner.camera", fallback: "Take photo"), systemImage: "camera")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.borderedProminent)
 
                         PhotosPicker(selection: $selectedItem, matching: .images) {
-                            Label("Elegir", systemImage: "photo")
+                            Label(L10n.text("scanner.choose", fallback: "Choose photo"), systemImage: "photo")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
@@ -61,7 +61,7 @@ struct ScannerView: View {
                     }
 
                     if isProcessing {
-                        ProgressView("Analizando color y candidatos")
+                        ProgressView(L10n.text("scanner.processing", fallback: "Checking colors and candidates"))
                     }
 
                     if let result {
@@ -70,14 +70,14 @@ struct ScannerView: View {
                         }
                     }
 
-                    Text("La identificacion local de Rocio es experimental. Usa color y senales simples de la foto; verifica siempre con la ficha antes de actuar.")
+                    Text(L10n.text("scanner.disclaimer", fallback: "Rocio's on-device identification is experimental. It uses color and simple visual traits; always verify the care guide before acting."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding()
             }
-            .navigationTitle("Scanner")
+            .navigationTitle(L10n.text("scanner.title", fallback: "Scanner"))
             .sheet(isPresented: $isShowingCamera) {
                 CameraCaptureView { image in
                     selectedImage = image
@@ -98,9 +98,9 @@ struct ScannerView: View {
             Image(systemName: "camera.macro")
                 .font(.system(size: 52))
                 .foregroundStyle(Color.rocioLeaf)
-            Text("Apunta a una flor abierta")
+            Text(L10n.text("scanner.placeholder.title", fallback: "Frame an open flower"))
                 .font(.title3.bold())
-            Text("Usa luz natural y un fondo limpio para mejorar la lectura local.")
+            Text(L10n.text("scanner.placeholder.copy", fallback: "Use natural light and a clean background to improve the on-device match."))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -141,9 +141,9 @@ private struct ScannerPromiseCard: View {
                 }
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Scanner honesto")
+                    Text(L10n.text("scanner.promise.title", fallback: "An honest scanner"))
                         .font(.headline)
-                    Text("Rocio compara senales visibles y muestra candidatos. No promete diagnostico perfecto.")
+                    Text(L10n.text("scanner.promise.copy", fallback: "Rocio compares visible traits and shows candidates. It does not promise a perfect diagnosis."))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -176,7 +176,7 @@ private struct ScannerResultCard: View {
                 ProgressView(value: min(100, max(0, result.confidence)), total: 100)
                     .tint(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
                 HStack {
-                    Text("\(Int(result.confidence.rounded()))% coincidencia local")
+                    Text(L10n.format("scanner.match", fallback: "%d%% on-device match", Int(result.confidence.rounded())))
                     Spacer()
                     Text(result.confidenceBand.reviewSafeCopy)
                 }
@@ -187,13 +187,16 @@ private struct ScannerResultCard: View {
             Button {
                 onSelectFlower(result.flower)
             } label: {
-                Label("Ver ficha de \(result.flower.name)", systemImage: "doc.text")
+                Label(
+                    L10n.format("scanner.view.guide", fallback: "View %@ care guide", result.flower.name),
+                    systemImage: "doc.text"
+                )
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
 
             VStack(alignment: .leading, spacing: 8) {
-                Text("Candidatos")
+                Text(L10n.text("scanner.candidates", fallback: "Candidates"))
                     .font(.headline)
                 ForEach(result.candidates) { candidate in
                     Button {

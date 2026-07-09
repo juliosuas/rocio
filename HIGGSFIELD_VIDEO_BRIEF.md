@@ -5,7 +5,7 @@ The current MP4 is built from real Rocio demo screenshots in `assets/video/frame
 
 ## Goal
 
-Create a 10-12 second cinematic App Store landing video for Rocio, a Spanish-first iOS app for caring for flowers.
+Create a 15-25 second product demo for Rocio, a bilingual English/Spanish native iOS app for caring for flowers. Use only screen recordings of the real SwiftUI app; do not substitute cinematic stock footage for product behavior.
 
 ## Visual Direction
 

@@ -4,15 +4,15 @@ Date: 2026-07-04
 
 ## Positioning
 
-Rocio: cuida tus flores en español, sin complicarte.
+Rocio: gentle flower care, without the fuss. / Cuida tus flores sin complicarte.
 
-Rocio is not trying to out-claim large AI plant apps. The v1 angle is trust: local-first, Spanish-first, flower-focused, practical, and honest about uncertainty.
+Rocio is not trying to out-claim large AI plant apps. The v1 angle is trust: local-first, bilingual English/Spanish, flower-focused, practical, and honest about uncertainty.
 
 Benchmark: Planta is the primary commercial reference because it monetizes care habits and reminders. PictureThis and Plantum are secondary references for scanner positioning, ASO, and premium pricing pressure.
 
 ## Differentiators
 
-- Spanish-first product, not translated afterthought.
+- Native English and Spanish product copy that follows the user's device language.
 - Focused on flowers and small home gardens.
 - Local garden data with export/delete controls.
 - No tracking, no accounts, no analytics in v1.
@@ -22,7 +22,7 @@ Benchmark: Planta is the primary commercial reference because it monetizes care 
 
 ## Launch Audience
 
-- People in Mexico/LatAm caring for flowers at home.
+- English- and Spanish-speaking people caring for flowers at home, with initial cultural context for Mexico/LatAm.
 - Beginners who want simple riego/cuidado guidance.
 - Users skeptical of aggressive AI paywalls.
 - Friends/family/TestFlight testers first, then App Store.

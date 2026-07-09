@@ -48,6 +48,9 @@
 		010000000000000000000027 /* FlowerCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000027 /* FlowerCatalogTests.swift */; };
 		010000000000000000000028 /* GardenStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000028 /* GardenStoreTests.swift */; };
 		010000000000000000000029 /* WateringNotificationSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002B /* WateringNotificationSchedulerTests.swift */; };
+		01000000000000000000002A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002C /* Localization.swift */; };
+		01000000000000000000002B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002D /* Localizable.xcstrings */; };
+		01000000000000000000002C /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002E /* AppShortcuts.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -104,6 +107,9 @@
 		020000000000000000000029 /* Rocio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rocio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		02000000000000000000002A /* RocioTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RocioTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		02000000000000000000002B /* WateringNotificationSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WateringNotificationSchedulerTests.swift; sourceTree = "<group>"; };
+		02000000000000000000002C /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Localization.swift; sourceTree = "<group>"; };
+		02000000000000000000002D /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		02000000000000000000002E /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +144,7 @@
 			children = (
 				020000000000000000000001 /* RocioApp.swift */,
 				020000000000000000000002 /* AppRouter.swift */,
+				02000000000000000000002C /* Localization.swift */,
 				070000000000000000000003 /* Models */,
 				070000000000000000000004 /* Data */,
 				070000000000000000000005 /* Stores */,
@@ -177,6 +184,8 @@
 			children = (
 				020000000000000000000016 /* Assets.xcassets */,
 				020000000000000000000017 /* PrivacyInfo.xcprivacy */,
+				02000000000000000000002D /* Localizable.xcstrings */,
+				02000000000000000000002E /* AppShortcuts.xcstrings */,
 				070000000000000000000012 /* Flowers */,
 			);
 			path = Resources;
@@ -271,6 +280,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				es,
 				Base,
 			);
 			mainGroup = 070000000000000000000001;
@@ -291,6 +301,8 @@
 			files = (
 				010000000000000000000016 /* Assets.xcassets in Resources */,
 				010000000000000000000017 /* PrivacyInfo.xcprivacy in Resources */,
+				01000000000000000000002B /* Localizable.xcstrings in Resources */,
+				01000000000000000000002C /* AppShortcuts.xcstrings in Resources */,
 				010000000000000000000018 /* cempasuchil.jpg in Resources */,
 				010000000000000000000019 /* clavel.jpg in Resources */,
 				01000000000000000000001A /* gardenia.jpg in Resources */,
@@ -344,6 +356,7 @@
 				010000000000000000000013 /* CameraCaptureView.swift in Sources */,
 				010000000000000000000014 /* SettingsView.swift in Sources */,
 				010000000000000000000015 /* RocioIntents.swift in Sources */,
+				01000000000000000000002A /* Localization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

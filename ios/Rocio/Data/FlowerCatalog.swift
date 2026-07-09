@@ -378,11 +378,11 @@ enum FlowerCatalogFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: "Todas"
-        case .easy: "Faciles"
-        case .fullSun: "Sol"
-        case .indoor: "Interior"
-        case .mexico: "Mexico"
+        case .all: L10n.text("catalog.filter.all", fallback: "All")
+        case .easy: L10n.text("catalog.filter.easy", fallback: "Easy")
+        case .fullSun: L10n.text("catalog.filter.sun", fallback: "Sun")
+        case .indoor: L10n.text("catalog.filter.indoor", fallback: "Indoor")
+        case .mexico: L10n.text("catalog.filter.latam", fallback: "LatAm")
         }
     }
 

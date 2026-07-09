@@ -41,6 +41,9 @@ final class FlowerCatalogTests: XCTestCase {
         XCTAssertEqual(IdentificationConfidenceBand(confidence: 60, isUncertain: true), .experimental)
         XCTAssertEqual(IdentificationConfidenceBand(confidence: 72, isUncertain: false), .possible)
         XCTAssertEqual(IdentificationConfidenceBand(confidence: 90, isUncertain: false), .probable)
-        XCTAssertEqual(IdentificationConfidenceBand(confidence: 90, isUncertain: true).reviewSafeCopy, "Usa esto como pista, no como diagnostico.")
+        XCTAssertEqual(
+            IdentificationConfidenceBand(confidence: 90, isUncertain: true).reviewSafeCopy,
+            L10n.text("scanner.confidence.experimental.copy", fallback: "Use this as a clue, not a diagnosis.")
+        )
     }
 }

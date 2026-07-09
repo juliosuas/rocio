@@ -8,7 +8,7 @@ Use this as the working draft for App Store Connect App Privacy and App Review n
 
 - Rocio stores the user's saved garden locally on the device with `UserDefaults`.
 - Rocio can export saved garden data only when the user taps the export control in Settings.
-- Rocio can delete saved garden data when the user confirms the destructive delete action in Settings.
+- Rocio can delete saved garden data and cancel pending local watering reminders when the user confirms the destructive delete action in Settings.
 - Rocio analyzes camera or photo input locally in the native app for an experimental flower match.
 - Rocio does not save scanner photos in the native app.
 - Rocio does not send scanner photos, garden data, identifiers, diagnostics, analytics, or contact information to Rocio servers in the current native release.
@@ -57,9 +57,11 @@ Notifications:
 
 Rocio asks for notification permission only from Settings when the user taps `Activar recordatorios de riego`. Notifications are local watering reminders based on saved garden plants.
 
+When the user deletes local data in Settings, Rocio also cancels pending local watering reminders.
+
 ## Review Notes Draft
 
-Rocio is a Spanish-first flower-care app. The native iOS app stores the user's garden locally on the device, schedules local watering reminders after user opt-in, and offers an experimental local flower identification helper using camera or photo input. Identification is assistive and may be uncertain; the app does not claim professional botanical, agricultural, or medical accuracy.
+Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. The native iOS app stores the user's garden locally on the device, schedules local watering reminders after user opt-in, and offers an experimental on-device flower matching helper using camera or photo input. Identification is assistive and may be uncertain; the app does not claim professional botanical, agricultural, or medical accuracy.
 
 No Plant.id or Supabase provider calls are enabled in the current native iOS release. Camera and selected photo input are analyzed locally on the device and are not uploaded or saved by the app.
 

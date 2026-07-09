@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  flower-classifier:
-    name: Flower classifier harness
+  release-gate:
+    name: Rocio release gate
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -22,5 +22,5 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Run strict classifier QA
-        run: node qa/readonly-flower-classifier-harness.mjs --strict
+      - name: Run complete release QA
+        run: node qa/release-gate.mjs

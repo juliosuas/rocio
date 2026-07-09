@@ -3,57 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Centro de soporte de Rocio para jardín, recordatorios y scanner experimental.">
   <title>Soporte - Rocio</title>
   <style>
-    body {
-      max-width: 820px;
-      margin: 0 auto;
-      padding: 42px 22px 72px;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #1f2822;
-      background: #fffaf2;
-      line-height: 1.55;
-    }
-
-    a { color: #2f6b4f; }
-    h1 { font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 18px; }
-    h2 { margin-top: 34px; }
-    .nav { margin-bottom: 38px; display: flex; gap: 14px; flex-wrap: wrap; }
-    .muted { color: #5d685f; }
-    .step { border-top: 1px solid rgba(31, 40, 34, 0.16); padding: 16px 0; }
+    body { max-width: 820px; margin: 0 auto; padding: 42px 22px 72px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2822; background: #fffaf2; line-height: 1.6; }
+    a { color: #2f6b4f; } h1 { font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 18px; } h2 { margin-top: 34px; }
+    .nav { margin-bottom: 38px; display: flex; gap: 14px; flex-wrap: wrap; } .muted { color: #5d685f; } .step { border-top: 1px solid rgba(31, 40, 34, 0.16); padding: 16px 0; }
   </style>
 </head>
 <body>
-  <nav class="nav" aria-label="Principal">
-    <a href="launch.html">Rocio</a>
-    <a href="index.html">Demo</a>
-    <a href="privacy.html">Privacidad</a>
-  </nav>
+  <nav class="nav" aria-label="Principal"><a href="launch.html">Rocio</a><a href="index.html?demo=1">Demo</a><a href="privacy.html">Privacidad</a></nav>
+  <h1>Centro de soporte</h1>
+  <p class="muted">Ayuda para la app iOS de Rocio y su scanner experimental.</p>
 
-  <h1>Soporte</h1>
-  <p class="muted">Ayuda básica para la versión iOS de Rocio. Este canal queda como borrador público hasta que Julio autorice el soporte final para App Store.</p>
+  <h2>Soluciones rápidas</h2>
+  <div class="step"><strong>Mis plantas no aparecen.</strong><p>La v1 guarda el jardín en el dispositivo. Comprueba que estás usando el mismo iPhone y que no borraste los datos desde Ajustes.</p></div>
+  <div class="step"><strong>No recibo recordatorios.</strong><p>Activa los recordatorios desde Ajustes y confirma que iOS permite notificaciones para Rocio.</p></div>
+  <div class="step"><strong>El scanner se equivoca.</strong><p>Usa luz natural, enfoca una sola flor abierta y revisa los candidatos antes de cambiar cuidados. El resultado es orientativo.</p></div>
 
-  <h2>Antes de escribir</h2>
-  <div class="step">
-    <strong>Mis plantas no aparecen.</strong>
-    <p>Revisa que estés usando el mismo dispositivo. La v1 guarda el jardín localmente y no sincroniza entre equipos.</p>
-  </div>
-  <div class="step">
-    <strong>No recibo recordatorios.</strong>
-    <p>Activa recordatorios desde Ajustes y confirma que iOS permitió notificaciones para Rocio.</p>
-  </div>
-  <div class="step">
-    <strong>El scanner se equivoca.</strong>
-    <p>El scanner es experimental. Usa luz natural, enfoca una flor abierta y revisa los candidatos antes de actuar.</p>
-  </div>
-
-  <h2>Límites actuales</h2>
-  <p>El reconocimiento real con Plant.id/Supabase está BLOCKED hasta tener credenciales seguras, despliegue revisado y QA con fotos reales. No compres, publiques ni sometas nada sin autorización explícita de Julio.</p>
-
-  <h2>Contacto</h2>
-  <p>Para App Store Connect se usará un correo de soporte del proyecto antes de enviar la app a revisión. Mientras tanto, registra bugs y decisiones en el repositorio de Rocio.</p>
+  <h2>Enviar una solicitud</h2>
+  <p>Reporta errores, solicitudes de privacidad o problemas de acceso mediante <a href="https://github.com/juliosuas/rocio/issues/new">GitHub Issues</a>. No incluyas fotos, direcciones ni otra información personal en una solicitud pública.</p>
 
   <h2>Privacidad</h2>
-  <p>Lee la <a href="privacy.html">política de privacidad</a> para entender qué datos se guardan localmente y qué no se recopila en la v1.</p>
+  <p>Consulta la <a href="privacy.html">política de privacidad</a> para conocer qué permanece local en la app y qué información guarda la lista de espera.</p>
 </body>
 </html>

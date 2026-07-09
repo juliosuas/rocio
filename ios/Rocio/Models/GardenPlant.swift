@@ -38,10 +38,10 @@ enum PlantStatus: String, Codable, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .healthy: "Saludable"
-        case .needsWater: "Necesita agua"
-        case .needsSun: "Necesita sol"
-        case .sick: "Enferma"
+        case .healthy: L10n.text("plant.status.healthy", fallback: "Healthy")
+        case .needsWater: L10n.text("plant.status.water", fallback: "Needs water")
+        case .needsSun: L10n.text("plant.status.sun", fallback: "Needs sun")
+        case .sick: L10n.text("plant.status.sick", fallback: "Unwell")
         }
     }
 
@@ -62,10 +62,9 @@ enum WateringUrgency: String {
 
     var label: String {
         switch self {
-        case .good: "Al dia"
-        case .soon: "Pronto"
-        case .overdue: "Toca regar"
+        case .good: L10n.text("watering.good", fallback: "On track")
+        case .soon: L10n.text("watering.soon", fallback: "Soon")
+        case .overdue: L10n.text("watering.overdue", fallback: "Water now")
         }
     }
 }
-

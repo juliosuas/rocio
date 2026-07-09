@@ -32,6 +32,6 @@ Capture five iPhone screenshots from the native app:
 
 ## Copy Gate
 
-- App Store screenshots should use Spanish-first copy.
+- Capture the primary App Store screenshot set in English, then verify the Spanish localized set for the same layouts.
 - Avoid "AI precisa", "diagnostico", "garantizado", or "identificacion perfecta".
 - Prefer "candidatos", "scanner experimental", "jardin privado", "recordatorios locales", and "sin cuentas en v1".

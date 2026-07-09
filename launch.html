@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Rocio es una app iOS privada y en español para cuidar flores: jardín local, recordatorios, catálogo y scanner experimental honesto.">
-  <title>Rocio - Cuida tus flores en español</title>
+  <meta name="description" content="Rocio is a private flower care app in English and Spanish with local reminders, practical guides, and an honest experimental scanner.">
+  <title>Rocio - Gentle flower care</title>
   <style>
     :root {
       color-scheme: light;
@@ -97,6 +97,7 @@
       position: relative;
       z-index: 2;
       width: min(760px, 100%);
+      min-width: 0;
       padding: 96px 0 36px;
     }
 
@@ -112,6 +113,9 @@
       font-size: 0.86rem;
       font-weight: 750;
       background: rgba(16, 20, 17, 0.24);
+      max-width: 100%;
+      white-space: normal;
+      overflow-wrap: anywhere;
     }
 
     h1 {
@@ -365,7 +369,13 @@
       .nav-links { display: none; }
       section { padding: 56px 22px; }
       .features, .showcase, .demo-stage, .pricing, .matrix { grid-template-columns: 1fr; }
-      .hero-content { padding-bottom: 20px; }
+      .hero-content { width: 100%; max-width: 100%; min-width: 0; padding-bottom: 20px; }
+      .eyebrow { display: flex; width: fit-content; min-height: 0; padding: 8px 11px; line-height: 1.25; }
+      .lead, h1, h2, h3, p, a, span { overflow-wrap: anywhere; }
+      .actions { display: grid; grid-template-columns: minmax(0, 1fr); }
+      .button { width: 100%; min-width: 0; min-height: 52px; padding: 12px 16px; text-align: center; white-space: normal; }
+      .hero-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .hero-stat { min-width: 0; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -389,11 +399,11 @@
     </nav>
 
     <div class="hero-content">
-      <div class="eyebrow">Video real de la app funcionando</div>
+      <div class="eyebrow">Vista previa del catalogo web</div>
       <h1>Rocio</h1>
-      <p class="lead">Cuida tus flores en español, sin complicarte: jardín privado, recordatorios de riego, catálogo práctico y scanner experimental honesto.</p>
+      <p class="lead">Gentle flower care in English and Spanish: a private garden, local watering reminders, practical guides, and an honest experimental scanner.</p>
       <div class="actions">
-        <a class="button" href="#demo">Ver demo en video</a>
+        <a class="button" href="#demo">Explorar el demo</a>
         <a class="button secondary" href="index.html?demo=1">Probar demo con datos</a>
       </div>
       <div class="hero-stats" aria-label="Estado de lanzamiento">
@@ -411,22 +421,19 @@
           <video class="demo-video" autoplay muted loop playsinline controls poster="assets/flowers/girasol.jpg">
             <source src="assets/video/rocio-demo.mp4" type="video/mp4">
           </video>
-          <div class="demo-strip" aria-label="Funciones demo">
-            <span>Catalogo filtrable</span>
-            <span>Mi Jardin</span>
-            <span>Calendario</span>
-            <span>Scanner honesto</span>
-            <span>Privacidad local</span>
+          <div class="demo-strip" aria-label="Contenido del clip">
+            <span>Catalogo web</span>
+            <span>Fotos reales</span>
+            <span>Demo interactiva disponible</span>
           </div>
         </div>
         <div>
-          <h2>Rocio funcionando, no maqueta</h2>
-          <p class="section-copy">El video está armado con capturas reales de la demo local: catálogo, Mi Jardín con datos, calendario y scanner experimental. Es producto visible, no un montaje genérico de flores.</p>
+          <h2>Prueba Rocio con datos de ejemplo</h2>
+          <p class="section-copy">El clip actual muestra el catalogo del demo web. Abre la experiencia interactiva para explorar Mi Jardin, calendario y scanner experimental; el video nativo completo se publicara despues de validarlo en Simulator.</p>
           <ul class="list">
-            <li><strong>Más atención arriba del fold</strong> El hero abre con movimiento real de producto y copy comercial claro.</li>
-            <li><strong>Demo verificable</strong> Abre <a href="index.html?demo=1">la app con datos semilla</a> y compara las pantallas contra el video.</li>
-            <li><strong>Higgsfield-ready</strong> Si hacemos una versión más cinematográfica, debe respetar estas pantallas reales y reemplazar el mismo archivo MP4.</li>
-            <li><strong>Review-safe</strong> El demo evita prometer identificación perfecta o diagnósticos profesionales.</li>
+            <li><strong>Demo verificable</strong> Abre <a href="index.html?demo=1">Rocio con datos de ejemplo</a> y recorre cada flujo por ti mismo.</li>
+            <li><strong>Privacidad clara</strong> El jardin se guarda localmente y puedes exportar o borrar sus datos.</li>
+            <li><strong>Scanner experimental</strong> Muestra candidatos e incertidumbre sin prometer un diagnostico perfecto.</li>
           </ul>
         </div>
       </div>
@@ -457,10 +464,10 @@
       <div class="section-inner showcase">
         <img src="assets/flowers/girasol.jpg" alt="Girasol fotografiado para el catálogo de Rocio">
         <div>
-          <h2>Diferente a las apps que cobran por ansiedad</h2>
-          <p class="section-copy">Planta, PictureThis y Plantum venden amplitud, AI y paywalls. Rocio compite por confianza: español primero, flores de casa, sin tracking y con cuidado práctico.</p>
+          <h2>Cuidado practico, sin presion</h2>
+          <p class="section-copy">Rocio compite por confianza: flores de casa, soporte nativo en ingles y espanol, privacidad local y guias faciles de consultar.</p>
           <ul class="list">
-            <li><strong>Spanish-first</strong> Copy, catálogo y marketing pensados para México y LatAm desde el inicio.</li>
+            <li><strong>English + Spanish</strong> Native localization with flower context relevant across Mexico and Latin America.</li>
             <li><strong>Privacidad como producto</strong> Sin cuentas, sin analytics y sin subida de fotos en la v1 nativa.</li>
             <li><strong>Nativa donde importa</strong> App Intents, recordatorios locales, cámara/fotos y experiencia iPhone real.</li>
           </ul>
@@ -468,43 +475,18 @@
       </div>
     </section>
 
-    <section>
-      <div class="section-inner">
-        <h2>Benchmark competitivo</h2>
-        <p class="section-copy">Rocio no necesita ganar por tamaño de base de datos en la v1. Gana por foco, privacidad y claridad para principiantes que cuidan flores en casa.</p>
-        <div class="matrix">
-          <article class="cell">
-            <strong>Planta</strong>
-            <span>Cuidado recurrente, onboarding fuerte y suscripción anual. Benchmark principal para retención.</span>
-          </article>
-          <article class="cell">
-            <strong>PictureThis</strong>
-            <span>Scanner masivo y claims agresivos. Benchmark para ASO, pero Rocio evita prometer precisión falsa.</span>
-          </article>
-          <article class="cell">
-            <strong>Plantum</strong>
-            <span>AI plant doctor y upsells premium. Benchmark para pricing posterior a App Review.</span>
-          </article>
-          <article class="cell">
-            <strong>Rocio</strong>
-            <span>Flores, español, privacidad local, recordatorios simples y scanner honesto para México/LatAm.</span>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <section id="launch">
       <div class="section-inner">
-        <h2>Ruta de lanzamiento</h2>
-        <p class="section-copy">La v1 será gratis para pasar review con menos riesgo. La monetización llega después con StoreKit si hay tracción real.</p>
+        <h2>Gratis desde el primer dia</h2>
+        <p class="section-copy">La primera version no requiere cuenta, suscripcion ni compra dentro de la app.</p>
         <div class="pricing">
           <article class="price">
-            <h3>v1 gratis</h3>
-            <p>Catálogo, Mi Jardín, calendario, onboarding nativo, scanner local, privacidad/exportación, App Intents y TestFlight.</p>
+            <h3>Cuidado diario</h3>
+            <p>Catalogo, Mi Jardin, calendario, recordatorios locales y scanner experimental.</p>
           </article>
           <article class="price">
-            <h3>v1.1 Pro</h3>
-            <p>Después de aceptación: pago único sugerido de US$14.99 o anual de US$19.99 con StoreKit, sin pagos externos.</p>
+            <h3>Tus datos son tuyos</h3>
+            <p>Sin cuentas ni tracking. Exporta o borra el jardin local desde Ajustes.</p>
           </article>
         </div>
       </div>
@@ -512,7 +494,7 @@
   </main>
 
   <footer>
-    <span>Rocio - Cuida tus flores en español.</span>
+    <span>Rocio - Gentle flower care.</span>
     <span><a href="privacy.html">Privacidad</a> · <a href="support.html">Soporte</a> · <a href="index.html?demo=1">Demo</a></span>
   </footer>
 </body>

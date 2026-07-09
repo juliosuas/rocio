@@ -6,7 +6,7 @@ Project source of truth: https://github.com/juliosuas/rocio
 
 ## Mission
 
-Ship Rocio, the Spanish-first flower-care app, to the App Store through daily small PRs. Every session must lower one concrete launch risk: build, signing, privacy, review compliance, native value, QA, TestFlight, or metadata.
+Ship Rocio, the bilingual English/Spanish flower-care app, to the App Store through daily small PRs. Every session must lower one concrete launch risk: build, signing, privacy, review compliance, native value, QA, TestFlight, or metadata.
 
 ## Roles
 
@@ -20,7 +20,7 @@ Turns the chosen risk into the smallest native implementation. Prefers SwiftUI, 
 
 ### Design Agent
 
-Reviews Spanish copy, empty states, permission flow, screenshots, Settings, scanner confidence language, and whether the app feels native rather than like a web wrapper.
+Reviews English and Spanish copy, empty states, permission flow, screenshots, Settings, scanner confidence language, and whether the app feels native.
 
 ### QA Agent
 
