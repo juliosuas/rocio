@@ -2,11 +2,11 @@
 
 Date: 2026-07-05
 
-This plan starts from the current MVP in `juliosuas/rocio`: a working Spanish-first PWA for flower care with local garden tracking, flower catalog, scanner fallback, service worker, and Supabase/Plant.id proxy code.
+This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation in this working tree. The next phase is not more concept work; it is signing, App Store Connect setup, screenshots, simulator/device smoke testing, and TestFlight hardening.
+Rocio has a native SwiftUI iOS product with EN/ES localization, local persistence, local notifications, App Intents, an honest scanner, privacy controls, and CI. The remaining release path is full local Xcode validation, signing, screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
@@ -34,9 +34,9 @@ Rocio is not App Store-ready yet, but it now has a native SwiftUI iOS foundation
 6. Persistence is still local-only.
    - The native app stores garden data in `UserDefaults` and now supports local export/delete. Cloud sync is out of scope for v1 unless product scope changes.
 
-7. Assets need release audit.
-   - Photo attributions exist, but each image must be license-safe for App Store distribution.
-   - Need App Store icon and screenshots.
+7. Assets need final visual release review.
+   - Photo attributions and automated asset checks pass.
+   - The opaque production icon is generated; screenshots and a native simulator video remain.
 
 8. QA is still too narrow.
    - Existing classifier harness is good. iOS CI exists for build, but native tests and a real-device smoke pass are still required before submission.
@@ -110,7 +110,7 @@ Acceptance criteria:
 - `LogWateringIntent` marks a selected saved garden plant as watered.
 - `OpenScannerIntent` opens the scanner flow.
 - `GardenPlantEntity` supports display and suggested entities.
-- `AppShortcutsProvider` exposes clear Spanish phrases.
+- `AppShortcutsProvider` exposes localized English and Spanish phrases.
 - App handles intent handoff through one central route.
 
 ## Milestone 4: TestFlight Readiness

@@ -27,21 +27,21 @@ struct FlowerDetailView: View {
                     }
 
                     LazyVGrid(columns: [.init(.flexible()), .init(.flexible())], spacing: 10) {
-                        DetailMetric(title: "Riego", value: "\(flower.waterMl) ml cada \(flower.waterDays) dias", systemImage: "drop")
-                        DetailMetric(title: "Luz", value: flower.sunlightLabel, systemImage: "sun.max")
-                        DetailMetric(title: "Dificultad", value: flower.difficultyLabel, systemImage: "chart.bar")
-                        DetailMetric(title: "Temperatura", value: "\(flower.tempRange.lowerBound)-\(flower.tempRange.upperBound) C", systemImage: "thermometer")
+                        DetailMetric(title: L10n.text("detail.watering", fallback: "Watering"), value: L10n.format("watering.interval", fallback: "%d ml every %d days", flower.waterMl, flower.waterDays), systemImage: "drop")
+                        DetailMetric(title: L10n.text("detail.light", fallback: "Light"), value: flower.sunlightLabel, systemImage: "sun.max")
+                        DetailMetric(title: L10n.text("detail.difficulty", fallback: "Difficulty"), value: flower.difficultyLabel, systemImage: "chart.bar")
+                        DetailMetric(title: L10n.text("detail.temperature", fallback: "Temperature"), value: "\(flower.tempRange.lowerBound)-\(flower.tempRange.upperBound) C", systemImage: "thermometer")
                     }
 
-                    DetailSection(title: "Suelo", bodyText: flower.soil)
-                    DetailSection(title: "Mascotas y toxicidad", bodyText: "\(flower.toxicLevel.label): \(flower.toxic)")
-                    DetailSection(title: "Fertilizacion", bodyText: flower.fertilizer)
-                    DetailSection(title: "Poda", bodyText: flower.pruning)
-                    DetailSection(title: "Propagacion", bodyText: flower.propagation)
-                    DetailSection(title: "Companeras", bodyText: flower.companions)
+                    DetailSection(title: L10n.text("detail.soil", fallback: "Soil"), bodyText: flower.soil)
+                    DetailSection(title: L10n.text("detail.toxicity", fallback: "Pets and toxicity"), bodyText: "\(flower.toxicLevel.label): \(flower.toxic)")
+                    DetailSection(title: L10n.text("detail.fertilizer", fallback: "Fertilizing"), bodyText: flower.fertilizer)
+                    DetailSection(title: L10n.text("detail.pruning", fallback: "Pruning"), bodyText: flower.pruning)
+                    DetailSection(title: L10n.text("detail.propagation", fallback: "Propagation"), bodyText: flower.propagation)
+                    DetailSection(title: L10n.text("detail.companions", fallback: "Companion plants"), bodyText: flower.companions)
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Siembra")
+                        Text(L10n.text("detail.planting", fallback: "Planting"))
                             .font(.headline)
                         ForEach(Array(flower.plantingSteps.enumerated()), id: \.offset) { index, step in
                             HStack(alignment: .top) {
@@ -61,7 +61,7 @@ struct FlowerDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Cerrar") { dismiss() }
+                    Button(L10n.text("action.close", fallback: "Close")) { dismiss() }
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -69,7 +69,12 @@ struct FlowerDetailView: View {
                     gardenStore.add(flower)
                     dismiss()
                 } label: {
-                    Label(inGarden ? "Ya esta en Mi Jardin" : "Agregar a Mi Jardin", systemImage: inGarden ? "checkmark" : "plus")
+                    Label(
+                        inGarden
+                            ? L10n.text("detail.in.garden", fallback: "Already in My Garden")
+                            : L10n.text("detail.add.garden", fallback: "Add to My Garden"),
+                        systemImage: inGarden ? "checkmark" : "plus"
+                    )
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                 }
@@ -118,4 +123,3 @@ private struct DetailSection: View {
         .background(.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
-

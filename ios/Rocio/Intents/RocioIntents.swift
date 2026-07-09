@@ -2,7 +2,7 @@ import AppIntents
 import Foundation
 
 struct GardenPlantEntity: AppEntity {
-    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Planta de Rocio")
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Rocio plant")
     static let defaultQuery = GardenPlantQuery()
 
     let id: String
@@ -36,47 +36,47 @@ struct GardenPlantQuery: EntityQuery {
 }
 
 struct OpenGardenIntent: AppIntent {
-    static let title: LocalizedStringResource = "Abrir Mi Jardin"
-    static let description = IntentDescription("Abre Rocio directamente en Mi Jardin.")
+    static let title: LocalizedStringResource = "Open My Garden"
+    static let description = IntentDescription("Open Rocio directly in My Garden.")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         IntentHandoffStore.setPendingRoute(.garden)
-        return .result(dialog: "Abriendo Mi Jardin en Rocio.")
+        return .result(dialog: "Opening My Garden in Rocio.")
     }
 }
 
 struct OpenScannerIntent: AppIntent {
-    static let title: LocalizedStringResource = "Escanear una flor"
-    static let description = IntentDescription("Abre el scanner de Rocio para tomar o elegir una foto.")
+    static let title: LocalizedStringResource = "Scan a flower"
+    static let description = IntentDescription("Open Rocio's scanner to take or choose a photo.")
     static let openAppWhenRun = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         IntentHandoffStore.setPendingRoute(.scanner)
-        return .result(dialog: "Abriendo el scanner de Rocio.")
+        return .result(dialog: "Opening Rocio's scanner.")
     }
 }
 
 struct LogWateringIntent: AppIntent {
-    static let title: LocalizedStringResource = "Registrar riego"
-    static let description = IntentDescription("Marca una planta guardada como regada.")
+    static let title: LocalizedStringResource = "Log watering"
+    static let description = IntentDescription("Mark a saved plant as watered.")
     static let openAppWhenRun = false
 
-    @Parameter(title: "Planta")
+    @Parameter(title: "Plant")
     var plant: GardenPlantEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         var plants = GardenPersistence.loadPlants()
         guard let uuid = UUID(uuidString: plant.id),
               let index = plants.firstIndex(where: { $0.id == uuid }) else {
-            return .result(dialog: "No encontre esa planta en Mi Jardin.")
+            return .result(dialog: "I could not find that plant in My Garden.")
         }
         plants[index].lastWateredAt = Date()
         if plants[index].status == .needsWater {
             plants[index].status = .healthy
         }
         GardenPersistence.savePlants(plants)
-        return .result(dialog: "Listo. Registre el riego de \(plants[index].nickname).")
+        return .result(dialog: "Done. I logged watering for \(plants[index].nickname).")
     }
 }
 
@@ -85,32 +85,31 @@ struct RocioShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: OpenGardenIntent(),
             phrases: [
-                "Abre mi jardin en \(.applicationName)",
-                "Ver mi jardin en \(.applicationName)"
+                "Open my garden in \(.applicationName)",
+                "Show my garden in \(.applicationName)"
             ],
-            shortTitle: "Abrir jardin",
+            shortTitle: "Open garden",
             systemImageName: "leaf"
         )
 
         AppShortcut(
             intent: LogWateringIntent(),
             phrases: [
-                "Regar una planta en \(.applicationName)",
-                "Registrar riego en \(.applicationName)"
+                "Water a plant in \(.applicationName)",
+                "Log watering in \(.applicationName)"
             ],
-            shortTitle: "Registrar riego",
+            shortTitle: "Log watering",
             systemImageName: "drop"
         )
 
         AppShortcut(
             intent: OpenScannerIntent(),
             phrases: [
-                "Escanear una flor con \(.applicationName)",
-                "Identificar una flor en \(.applicationName)"
+                "Scan a flower with \(.applicationName)",
+                "Identify a flower in \(.applicationName)"
             ],
-            shortTitle: "Escanear flor",
+            shortTitle: "Scan flower",
             systemImageName: "camera.viewfinder"
         )
     }
 }
-

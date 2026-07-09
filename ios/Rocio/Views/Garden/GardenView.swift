@@ -32,7 +32,7 @@ struct GardenView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Mi Jardin")
+            .navigationTitle(L10n.text("garden.title", fallback: "My Garden"))
             .sheet(item: $editingPlant) { plant in
                 GardenEditView(plant: plant)
                     .environmentObject(gardenStore)
@@ -52,14 +52,14 @@ private struct EmptyGardenCard: View {
                     .foregroundStyle(Color.rocioLeafDeep)
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Tu jardin esta listo para empezar")
+                    Text(L10n.text("garden.empty.title", fallback: "Your garden is ready to grow"))
                         .font(.title2.bold())
-                    Text("Agrega tu primera flor para activar riegos, calendario y atajos de Siri.")
+                    Text(L10n.text("garden.empty.copy", fallback: "Add your first flower to unlock watering, calendar, and Siri shortcuts."))
                         .foregroundStyle(.secondary)
                 }
 
                 Button(action: onOpenCatalog) {
-                    Label("Abrir catalogo", systemImage: "plus")
+                    Label(L10n.text("garden.empty.action", fallback: "Open catalog"), systemImage: "plus")
                 }
                 .buttonStyle(RocioPrimaryButtonStyle())
             }
@@ -75,7 +75,7 @@ private struct GardenSummaryCard: View {
             VStack(alignment: .leading, spacing: 14) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Estado de tu jardin")
+                        Text(L10n.text("garden.summary.title", fallback: "Garden status"))
                             .font(.headline)
                         Text(summary.statusLabel)
                             .font(.title2.bold())
@@ -88,12 +88,19 @@ private struct GardenSummaryCard: View {
                 }
 
                 HStack(spacing: 10) {
-                    MetricPill(title: "Plantas", value: "\(summary.plantCount)", systemImage: "leaf")
-                    MetricPill(title: "Atencion", value: "\(summary.needsAttentionCount)", systemImage: "bell")
+                    MetricPill(title: L10n.text("garden.summary.plants", fallback: "Plants"), value: "\(summary.plantCount)", systemImage: "leaf")
+                    MetricPill(title: L10n.text("garden.summary.attention", fallback: "Attention"), value: "\(summary.needsAttentionCount)", systemImage: "bell")
                 }
 
                 if let nextWateringDate = summary.nextWateringDate {
-                    Label("Proximo riego: \(nextWateringDate.formatted(date: .abbreviated, time: .omitted))", systemImage: "calendar")
+                    Label(
+                        L10n.format(
+                            "garden.summary.next",
+                            fallback: "Next watering: %@",
+                            nextWateringDate.formatted(date: .abbreviated, time: .omitted)
+                        ),
+                        systemImage: "calendar"
+                    )
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -132,9 +139,9 @@ private struct GardenRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Button("Editar", action: onEdit)
+                Button(L10n.text("action.edit", fallback: "Edit"), action: onEdit)
                     .buttonStyle(.borderless)
-                Button("Regar", action: onWater)
+                Button(L10n.text("action.water", fallback: "Water"), action: onWater)
                     .buttonStyle(.borderedProminent)
             }
         }

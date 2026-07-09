@@ -23,12 +23,60 @@ struct Flower: Identifiable, Codable, Equatable {
     let plantingSteps: [String]
     let colorProfile: FlowerColorProfile
 
+    init(
+        id: String,
+        emoji: String,
+        imageName: String,
+        name: String,
+        scientific: String,
+        difficulty: Int,
+        sunlight: Sunlight,
+        waterDays: Int,
+        waterMl: Int,
+        tempRange: ClosedRange<Int>,
+        soil: String,
+        seasonLabel: String,
+        fact: String,
+        toxic: String,
+        toxicLevel: ToxicLevel,
+        fertilizer: String,
+        pruning: String,
+        propagation: String,
+        companions: String,
+        plantingSteps: [String],
+        colorProfile: FlowerColorProfile
+    ) {
+        self.id = id
+        self.emoji = emoji
+        self.imageName = imageName
+        self.name = L10n.text("flower.\(id).name", fallback: name)
+        self.scientific = scientific
+        self.difficulty = difficulty
+        self.sunlight = sunlight
+        self.waterDays = waterDays
+        self.waterMl = waterMl
+        self.tempRange = tempRange
+        self.soil = L10n.text("flower.\(id).soil", fallback: soil)
+        self.seasonLabel = L10n.text("flower.\(id).season", fallback: seasonLabel)
+        self.fact = L10n.text("flower.\(id).fact", fallback: fact)
+        self.toxic = L10n.text("flower.\(id).toxicity", fallback: toxic)
+        self.toxicLevel = toxicLevel
+        self.fertilizer = L10n.text("flower.\(id).fertilizer", fallback: fertilizer)
+        self.pruning = L10n.text("flower.\(id).pruning", fallback: pruning)
+        self.propagation = L10n.text("flower.\(id).propagation", fallback: propagation)
+        self.companions = L10n.text("flower.\(id).companions", fallback: companions)
+        self.plantingSteps = plantingSteps.enumerated().map { index, step in
+            L10n.text("flower.\(id).planting.\(index + 1)", fallback: step)
+        }
+        self.colorProfile = colorProfile
+    }
+
     var sunlightLabel: String { sunlight.label }
     var difficultyLabel: String {
         switch difficulty {
-        case 1: "Facil"
-        case 2: "Media"
-        default: "Avanzada"
+        case 1: L10n.text("difficulty.easy", fallback: "Easy")
+        case 2: L10n.text("difficulty.medium", fallback: "Medium")
+        default: L10n.text("difficulty.advanced", fallback: "Advanced")
         }
     }
 }
@@ -40,9 +88,9 @@ enum Sunlight: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .fullSun: "Sol pleno"
-        case .partial: "Luz parcial"
-        case .shade: "Sombra"
+        case .fullSun: L10n.text("sunlight.full", fallback: "Full sun")
+        case .partial: L10n.text("sunlight.partial", fallback: "Partial light")
+        case .shade: L10n.text("sunlight.shade", fallback: "Shade")
         }
     }
 }
@@ -54,9 +102,9 @@ enum ToxicLevel: String, Codable {
 
     var label: String {
         switch self {
-        case .safe: "Segura"
-        case .caution: "Precaucion"
-        case .toxic: "Toxica"
+        case .safe: L10n.text("toxicity.safe", fallback: "Safe")
+        case .caution: L10n.text("toxicity.caution", fallback: "Caution")
+        case .toxic: L10n.text("toxicity.toxic", fallback: "Toxic")
         }
     }
 }
@@ -73,4 +121,3 @@ struct FlowerColorProfile: Codable, Equatable {
     let purpleAffinity: Double
     let blueAffinity: Double
 }
-

@@ -114,9 +114,9 @@ struct GardenSummary: Equatable {
     }
 
     var statusLabel: String {
-        if plantCount == 0 { return "Sin plantas" }
-        if overdueCount > 0 { return "Toca regar" }
-        if soonCount > 0 { return "Revisa pronto" }
-        return "Al dia"
+        if plantCount == 0 { return L10n.text("garden.summary.empty", fallback: "No plants yet") }
+        if overdueCount > 0 { return L10n.text("garden.summary.overdue", fallback: "Time to water") }
+        if soonCount > 0 { return L10n.text("garden.summary.soon", fallback: "Check soon") }
+        return L10n.text("garden.summary.good", fallback: "All on track")
     }
 }

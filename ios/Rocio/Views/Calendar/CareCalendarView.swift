@@ -16,7 +16,7 @@ struct CareCalendarView: View {
                     Section(day.formatted(date: .complete, time: .omitted)) {
                         let due = duePlants(on: day)
                         if due.isEmpty {
-                            Text("Sin riegos programados")
+                            Text(L10n.text("calendar.empty", fallback: "No watering scheduled"))
                                 .foregroundStyle(.secondary)
                         } else {
                             ForEach(due) { plant in
@@ -26,12 +26,12 @@ struct CareCalendarView: View {
                                         VStack(alignment: .leading) {
                                             Text(plant.nickname)
                                                 .font(.headline)
-                                            Text("\(flower.waterMl) ml de agua")
+                                            Text(L10n.format("calendar.water.amount", fallback: "%d ml of water", flower.waterMl))
                                                 .font(.caption)
                                                 .foregroundStyle(.secondary)
                                         }
                                         Spacer()
-                                        Button("Regar") {
+                                        Button(L10n.text("action.water", fallback: "Water")) {
                                             gardenStore.water(plant)
                                         }
                                         .buttonStyle(.bordered)
@@ -42,7 +42,7 @@ struct CareCalendarView: View {
                     }
                 }
             }
-            .navigationTitle("Calendario")
+            .navigationTitle(L10n.text("calendar.title", fallback: "Calendar"))
         }
     }
 
@@ -52,4 +52,3 @@ struct CareCalendarView: View {
         }
     }
 }
-

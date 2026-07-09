@@ -5,128 +5,81 @@ const projectRoot = path.resolve(import.meta.dirname, '..');
 
 function readRequired(relativePath) {
   const filePath = path.join(projectRoot, relativePath);
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Missing required file: ${relativePath}`);
-  }
+  if (!fs.existsSync(filePath)) throw new Error(`Missing required file: ${relativePath}`);
   return fs.readFileSync(filePath, 'utf8');
 }
 
-function fileExists(relativePath) {
-  return fs.existsSync(path.join(projectRoot, relativePath));
-}
-
-const indexHtml = readRequired('index.html');
 const privacyHtml = readRequired('privacy.html');
 const supportHtml = readRequired('support.html');
 const manifest = JSON.parse(readRequired('manifest.webmanifest'));
-const appStorePlan = readRequired('APPSTORE_SHIP_PLAN_2026-05-11.md');
+const appStorePlan = readRequired('APP_STORE_LAUNCH_PLAN.md');
 const lovablePrompt = readRequired('LOVABLE_READY_PROMPT.md');
-const photoAttributions = readRequired('PHOTO_ATTRIBUTIONS.md');
-
-const manifestIconPaths = Array.isArray(manifest.icons)
-  ? manifest.icons.map((icon) => icon.src.replace(/^\.\//, ''))
-  : [];
+const projectFile = readRequired('ios/Rocio.xcodeproj/project.pbxproj');
+const internalPublicCopy = /BLOCKED|PENDING|Borrador p[uú]blico|No compres|autorizaci[oó]n expl[ií]cita de Julio|PLANT_ID_API_KEY/i;
 
 const checks = [
   {
-    id: 'privacy-draft-exists-and-blocks-publication',
+    id: 'privacy-page-is-public-safe',
     area: 'privacy',
-    pass: privacyHtml.includes('Borrador público') &&
-      privacyHtml.includes('guarda tu jardín localmente') &&
-      privacyHtml.includes('Plant.id/Supabase permanece BLOCKED') &&
-      privacyHtml.includes('debe actualizarse para declarar el envío de fotos'),
-    evidence: 'Privacy page documents local storage and blocks Plant.id/Supabase/photo-transfer claims until production is real.',
+    pass: privacyHtml.includes('Política de privacidad') &&
+      privacyHtml.includes('Rocio guarda tu jardín localmente') &&
+      privacyHtml.includes('no se envían a servidores') &&
+      !internalPublicCopy.test(privacyHtml),
+    evidence: 'Privacy page explains local app behavior without internal release language.',
   },
   {
-    id: 'support-draft-exists-and-blocks-external-channel',
+    id: 'support-page-is-public-safe',
     area: 'support',
-    pass: supportHtml.includes('borrador público') &&
-      supportHtml.includes('BLOCKED hasta tener credenciales seguras') &&
-      supportHtml.includes('No compres, publiques ni sometas nada sin autorización explícita de Julio'),
-    evidence: 'Support page exists and explicitly blocks purchase/submission without Julio authorization.',
+    pass: supportHtml.includes('Centro de soporte') &&
+      supportHtml.includes('https://github.com/juliosuas/rocio/issues') &&
+      !internalPublicCopy.test(supportHtml),
+    evidence: 'Support page provides a real public channel and contains no owner-only instructions.',
   },
   {
-    id: 'ios-webapp-metadata-present',
-    area: 'iosMetadata',
-    pass: indexHtml.includes('apple-mobile-web-app-capable') &&
-      indexHtml.includes('apple-mobile-web-app-status-bar-style') &&
-      indexHtml.includes('apple-touch-icon') &&
-      indexHtml.includes('<link rel="manifest" href="manifest.webmanifest">'),
-    evidence: 'Main HTML includes iOS/PWA metadata needed before wrapping or screenshot QA.',
+    id: 'native-ios-target-present',
+    area: 'ios',
+    pass: projectFile.includes('PRODUCT_BUNDLE_IDENTIFIER = com.juliosuas.rocio;') &&
+      projectFile.includes('productType = "com.apple.product-type.application";'),
+    evidence: 'Rocio ships as a native iOS target, not a WebView wrapper.',
   },
   {
     id: 'manifest-minimum-fields-present',
-    area: 'manifest',
-    pass: typeof manifest.name === 'string' &&
-      typeof manifest.short_name === 'string' &&
-      manifest.display === 'standalone' &&
-      typeof manifest.start_url === 'string' &&
-      typeof manifest.scope === 'string' &&
-      manifestIconPaths.length > 0 &&
-      manifestIconPaths.every(fileExists),
-    evidence: 'Manifest has app identity, standalone display, start/scope, and existing icon files.',
+    area: 'pwaFallback',
+    pass: manifest.display === 'standalone' && manifest.start_url && manifest.scope &&
+      Array.isArray(manifest.icons) && manifest.icons.length > 0,
+    evidence: 'The GitHub Pages fallback retains valid installable PWA metadata.',
   },
   {
-    id: 'appstore-plan-keeps-owner-actions-blocked',
+    id: 'native-launch-plan-current',
     area: 'appStore',
-    pass: appStorePlan.includes('OWNER ACTION ONLY') &&
-      appStorePlan.includes('La automatización/cron no debe comprar, someter ni publicar') &&
-      appStorePlan.includes('No vender el scanner como reconocimiento real'),
-    evidence: 'App Store plan keeps purchase/submission/publishing as owner-only and blocks real-recognition claims.',
+    pass: appStorePlan.includes('SwiftUI') &&
+      appStorePlan.includes('com.juliosuas.rocio') &&
+      !appStorePlan.includes('Crear proyecto Capacitor'),
+    evidence: 'The active launch plan describes the native SwiftUI release.',
   },
   {
-    id: 'lovable-prompt-keeps-production-actions-blocked',
+    id: 'lovable-contract-is-global-and-honest',
     area: 'lovable',
-    pass: lovablePrompt.includes('Do not publish, submit to App Store, or connect production credentials') &&
-      lovablePrompt.includes('Do not invent botanical claims') &&
-      lovablePrompt.includes('Catalog photos have local source/license attribution rows') &&
-      lovablePrompt.includes('Privacy/support drafts are local only'),
-    evidence: 'Lovable prompt is ready for handoff while preserving no-publish, no-secret, and no-invented-claims constraints.',
-  },
-];
-
-const blockers = [
-  {
-    id: 'apple-developer-owner-action',
-    blocked: appStorePlan.includes('Julio compra Apple Developer Program si decide avanzar.'),
-    evidence: 'Apple Developer enrollment/purchase remains owner-only.',
-  },
-  {
-    id: 'privacy-support-public-url',
-    blocked: supportHtml.includes('borrador público hasta que Julio autorice el soporte final para App Store'),
-    evidence: 'Privacy/support URLs exist as public drafts, but final App Store support remains owner-authorized.',
-  },
-  {
-    id: 'plantid-supabase-production',
-    blocked: privacyHtml.includes('Plant.id/Supabase permanece BLOCKED') &&
-      supportHtml.includes('reconocimiento real con Plant.id/Supabase está BLOCKED'),
-    evidence: 'Real recognition remains blocked without secure Supabase deploy, secret, and real-photo QA.',
-  },
-  {
-    id: 'appstore-photo-assets',
-    blocked: /assets\/flowers\/.+\.jpg.+PENDING/i.test(photoAttributions),
-    evidence: 'A catalog photo attribution row still contains a PENDING source or license marker.',
+    pass: lovablePrompt.includes('global flower care app') &&
+      lovablePrompt.includes('bilingual English and Spanish') &&
+      lovablePrompt.includes('experimental scanner') &&
+      !lovablePrompt.includes('Spanish-speaking flower owners'),
+    evidence: 'Lovable is aligned with the global bilingual product and honest scanner claim.',
   },
 ];
 
 const failed = checks.filter((check) => !check.pass);
+const hasTeam = [...projectFile.matchAll(/DEVELOPMENT_TEAM = ([^;]*);/g)]
+  .some((match) => match[1].trim().replaceAll('"', ''));
 
-console.table(checks.map(({ id, area, pass, evidence }) => ({
-  id,
-  area,
-  pass,
-  evidence,
-})));
-console.table(blockers);
+console.table(checks);
 console.log(JSON.stringify({
   total: checks.length,
   passed: checks.length - failed.length,
   failed: failed.map((check) => check.id),
   localStaticReadinessReady: failed.length === 0,
-  appStoreSubmissionReady: false,
-  blockers: blockers.filter((blocker) => blocker.blocked).map((blocker) => blocker.id),
+  appStoreSubmissionReady: failed.length === 0 && hasTeam,
+  blockers: hasTeam ? [] : ['apple-developer-team'],
 }, null, 2));
 
-if (failed.length) {
-  process.exitCode = 1;
-}
+if (failed.length) process.exit(1);

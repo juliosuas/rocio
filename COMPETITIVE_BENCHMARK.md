@@ -17,7 +17,7 @@ Reason: Rocio's commercial path is recurring plant care, reminders, trust, and h
 | Onboarding | Strong habit setup | Scanner-first | AI-first | 3-step native onboarding |
 | Scanner claims | Secondary | Aggressive identification | AI plant doctor | Honest local candidates |
 | Privacy angle | Not primary | Not primary | Not primary | Local-first, no tracking v1 |
-| Language angle | Broad/localized | Broad/localized | Broad/localized | Spanish-first for Mexico/LatAm |
+| Language angle | Broad/localized | Broad/localized | Broad/localized | Native English/Spanish with Mexico/LatAm flower context |
 | Differentiation | Full care platform | Massive database | AI diagnosis | Simple private flower companion |
 
 ## Pricing Strategy

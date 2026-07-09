@@ -21,8 +21,13 @@ struct WateringNotificationScheduler {
             let triggerDate = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
 
             let content = UNMutableNotificationContent()
-            content.title = "Rocio te recuerda regar"
-            content.body = "\(plant.nickname) necesita \(flower.waterMl) ml de agua hoy."
+            content.title = L10n.text("notification.watering.title", fallback: "Rocio watering reminder")
+            content.body = L10n.format(
+                "notification.watering.body",
+                fallback: "%@ needs %d ml of water today.",
+                plant.nickname,
+                flower.waterMl
+            )
             content.sound = .default
 
             let request = UNNotificationRequest(
@@ -32,6 +37,10 @@ struct WateringNotificationScheduler {
             )
             try? await center.add(request)
         }
+    }
+
+    func cancelPendingNotifications() {
+        UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
     }
 
     func scheduledFireDate(for dueDate: Date, now: Date = Date()) -> Date {

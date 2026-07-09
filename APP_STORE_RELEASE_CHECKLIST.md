@@ -45,7 +45,7 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 
 ## App Store Notes Draft
 
-Rocio is a Spanish-first flower-care app. The app stores the user's garden locally on the device, schedules local watering reminders, and uses camera/photo input for an experimental on-device flower identification helper. No Plant.id or Supabase provider calls are enabled in the native app in this release.
+Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. The app stores the user's garden locally on the device, schedules local watering reminders, and uses camera/photo input for an experimental on-device flower matching helper. No Plant.id or Supabase provider calls are enabled in the native app in this release.
 
 Camera permission is used only when the user taps the scanner camera action. Photo library permission is used only when the user chooses a photo for local analysis. Notification permission is requested only from Settings when the user enables watering reminders.
 

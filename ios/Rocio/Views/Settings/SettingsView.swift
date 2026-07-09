@@ -2,63 +2,87 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var gardenStore: GardenStore
-    @State private var notificationStatus = "Sin solicitar"
+    @State private var notificationStatus = L10n.text("settings.notifications.not.requested", fallback: "Not requested")
     @State private var showingResetConfirmation = false
 
     private let notificationScheduler = WateringNotificationScheduler()
+    private let localDataResetter = LocalDataResetter()
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Permisos") {
-                    Text("Rocio puede enviarte recordatorios locales para regar tus plantas guardadas. Se activan solo si tocas este boton y aceptas el permiso de iOS.")
+                Section(L10n.text("settings.permissions", fallback: "Permissions")) {
+                    Text(L10n.text("settings.notifications.copy", fallback: "Rocio can send local reminders for your saved plants. They are enabled only after you tap this button and allow them in iOS."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     Button {
                         Task {
                             let granted = await notificationScheduler.requestAuthorization()
-                            notificationStatus = granted ? "Recordatorios activos" : "Permiso denegado"
+                            notificationStatus = granted
+                                ? L10n.text("settings.notifications.active", fallback: "Reminders active")
+                                : L10n.text("settings.notifications.denied", fallback: "Permission denied")
                             await notificationScheduler.refreshNotifications(for: gardenStore.plants)
                         }
                     } label: {
-                        Label("Activar recordatorios de riego", systemImage: "bell.badge")
+                        Label(L10n.text("settings.notifications.enable", fallback: "Enable watering reminders"), systemImage: "bell.badge")
                     }
                     Text(notificationStatus)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Privacidad") {
-                    Text("Rocio guarda tu jardin localmente en este iPhone. Las fotos se analizan en el dispositivo y no se guardan en esta version nativa.")
+                Section(L10n.text("settings.privacy", fallback: "Privacy")) {
+                    Text(L10n.text("settings.privacy.copy", fallback: "Rocio stores your garden on this iPhone. Photos are analyzed on the device and are not saved by this version of the app."))
                     ShareLink(item: exportPayload) {
-                        Label("Exportar datos locales", systemImage: "square.and.arrow.up")
+                        Label(L10n.text("settings.export", fallback: "Export local data"), systemImage: "square.and.arrow.up")
                     }
-                    Button("Borrar datos locales", role: .destructive) {
+                    Button(L10n.text("settings.delete", fallback: "Delete local data"), role: .destructive) {
                         showingResetConfirmation = true
                     }
                 }
 
-                Section("App Store") {
-                    LabeledContent("Version", value: "1.0")
-                    LabeledContent("Bundle", value: "com.juliosuas.rocio")
-                    Text("Pendiente antes de publicar: Apple Developer Team, capturas finales, revision visual, politica de privacidad y TestFlight.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                Section(L10n.text("settings.about", fallback: "About")) {
+                    LabeledContent(L10n.text("settings.version", fallback: "Version"), value: "1.0")
+                    Link(destination: URL(string: "https://juliosuas.github.io/rocio/privacy.html")!) {
+                        Label(L10n.text("settings.privacy.policy", fallback: "Privacy policy"), systemImage: "hand.raised")
+                    }
+                    Link(destination: URL(string: "https://juliosuas.github.io/rocio/support.html")!) {
+                        Label(L10n.text("settings.support", fallback: "Support"), systemImage: "questionmark.circle")
+                    }
                 }
             }
-            .navigationTitle("Ajustes")
-            .confirmationDialog("Borrar datos locales", isPresented: $showingResetConfirmation, titleVisibility: .visible) {
-                Button("Borrar jardin", role: .destructive) {
-                    gardenStore.reset()
+            .navigationTitle(L10n.text("settings.title", fallback: "Settings"))
+            .confirmationDialog(L10n.text("settings.delete", fallback: "Delete local data"), isPresented: $showingResetConfirmation, titleVisibility: .visible) {
+                Button(L10n.text("settings.delete.confirm", fallback: "Delete garden"), role: .destructive) {
+                    localDataResetter.reset(gardenStore: gardenStore)
+                    notificationStatus = L10n.text("settings.delete.done", fallback: "Data and reminders deleted")
                 }
-                Button("Cancelar", role: .cancel) {}
+                Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
             } message: {
-                Text("Esta accion elimina tu jardin guardado en este iPhone.")
+                Text(L10n.text("settings.delete.message", fallback: "This removes your saved garden from this iPhone and cancels pending reminders."))
             }
         }
     }
 
     private var exportPayload: String {
         GardenExport.payload(plants: gardenStore.plants)
+    }
+}
+
+struct LocalDataResetter {
+    private let cancelPendingNotifications: () -> Void
+
+    init(notificationScheduler: WateringNotificationScheduler = WateringNotificationScheduler()) {
+        self.cancelPendingNotifications = notificationScheduler.cancelPendingNotifications
+    }
+
+    init(cancelPendingNotifications: @escaping () -> Void) {
+        self.cancelPendingNotifications = cancelPendingNotifications
+    }
+
+    @MainActor
+    func reset(gardenStore: GardenStore) {
+        gardenStore.reset()
+        cancelPendingNotifications()
     }
 }

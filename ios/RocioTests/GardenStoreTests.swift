@@ -32,7 +32,7 @@ final class GardenStoreTests: XCTestCase {
 
         XCTAssertEqual(summary.plantCount, 2)
         XCTAssertEqual(summary.overdueCount, 1)
-        XCTAssertEqual(summary.statusLabel, "Toca regar")
+        XCTAssertEqual(summary.statusLabel, L10n.text("garden.summary.overdue", fallback: "Time to water"))
         XCTAssertEqual(summary.nextWateringDate, calendar.date(byAdding: .day, value: 3, to: overdueDate))
     }
 
@@ -53,5 +53,18 @@ final class GardenStoreTests: XCTestCase {
         store.reset()
 
         XCTAssertTrue(store.plants.isEmpty)
+    }
+
+    func testLocalDataResetClearsPlantsAndCancelsPendingNotifications() {
+        let store = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
+        var didCancelPendingNotifications = false
+        let resetter = LocalDataResetter {
+            didCancelPendingNotifications = true
+        }
+
+        resetter.reset(gardenStore: store)
+
+        XCTAssertTrue(store.plants.isEmpty)
+        XCTAssertTrue(didCancelPendingNotifications)
     }
 }
