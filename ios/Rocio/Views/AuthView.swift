@@ -8,64 +8,85 @@ struct AuthView: View {
     @State private var isCreatingAccount = false
     @State private var isWorking = false
 
+    private var heroFlower: Flower? { FlowerCatalog.flower(id: "rosa") }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemName: "camera.macro")
-                            .font(.system(size: 42))
-                            .foregroundStyle(Color.rocioLeafDeep)
-                        Text("Rocio")
-                            .font(.largeTitle.bold())
-                        Text(L10n.text("auth.subtitle", fallback: "Your flower garden, synced and ready wherever you grow."))
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    VStack(spacing: 14) {
-                        TextField(L10n.text("auth.email", fallback: "Email"), text: $email)
-                            .textContentType(.emailAddress)
-                            .keyboardType(.emailAddress)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                        SecureField(L10n.text("auth.password", fallback: "Password"), text: $password)
-                            .textContentType(isCreatingAccount ? .newPassword : .password)
-                    }
-                    .textFieldStyle(.roundedBorder)
-
-                    if let error = sessionStore.errorMessage {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(.red)
-                    }
-
-                    Button {
-                        Task { await submit() }
-                    } label: {
-                        HStack {
-                            if isWorking { ProgressView().tint(.white) }
-                            Text(isCreatingAccount
-                                 ? L10n.text("auth.create", fallback: "Create account")
-                                 : L10n.text("auth.signin", fallback: "Sign in"))
+                VStack(alignment: .leading, spacing: 0) {
+                    ZStack(alignment: .bottomLeading) {
+                        if let heroFlower {
+                            FlowerArtwork(flower: heroFlower, height: 250)
+                        } else {
+                            Color.rocioLeafAction.frame(height: 250)
                         }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(RocioPrimaryButtonStyle())
-                    .disabled(!isValid || isWorking)
 
-                    Button(isCreatingAccount
-                           ? L10n.text("auth.existing", fallback: "Already have an account? Sign in")
-                           : L10n.text("auth.new", fallback: "New to Rocio? Create an account")) {
-                        isCreatingAccount.toggle()
+                        VStack(alignment: .leading, spacing: 5) {
+                            Label("Rocio", systemImage: "camera.macro")
+                                .font(.rocioDisplay)
+                            Text(L10n.text("auth.subtitle", fallback: "Your flower garden, synced and ready wherever you grow."))
+                                .font(.subheadline.weight(.medium))
+                                .lineLimit(2)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.black.opacity(0.48))
                     }
-                    .frame(maxWidth: .infinity)
 
-                    Text(L10n.text("auth.privacy", fallback: "An account is required to sync your garden and enforce fair AI scan limits. Rocio does not sell your data or use advertising trackers."))
+                    VStack(alignment: .leading, spacing: 18) {
+                        Picker(L10n.text("auth.signin", fallback: "Sign in"), selection: $isCreatingAccount) {
+                            Text(L10n.text("auth.signin", fallback: "Sign in")).tag(false)
+                            Text(L10n.text("auth.create", fallback: "Create account")).tag(true)
+                        }
+                        .pickerStyle(.segmented)
+
+                        VStack(spacing: 12) {
+                            AuthField(systemImage: "envelope") {
+                                TextField(L10n.text("auth.email", fallback: "Email"), text: $email)
+                                    .textContentType(.emailAddress)
+                                    .keyboardType(.emailAddress)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                            }
+                            AuthField(systemImage: "lock") {
+                                SecureField(L10n.text("auth.password", fallback: "Password"), text: $password)
+                                    .textContentType(isCreatingAccount ? .newPassword : .password)
+                            }
+                        }
+
+                        if let error = sessionStore.errorMessage {
+                            Label(error, systemImage: "exclamationmark.circle.fill")
+                                .font(.footnote)
+                                .foregroundStyle(.red)
+                        }
+
+                        Button {
+                            Task { await submit() }
+                        } label: {
+                            HStack {
+                                if isWorking { ProgressView().tint(.white) }
+                                Text(isCreatingAccount
+                                     ? L10n.text("auth.create", fallback: "Create account")
+                                     : L10n.text("auth.signin", fallback: "Sign in"))
+                                Spacer()
+                                Image(systemName: "arrow.right")
+                            }
+                        }
+                        .buttonStyle(RocioPrimaryButtonStyle())
+                        .disabled(!isValid || isWorking)
+
+                        Label {
+                            Text(L10n.text("auth.privacy", fallback: "An account is required to sync your garden and enforce fair AI scan limits. Rocio does not sell your data or use advertising trackers."))
+                        } icon: {
+                            Image(systemName: "hand.raised.fill")
+                                .foregroundStyle(Color.rocioTeal)
+                        }
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                    }
+                    .padding(20)
                 }
-                .padding(24)
             }
             .background(Color.rocioCanvas.ignoresSafeArea())
         }
@@ -84,6 +105,29 @@ struct AuthView: View {
         } else {
             await sessionStore.signIn(email: email, password: password, gardenStore: gardenStore)
         }
+    }
+}
+
+private struct AuthField<Content: View>: View {
+    let systemImage: String
+    let content: () -> Content
+
+    init(systemImage: String, @ViewBuilder content: @escaping () -> Content) {
+        self.systemImage = systemImage
+        self.content = content
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .foregroundStyle(Color.rocioLeafDeep)
+                .frame(width: 22)
+            content()
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 50)
+        .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
     }
 }
 struct CloudConfigurationRequiredView: View {

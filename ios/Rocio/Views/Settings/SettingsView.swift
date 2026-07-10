@@ -74,6 +74,9 @@ struct SettingsView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.rocioCanvas)
+            .tint(Color.rocioLeafDeep)
             .navigationTitle(L10n.text("settings.title", fallback: "Settings"))
             .onChange(of: analyticsEnabled) { _, enabled in
                 Task { await sessionStore.setAnalyticsEnabled(enabled) }

@@ -55,46 +55,55 @@ struct RootView: View {
 private struct OnboardingView: View {
     let onFinish: () -> Void
 
+    private var heroFlower: Flower? { FlowerCatalog.flower(id: "orquidea") }
+
     var body: some View {
-        VStack(spacing: 26) {
-            Spacer(minLength: 22)
+        ScrollView {
+            VStack(spacing: 0) {
+                if let heroFlower {
+                    FlowerArtwork(flower: heroFlower, height: 230)
+                }
 
-            VStack(spacing: 10) {
-                Text("Rocio")
-                    .font(.largeTitle.bold())
-                Text(L10n.text("onboarding.subtitle", fallback: "Care for your flowers with simple guidance and secure cloud sync."))
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
+                VStack(alignment: .leading, spacing: 22) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Rocio")
+                            .font(.rocioDisplay)
+                        Text(L10n.text("onboarding.subtitle", fallback: "Care for your flowers with simple guidance and secure cloud sync."))
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    VStack(spacing: 4) {
+                        OnboardingStep(
+                            systemImage: "camera.macro",
+                            title: L10n.text("onboarding.choose.title", fallback: "Choose your flowers"),
+                            copy: L10n.text("onboarding.choose.copy", fallback: "Start with familiar flowers and clear guides for your home, balcony, or garden.")
+                        )
+                        Divider()
+                        OnboardingStep(
+                            systemImage: "bell.badge",
+                            title: L10n.text("onboarding.reminders.title", fallback: "Enable reminders"),
+                            copy: L10n.text("onboarding.reminders.copy", fallback: "Rocio uses local notifications only after you enable them in Settings.")
+                        )
+                        Divider()
+                        OnboardingStep(
+                            systemImage: "icloud",
+                            title: L10n.text("onboarding.private.title", fallback: "Your garden, synced"),
+                            copy: L10n.text("onboarding.private.copy", fallback: "Your account keeps your garden available across devices. You can export or delete it anytime.")
+                        )
+                    }
+
+                    Button(action: onFinish) {
+                        HStack {
+                            Label(L10n.text("onboarding.start", fallback: "Explore the catalog"), systemImage: "leaf")
+                            Spacer()
+                            Image(systemName: "arrow.right")
+                        }
+                    }
+                    .buttonStyle(RocioPrimaryButtonStyle())
+                }
+                .padding(20)
             }
-            .padding(.horizontal)
-
-            VStack(spacing: 12) {
-                OnboardingStep(
-                    systemImage: "camera.macro",
-                    title: L10n.text("onboarding.choose.title", fallback: "Choose your flowers"),
-                    copy: L10n.text("onboarding.choose.copy", fallback: "Start with familiar flowers and clear guides for your home, balcony, or garden.")
-                )
-                OnboardingStep(
-                    systemImage: "bell.badge",
-                    title: L10n.text("onboarding.reminders.title", fallback: "Enable reminders"),
-                    copy: L10n.text("onboarding.reminders.copy", fallback: "Rocio uses local notifications only after you enable them in Settings.")
-                )
-                OnboardingStep(
-                    systemImage: "icloud",
-                    title: L10n.text("onboarding.private.title", fallback: "Your garden, synced"),
-                    copy: L10n.text("onboarding.private.copy", fallback: "Your account keeps your garden available across devices. You can export or delete it anytime.")
-                )
-            }
-            .padding(.horizontal)
-
-            Button(action: onFinish) {
-                Label(L10n.text("onboarding.start", fallback: "Explore the catalog"), systemImage: "leaf")
-            }
-            .buttonStyle(RocioPrimaryButtonStyle())
-            .padding(.horizontal)
-
-            Spacer(minLength: 22)
         }
         .background(Color.rocioCanvas.ignoresSafeArea())
     }
@@ -111,7 +120,7 @@ private struct OnboardingStep: View {
                 .font(.title2)
                 .foregroundStyle(Color.rocioLeafDeep)
                 .frame(width: 42, height: 42)
-                .background(Color.rocioLeafSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(Color.rocioLeafSoft, in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
@@ -122,12 +131,7 @@ private struct OnboardingStep: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(14)
-        .background(.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.rocioLine)
-        )
+        .padding(.vertical, 12)
     }
 }
 

@@ -386,6 +386,16 @@ enum FlowerCatalogFilter: String, CaseIterable, Identifiable {
         }
     }
 
+    var systemImage: String {
+        switch self {
+        case .all: "camera.macro"
+        case .easy: "sparkles"
+        case .fullSun: "sun.max.fill"
+        case .indoor: "house.fill"
+        case .mexico: "globe.americas.fill"
+        }
+    }
+
     func includes(_ flower: Flower) -> Bool {
         switch self {
         case .all:

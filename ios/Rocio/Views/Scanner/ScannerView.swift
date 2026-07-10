@@ -23,20 +23,22 @@ struct ScannerView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 18) {
+                VStack(spacing: 16) {
                     ScannerPromiseCard()
 
                     if let selectedImage {
                         Image(uiImage: selectedImage)
                             .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                            .frame(maxHeight: 320)
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .aspectRatio(4 / 3, contentMode: .fit)
+                            .clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                     } else {
                         scannerPlaceholder
                     }
 
-                    HStack {
+                    HStack(spacing: 10) {
                         Button {
                             guard canUseCamera else {
                                 cameraUnavailableMessage = L10n.text("scanner.camera.unavailable", fallback: "The camera is unavailable on this device. You can choose a photo instead.")
@@ -48,13 +50,13 @@ struct ScannerView: View {
                             Label(L10n.text("scanner.camera", fallback: "Take photo"), systemImage: "camera")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(RocioPrimaryButtonStyle())
 
                         PhotosPicker(selection: $selectedItem, matching: .images) {
                             Label(L10n.text("scanner.choose", fallback: "Choose photo"), systemImage: "photo")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(RocioSecondaryButtonStyle())
                     }
 
                     if let cameraUnavailableMessage {
@@ -81,6 +83,7 @@ struct ScannerView: View {
                 }
                 .padding()
             }
+            .background(Color.rocioCanvas)
             .navigationTitle(L10n.text("scanner.title", fallback: "Scanner"))
             .sheet(isPresented: $isShowingCamera) {
                 CameraCaptureView { image in
@@ -111,19 +114,21 @@ struct ScannerView: View {
 
     private var scannerPlaceholder: some View {
         VStack(spacing: 12) {
-            Image(systemName: "camera.macro")
-                .font(.system(size: 52))
-                .foregroundStyle(Color.rocioLeaf)
+            Image(systemName: "viewfinder")
+                .font(.system(size: 48, weight: .light))
+                .foregroundStyle(Color.rocioRose)
             Text(L10n.text("scanner.placeholder.title", fallback: "Frame an open flower"))
-                .font(.title3.bold())
+                .font(.rocioTitle)
             Text(L10n.text("scanner.placeholder.copy", fallback: "Use natural light and a clean background to improve the on-device match."))
                 .font(.callout)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.white.opacity(0.72))
                 .multilineTextAlignment(.center)
         }
+        .foregroundStyle(.white)
         .frame(maxWidth: .infinity)
-        .padding(32)
-        .background(Color.rocioLeafSoft, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .aspectRatio(4 / 3, contentMode: .fit)
+        .padding(24)
+        .background(Color.rocioLeafAction, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func load(_ item: PhotosPickerItem?) async {
@@ -156,25 +161,23 @@ private struct ScannerPromiseCard: View {
     }
 
     var body: some View {
-        RocioCard {
-            HStack(spacing: 14) {
-                if let sampleFlower {
-                    FlowerImage(flower: sampleFlower, size: 76)
-                } else {
-                    Image(systemName: "camera.macro")
-                        .font(.title)
-                        .foregroundStyle(Color.rocioLeafDeep)
-                }
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(L10n.text("scanner.promise.title", fallback: "An honest scanner"))
-                        .font(.headline)
-                    Text(L10n.text("scanner.promise.copy", fallback: "Rocio compares visible traits and shows candidates. It does not promise a perfect diagnosis."))
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 0)
+        HStack(spacing: 14) {
+            if let sampleFlower {
+                FlowerImage(flower: sampleFlower, size: 72)
+            } else {
+                Image(systemName: "camera.macro")
+                    .font(.title)
+                    .foregroundStyle(Color.rocioLeafDeep)
             }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(L10n.text("scanner.promise.title", fallback: "An honest scanner"))
+                    .font(.rocioTitle)
+                Text(L10n.text("scanner.promise.copy", fallback: "Rocio compares visible traits and shows candidates. It does not promise a perfect diagnosis."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
         }
     }
 }
@@ -202,13 +205,13 @@ private struct ScannerResultCard: View {
                         .foregroundStyle(.secondary)
                     Label(result.confidenceBand.label, systemImage: "waveform.path.ecg")
                         .font(.caption.bold())
-                        .foregroundStyle(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
+                        .foregroundStyle(result.confidenceBand == .experimental ? Color.rocioAmber : Color.rocioLeafDeep)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 ProgressView(value: min(100, max(0, result.confidence)), total: 100)
-                    .tint(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
+                    .tint(result.confidenceBand == .experimental ? Color.rocioAmber : Color.rocioLeafDeep)
                 HStack {
                     Text(L10n.format("scanner.match", fallback: "%d%% visual match", Int(result.confidence.rounded())))
                     Spacer()
@@ -219,13 +222,16 @@ private struct ScannerResultCard: View {
             }
 
             HStack {
-                Label(result.provider.label, systemImage: result.provider == .cloud ? "sparkles" : "iphone")
+                RocioStatusBadge(
+                    title: result.provider.label,
+                    systemImage: result.provider == .cloud ? "sparkles" : "iphone",
+                    tint: result.provider == .cloud ? .rocioRose : .rocioTeal
+                )
                 Spacer()
                 if let remaining = result.remainingCloudScans {
                     Text(L10n.format("scanner.remaining", fallback: "%d cloud scans left", remaining))
                 }
             }
-            .font(.caption)
             .foregroundStyle(.secondary)
 
             Button {
