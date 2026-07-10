@@ -19,6 +19,22 @@ struct GardenEditView: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let flower = gardenStore.flower(for: plant) {
+                    Section {
+                        HStack(spacing: 14) {
+                            FlowerImage(flower: flower, size: 72)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(plant.nickname)
+                                    .font(.rocioTitle)
+                                Text(flower.scientific)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
                 Section(L10n.text("garden.edit.plant", fallback: "Plant")) {
                     TextField(L10n.text("garden.edit.name", fallback: "Name"), text: $nickname)
                     Picker(L10n.text("garden.edit.status", fallback: "Status"), selection: $status) {
@@ -48,6 +64,9 @@ struct GardenEditView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.rocioCanvas)
+            .tint(Color.rocioLeafDeep)
             .navigationTitle(L10n.text("garden.edit.title", fallback: "Edit plant"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

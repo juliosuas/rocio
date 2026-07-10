@@ -13,38 +13,49 @@ struct CatalogView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(spacing: 14) {
-                    RocioCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Label(L10n.text("catalog.hero.title", fallback: "Flowers for home, balcony, and garden"), systemImage: "sparkles")
-                                .font(.headline)
-                                .foregroundStyle(Color.rocioLeafDeep)
-                            Text(L10n.text("catalog.hero.copy", fallback: "Filter by easy care, sun, indoor growing, or flowers familiar across Mexico and Latin America."))
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
+                VStack(alignment: .leading, spacing: 18) {
+                    CatalogHero()
 
-                    Picker(L10n.text("catalog.filter", fallback: "Filter"), selection: $selectedFilter) {
-                        ForEach(FlowerCatalogFilter.allCases) { filter in
-                            Text(filter.title).tag(filter)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(FlowerCatalogFilter.allCases) { filter in
+                                Button {
+                                    withAnimation(.easeOut(duration: 0.18)) {
+                                        selectedFilter = filter
+                                    }
+                                } label: {
+                                    RocioFilterChip(
+                                        title: filter.title,
+                                        systemImage: filter.systemImage,
+                                        isSelected: selectedFilter == filter
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityAddTraits(selectedFilter == filter ? .isSelected : [])
+                            }
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.vertical, 2)
+                    .contentMargins(.horizontal, 16, for: .scrollContent)
 
-                    ForEach(filteredFlowers) { flower in
-                        Button {
-                            selectedFlower = flower
-                        } label: {
-                            CatalogFlowerCard(flower: flower, isInGarden: gardenStore.plants.contains { $0.flowerId == flower.id })
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                        ForEach(filteredFlowers) { flower in
+                            Button {
+                                selectedFlower = flower
+                            } label: {
+                                CatalogFlowerCard(
+                                    flower: flower,
+                                    isInGarden: gardenStore.plants.contains { $0.flowerId == flower.id }
+                                )
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding()
+                .padding(.bottom, 20)
             }
-            .navigationTitle("Rocio")
+            .background(Color.rocioCanvas)
+            .navigationTitle(L10n.text("tab.catalog", fallback: "Catalog"))
             .searchable(text: $searchText, prompt: Text(L10n.text("catalog.search", fallback: "Search flowers")))
             .sheet(item: $selectedFlower) { flower in
                 FlowerDetailView(flower: flower)
@@ -54,50 +65,95 @@ struct CatalogView: View {
     }
 }
 
+private struct CatalogHero: View {
+    private var flower: Flower? { FlowerCatalog.flower(id: "cempasuchil") }
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            if let flower {
+                FlowerArtwork(flower: flower, height: 190)
+            } else {
+                Color.rocioLeafDeep.frame(height: 190)
+            }
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Rocio")
+                    .font(.rocioDisplay)
+                Text(L10n.text("catalog.hero.title", fallback: "Flowers for home, balcony, and garden"))
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(2)
+            }
+            .foregroundStyle(.white)
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.black.opacity(0.46))
+        }
+    }
+}
+
 private struct CatalogFlowerCard: View {
     let flower: Flower
     let isInGarden: Bool
 
     var body: some View {
-        HStack(spacing: 14) {
-            FlowerImage(flower: flower, size: 76)
-
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(flower.name)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        Text(flower.scientific)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                    Spacer(minLength: 8)
-                    if isInGarden {
-                        Image(systemName: "checkmark.seal.fill")
-                            .foregroundStyle(Color.rocioLeafDeep)
-                            .accessibilityLabel(L10n.text("catalog.in.garden", fallback: "In your garden"))
-                    }
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                FlowerArtwork(flower: flower, height: 132)
+                if isInGarden {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.title3)
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.rocioLeafDeep)
+                        .padding(9)
+                        .accessibilityLabel(L10n.text("catalog.in.garden", fallback: "In your garden"))
                 }
-
-                HStack(spacing: 6) {
-                    PillLabel(title: flower.difficultyLabel, systemImage: "chart.bar")
-                    PillLabel(title: flower.sunlightLabel, systemImage: "sun.max")
-                }
-
-                Label(
-                    L10n.format("watering.interval", fallback: "%d ml every %d days", flower.waterMl, flower.waterDays),
-                    systemImage: "drop"
-                )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             }
+
+            VStack(alignment: .leading, spacing: 7) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(flower.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(flower.scientific)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                CareLine(
+                    title: L10n.format("watering.interval", fallback: "%d ml every %d days", flower.waterMl, flower.waterDays),
+                    systemImage: "drop.fill",
+                    tint: .rocioTeal
+                )
+                CareLine(
+                    title: flower.sunlightLabel,
+                    systemImage: flower.sunlight == .fullSun ? "sun.max.fill" : "sun.min.fill",
+                    tint: .rocioRose
+                )
+            }
+            .padding(11)
         }
-        .padding(12)
-        .background(.background, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .stroke(Color.rocioLine)
-        )
+        .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
+    }
+}
+
+private struct CareLine: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Image(systemName: systemImage)
+                .foregroundStyle(tint)
+            Text(title)
+                .lineLimit(2)
+                .minimumScaleFactor(0.82)
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 }
