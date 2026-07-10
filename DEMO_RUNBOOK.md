@@ -21,7 +21,7 @@ Open:
 ## Demo Script
 
 1. Open `launch.html`.
-2. Explain the positioning: gentle flower care in English and Spanish, local/private, and honest about experimental matching.
+2. Explain the positioning: gentle flower care in English and Spanish, account-synced, and honest about experimental matching. State that consented scans are authenticated through Rocio Cloud and forwarded to Plant.id, with a local fallback.
 3. Open the app demo.
 4. Show catalog flower cards and care information.
 5. Add a flower to Mi Jardin.

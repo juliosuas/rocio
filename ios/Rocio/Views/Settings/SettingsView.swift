@@ -2,8 +2,11 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var gardenStore: GardenStore
+    @EnvironmentObject private var sessionStore: SessionStore
+    @AppStorage("rocio.analytics.enabled") private var analyticsEnabled = true
     @State private var notificationStatus = L10n.text("settings.notifications.not.requested", fallback: "Not requested")
     @State private var showingResetConfirmation = false
+    @State private var showingAccountDeletion = false
 
     private let notificationScheduler = WateringNotificationScheduler()
     private let localDataResetter = LocalDataResetter()
@@ -11,6 +14,22 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                Section(L10n.text("settings.account", fallback: "Account")) {
+                    if let email = sessionStore.session?.user.email {
+                        LabeledContent(L10n.text("settings.email", fallback: "Email"), value: email)
+                    }
+                    LabeledContent(L10n.text("settings.sync", fallback: "Cloud sync"), value: sessionStore.syncMessage)
+                    Button {
+                        Task { await sessionStore.signOut(gardenStore: gardenStore) }
+                    } label: {
+                        Label(L10n.text("settings.signout", fallback: "Sign out"), systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                    Button(role: .destructive) {
+                        showingAccountDeletion = true
+                    } label: {
+                        Label(L10n.text("settings.account.delete", fallback: "Delete account"), systemImage: "person.crop.circle.badge.minus")
+                    }
+                }
                 Section(L10n.text("settings.permissions", fallback: "Permissions")) {
                     Text(L10n.text("settings.notifications.copy", fallback: "Rocio can send local reminders for your saved plants. They are enabled only after you tap this button and allow them in iOS."))
                         .font(.footnote)
@@ -32,7 +51,11 @@ struct SettingsView: View {
                 }
 
                 Section(L10n.text("settings.privacy", fallback: "Privacy")) {
-                    Text(L10n.text("settings.privacy.copy", fallback: "Rocio stores your garden on this iPhone. Photos are analyzed on the device and are not saved by this version of the app."))
+                    Text(L10n.text("settings.privacy.copy", fallback: "Rocio syncs your garden to your account. Scanner photos are sent only after consent and are not stored by Rocio."))
+                    Toggle(L10n.text("settings.analytics", fallback: "Share product analytics"), isOn: $analyticsEnabled)
+                    Text(L10n.text("settings.analytics.copy", fallback: "Analytics contain product events tied to your Rocio account, never scanner photos or advertising identifiers."))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     ShareLink(item: exportPayload) {
                         Label(L10n.text("settings.export", fallback: "Export local data"), systemImage: "square.and.arrow.up")
                     }
@@ -52,6 +75,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(L10n.text("settings.title", fallback: "Settings"))
+            .onChange(of: analyticsEnabled) { _, enabled in
+                Task { await sessionStore.setAnalyticsEnabled(enabled) }
+            }
             .confirmationDialog(L10n.text("settings.delete", fallback: "Delete local data"), isPresented: $showingResetConfirmation, titleVisibility: .visible) {
                 Button(L10n.text("settings.delete.confirm", fallback: "Delete garden"), role: .destructive) {
                     localDataResetter.reset(gardenStore: gardenStore)
@@ -59,7 +85,26 @@ struct SettingsView: View {
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
             } message: {
-                Text(L10n.text("settings.delete.message", fallback: "This removes your saved garden from this iPhone and cancels pending reminders."))
+                Text(L10n.text("settings.delete.message", fallback: "This removes your garden from this device and Rocio Cloud, and cancels pending reminders."))
+            }
+            .confirmationDialog(L10n.text("settings.account.delete", fallback: "Delete account"), isPresented: $showingAccountDeletion, titleVisibility: .visible) {
+                Button(L10n.text("settings.account.delete.confirm", fallback: "Permanently delete account"), role: .destructive) {
+                    Task { await sessionStore.deleteAccount(gardenStore: gardenStore) }
+                }
+                Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
+            } message: {
+                Text(L10n.text("settings.account.delete.message", fallback: "This permanently deletes your account, synced garden, scan history, and analytics events. This cannot be undone."))
+            }
+            .alert(
+                L10n.text("settings.error.title", fallback: "Could not complete the request"),
+                isPresented: Binding(
+                    get: { sessionStore.errorMessage != nil },
+                    set: { if !$0 { sessionStore.clearError() } }
+                )
+            ) {
+                Button(L10n.text("action.ok", fallback: "OK")) { sessionStore.clearError() }
+            } message: {
+                Text(sessionStore.errorMessage ?? "")
             }
         }
     }

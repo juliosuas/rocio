@@ -6,6 +6,7 @@ struct RocioApp: App {
 
     @StateObject private var router = AppRouter()
     @StateObject private var gardenStore = GardenStore()
+    @StateObject private var sessionStore = SessionStore()
     private let notificationScheduler = WateringNotificationScheduler()
 
     var body: some Scene {
@@ -13,6 +14,7 @@ struct RocioApp: App {
             RootView()
                 .environmentObject(router)
                 .environmentObject(gardenStore)
+                .environmentObject(sessionStore)
                 .tint(.rocioLeaf)
                 .onAppear {
                     router.applyPendingIntentRoute()
@@ -27,6 +29,12 @@ struct RocioApp: App {
                 }
                 .task(id: gardenStore.plants) {
                     await notificationScheduler.refreshNotifications(for: gardenStore.plants)
+                }
+                .task {
+                    gardenStore.cloudChangeHandler = { change in
+                        sessionStore.enqueueGardenChange(change)
+                    }
+                    await sessionStore.bootstrap(gardenStore: gardenStore)
                 }
         }
     }

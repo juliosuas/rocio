@@ -6,7 +6,7 @@ This plan starts from the current `juliosuas/rocio` product: a bilingual native 
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS product with EN/ES localization, local persistence, local notifications, App Intents, an honest scanner, privacy controls, and CI. The remaining release path is full local Xcode validation, signing, screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, and CI. The remaining release path is backend deployment, production credentials, local Xcode validation, signing, screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
@@ -31,8 +31,9 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, local persistenc
 5. Reminder reliability needs device testing.
    - Native local notifications exist, but permission flow and scheduled delivery must be tested on a real simulator/device before TestFlight.
 
-6. Persistence is still local-only.
-   - The native app stores garden data in `UserDefaults` and now supports local export/delete. Cloud sync is out of scope for v1 unless product scope changes.
+6. Cloud deployment is not complete.
+   - The native app caches garden data in `UserDefaults` and syncs authenticated account data through Supabase.
+   - Deploy the migration and Edge Function, set the public Supabase release key, configure `PLANT_ID_API_KEY`, and verify RLS, quotas, sync, analytics opt-out, and account deletion against production.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
@@ -57,9 +58,9 @@ Recommended path:
 
 - Keep the PWA alive as the product prototype and web fallback.
 - Add a native SwiftUI iOS app rather than only wrapping the web app.
-- Use native persistence for saved garden plants in the iOS app.
+- Use local caching plus account-scoped Supabase synchronization for saved garden plants.
 - Reuse the flower catalog data by extracting it from `index.html` into a structured data file in a later PR.
-- Use Supabase Edge Functions for Plant.id only when the provider is enabled.
+- Use an authenticated Supabase Edge Function for consented Plant.id scans, with monthly quotas and an on-device fallback.
 - Add App Intents in the first iOS milestone, but keep the intent surface small.
 
 ## Milestone 0: Project Control

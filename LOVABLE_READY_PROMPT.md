@@ -4,10 +4,10 @@ Build the public marketing site for Rocio, a global flower care app with bilingu
 
 ## Product Promise
 
-- A private flower garden stored locally on the user's iPhone.
+- A secure account with a locally cached flower garden synchronized through Supabase.
 - Practical flower care guides, watering reminders, and a weekly calendar.
-- An experimental scanner that compares visible traits on device and shows multiple candidates without promising perfect identification or diagnosis.
-- No account, tracking, analytics, remote recognition, or payment in v1.
+- An experimental scanner that sends consented images through an authenticated Supabase Edge Function to Plant.id, shows multiple candidates, and falls back to an on-device visual match.
+- Required authentication, optional first-party product analytics with opt-out, no advertising or cross-app tracking, and no payment in the initial release.
 
 ## Canonical Proof And Links
 
@@ -24,7 +24,7 @@ Create a real Lovable Cloud waitlist backed by `waitlist_subscribers(id, email u
 
 ## Privacy Boundary
 
-State clearly that the iOS app collects no data in v1 and keeps garden data and photo analysis on device. Separately disclose that the public website collects an email address, locale, consent version, and timestamps only when a visitor joins the waitlist. Never imply the website itself has zero collection after waitlist submission.
+State clearly that the iOS app links an email, user ID, synchronized garden, limited optional product analytics, and consented scanner requests to the user's account. Scanner images are processed by Plant.id through Rocio Cloud and are not stored in Rocio's database. Separately disclose that the public website collects an email address, locale, consent version, and timestamps only when a visitor joins the waitlist.
 
 ## Design And Release Requirements
 

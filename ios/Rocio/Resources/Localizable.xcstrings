@@ -1,6 +1,48 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "action.ok": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"OK"}},"es":{"stringUnit":{"state":"translated","value":"Aceptar"}}}},
+    "auth.create": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Create account"}},"es":{"stringUnit":{"state":"translated","value":"Crear cuenta"}}}},
+    "auth.email": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Email"}},"es":{"stringUnit":{"state":"translated","value":"Correo electrónico"}}}},
+    "auth.existing": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Already have an account? Sign in"}},"es":{"stringUnit":{"state":"translated","value":"¿Ya tienes cuenta? Inicia sesión"}}}},
+    "auth.new": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"New to Rocio? Create an account"}},"es":{"stringUnit":{"state":"translated","value":"¿Eres nuevo en Rocio? Crea una cuenta"}}}},
+    "auth.password": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Password"}},"es":{"stringUnit":{"state":"translated","value":"Contraseña"}}}},
+    "auth.privacy": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"An account is required to sync your garden and enforce fair AI scan limits. Rocio does not sell your data or use advertising trackers."}},"es":{"stringUnit":{"state":"translated","value":"La cuenta permite sincronizar tu jardín y aplicar límites justos al scanner con IA. Rocio no vende tus datos ni usa rastreadores publicitarios."}}}},
+    "auth.signin": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Sign in"}},"es":{"stringUnit":{"state":"translated","value":"Iniciar sesión"}}}},
+    "auth.subtitle": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Your flower garden, synced and ready wherever you grow."}},"es":{"stringUnit":{"state":"translated","value":"Tu jardín de flores, sincronizado dondequiera que cultives."}}}},
+    "cloud.loading": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Opening Rocio"}},"es":{"stringUnit":{"state":"translated","value":"Abriendo Rocio"}}}},
+    "cloud.pending": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Saved on this device; cloud sync pending"}},"es":{"stringUnit":{"state":"translated","value":"Guardado en este dispositivo; sincronización pendiente"}}}},
+    "cloud.synced": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Synced"}},"es":{"stringUnit":{"state":"translated","value":"Sincronizado"}}}},
+    "cloud.syncing": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Syncing"}},"es":{"stringUnit":{"state":"translated","value":"Sincronizando"}}}},
+    "detail.temperature.value": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"%d-%d C"}},"es":{"stringUnit":{"state":"translated","value":"%d-%d C"}}}},
+    "error.auth.confirm": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Confirm your email, then sign in."}},"es":{"stringUnit":{"state":"translated","value":"Confirma tu correo y después inicia sesión."}}}},
+    "error.auth.exists": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"An account already exists for this email."}},"es":{"stringUnit":{"state":"translated","value":"Ya existe una cuenta con este correo."}}}},
+    "error.auth.invalid": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"The email or password is incorrect."}},"es":{"stringUnit":{"state":"translated","value":"El correo o la contraseña son incorrectos."}}}},
+    "error.auth.session": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Your session expired. Sign in again."}},"es":{"stringUnit":{"state":"translated","value":"Tu sesión expiró. Inicia sesión de nuevo."}}}},
+    "error.auth.weak_password": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Use a password with at least eight characters."}},"es":{"stringUnit":{"state":"translated","value":"Usa una contraseña de al menos ocho caracteres."}}}},
+    "error.cloud.generic": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Rocio Cloud is temporarily unavailable. Try again."}},"es":{"stringUnit":{"state":"translated","value":"Rocio Cloud no está disponible temporalmente. Intenta de nuevo."}}}},
+    "error.generic": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Something went wrong. Try again."}},"es":{"stringUnit":{"state":"translated","value":"Algo salió mal. Intenta de nuevo."}}}},
+    "error.network": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Check your internet connection and try again."}},"es":{"stringUnit":{"state":"translated","value":"Revisa tu conexión a internet e intenta de nuevo."}}}},
+    "error.scan.quota": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"You have used this month's cloud scans."}},"es":{"stringUnit":{"state":"translated","value":"Ya usaste los escaneos en la nube de este mes."}}}},
+    "scanner.ai.candidates": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"AI candidates"}},"es":{"stringUnit":{"state":"translated","value":"Candidatos de IA"}}}},
+    "scanner.consent.continue": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Send this photo"}},"es":{"stringUnit":{"state":"translated","value":"Enviar esta foto"}}}},
+    "scanner.consent.copy": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Rocio will send a compressed copy of this flower photo to Plant.id through Rocio Cloud. The photo is used for identification and is not stored by Rocio."}},"es":{"stringUnit":{"state":"translated","value":"Rocio enviará una copia comprimida de esta foto a Plant.id mediante Rocio Cloud. La foto se usa para identificar y Rocio no la almacena."}}}},
+    "scanner.consent.title": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Use cloud identification?"}},"es":{"stringUnit":{"state":"translated","value":"¿Usar identificación en la nube?"}}}},
+    "scanner.provider.cloud": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"AI cloud match"}},"es":{"stringUnit":{"state":"translated","value":"Coincidencia con IA"}}}},
+    "scanner.provider.fallback": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"On-device fallback"}},"es":{"stringUnit":{"state":"translated","value":"Alternativa en el dispositivo"}}}},
+    "scanner.provider.local": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"On-device match"}},"es":{"stringUnit":{"state":"translated","value":"Coincidencia en el dispositivo"}}}},
+    "scanner.remaining": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"%d cloud scans left"}},"es":{"stringUnit":{"state":"translated","value":"Quedan %d escaneos en la nube"}}}},
+    "scanner.view.closest.guide": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"View closest Rocio guide: %@"}},"es":{"stringUnit":{"state":"translated","value":"Ver la guía más cercana: %@"}}}},
+    "settings.account": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Account"}},"es":{"stringUnit":{"state":"translated","value":"Cuenta"}}}},
+    "settings.account.delete": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Delete account"}},"es":{"stringUnit":{"state":"translated","value":"Eliminar cuenta"}}}},
+    "settings.account.delete.confirm": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Permanently delete account"}},"es":{"stringUnit":{"state":"translated","value":"Eliminar cuenta permanentemente"}}}},
+    "settings.account.delete.message": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"This permanently deletes your account, synced garden, scan history, and analytics events. This cannot be undone."}},"es":{"stringUnit":{"state":"translated","value":"Esto elimina permanentemente tu cuenta, jardín sincronizado, historial de escaneos y eventos de analítica. No se puede deshacer."}}}},
+    "settings.analytics": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Share product analytics"}},"es":{"stringUnit":{"state":"translated","value":"Compartir analítica del producto"}}}},
+    "settings.analytics.copy": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Analytics contain product events tied to your Rocio account, never scanner photos or advertising identifiers."}},"es":{"stringUnit":{"state":"translated","value":"La analítica contiene eventos del producto ligados a tu cuenta, nunca fotos del scanner ni identificadores publicitarios."}}}},
+    "settings.email": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Email"}},"es":{"stringUnit":{"state":"translated","value":"Correo"}}}},
+    "settings.error.title": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Could not complete the request"}},"es":{"stringUnit":{"state":"translated","value":"No se pudo completar la solicitud"}}}},
+    "settings.signout": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Sign out"}},"es":{"stringUnit":{"state":"translated","value":"Cerrar sesión"}}}},
+    "settings.sync": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Cloud sync"}},"es":{"stringUnit":{"state":"translated","value":"Sincronización en la nube"}}}},
     "Done. I logged watering for %@.": {
       "extractionState": "manual",
       "localizations": {
@@ -4376,13 +4418,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your plants stay on this iPhone. You can export or delete your data."
+            "value": "Your account keeps your garden available across devices. You can export or delete it anytime."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tus plantas se quedan en este iPhone. Puedes exportar o borrar tus datos."
+            "value": "Tu cuenta mantiene el jardín disponible entre dispositivos. Puedes exportarlo o eliminarlo cuando quieras."
           }
         }
       }
@@ -4393,13 +4435,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your private garden"
+            "value": "Your garden, synced"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tu jardín privado"
+            "value": "Tu jardín sincronizado"
           }
         }
       }
@@ -4461,13 +4503,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Care for your flowers, privately and without the fuss."
+            "value": "Care for your flowers with simple guidance and secure cloud sync."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cuida tus flores con privacidad y sin complicarte."
+            "value": "Cuida tus flores con guías simples y sincronización segura."
           }
         }
       }
@@ -4716,13 +4758,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rocio's on-device identification is experimental. It uses color and simple visual traits; always verify the care guide before acting."
+            "value": "Flower identification is experimental. Cloud results use Plant.id when available; Rocio falls back to a simple on-device visual match. Always verify before acting."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La identificación local de Rocio es experimental. Usa color y rasgos visuales simples; verifica siempre la ficha antes de actuar."
+            "value": "La identificación es experimental. Rocio usa Plant.id cuando está disponible y recurre a una coincidencia visual local si falla. Verifica siempre antes de actuar."
           }
         }
       }
@@ -4733,13 +4775,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d%% on-device match"
+            "value": "%d%% visual match"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "%d%% de coincidencia local"
+            "value": "%d%% de coincidencia visual"
           }
         }
       }
@@ -4937,13 +4979,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This removes your saved garden from this iPhone and cancels pending reminders."
+            "value": "This removes your garden from this device and Rocio Cloud, and cancels pending reminders."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esto elimina tu jardín guardado en este iPhone y cancela los recordatorios pendientes."
+            "value": "Esto elimina tu jardín de este dispositivo y Rocio Cloud, y cancela los recordatorios pendientes."
           }
         }
       }
@@ -5090,13 +5132,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rocio stores your garden on this iPhone. Photos are analyzed on the device and are not saved by this version of the app."
+            "value": "Rocio syncs your garden to your account. Scanner photos are sent only after consent and are not stored by Rocio."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rocio guarda tu jardín en este iPhone. Las fotos se analizan en el dispositivo y esta versión de la app no las guarda."
+            "value": "Rocio sincroniza tu jardín con tu cuenta. Las fotos del scanner se envían solo con tu consentimiento y Rocio no las almacena."
           }
         }
       }

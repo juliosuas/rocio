@@ -49,11 +49,10 @@ const checks = [
   {
     id: 'readme-recognition-claims-honest',
     area: 'scannerClaims',
-    pass: readme.includes('current build uses an honest local flower matcher') &&
-      readme.includes('recognition proxy remains blocked') &&
-      !readme.includes('now connected to a secure Supabase identification proxy') &&
-      !readme.includes('Online-first IA'),
-    evidence: 'README does not present Supabase/Plant.id recognition as currently active.',
+    pass: readme.includes('web demo keeps an honest local flower matcher') &&
+      readme.includes('native iOS track now includes an authenticated Supabase/Plant.id path') &&
+      readme.includes('deployment credentials remain a release blocker'),
+    evidence: 'README distinguishes the local web demo from the implemented but not yet deployed native cloud path.',
   },
 ];
 

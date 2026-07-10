@@ -7,6 +7,8 @@ on:
       - 'ios/**'
       - '.github/workflows/ios.yml'
   push:
+    branches:
+      - main
     paths:
       - 'ios/**'
       - '.github/workflows/ios.yml'
@@ -18,6 +20,7 @@ jobs:
   build-and-test:
     name: Build and test Rocio iOS
     runs-on: macos-latest
+    timeout-minutes: 20
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -41,13 +44,21 @@ jobs:
         id: simulator
         run: |
           set -euo pipefail
-          SIMULATOR_NAME="$(xcrun simctl list devices available | grep -E 'iPhone .*\(' | head -n 1 | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/' || true)"
-          if [ -z "$SIMULATOR_NAME" ]; then
+          SIMULATOR_LINE="$(xcrun simctl list devices available | grep -E 'iPhone .*\([0-9A-Fa-f-]{36}\)' | head -n 1 || true)"
+          SIMULATOR_NAME="$(printf '%s' "$SIMULATOR_LINE" | sed -E 's/^[[:space:]]*(iPhone [^(]+) \(.*$/\1/' | xargs)"
+          SIMULATOR_UDID="$(printf '%s' "$SIMULATOR_LINE" | sed -E 's/.*\(([0-9A-Fa-f-]{36})\).*/\1/')"
+          if [ -z "$SIMULATOR_NAME" ] || [ -z "$SIMULATOR_UDID" ]; then
             echo "No available iPhone simulator found" >&2
             exit 1
           fi
           echo "name=$SIMULATOR_NAME" >> "$GITHUB_OUTPUT"
-          echo "Using simulator: $SIMULATOR_NAME"
+          echo "udid=$SIMULATOR_UDID" >> "$GITHUB_OUTPUT"
+          echo "Using simulator: $SIMULATOR_NAME ($SIMULATOR_UDID)"
+
+      - name: Boot iPhone simulator
+        run: |
+          xcrun simctl boot "${{ steps.simulator.outputs.udid }}" 2>/dev/null || true
+          xcrun simctl bootstatus "${{ steps.simulator.outputs.udid }}" -b
 
       - name: Run unit tests on iOS Simulator
         run: |
@@ -55,6 +66,7 @@ jobs:
             -project ios/Rocio.xcodeproj \
             -scheme Rocio \
             -configuration Debug \
-            -destination "platform=iOS Simulator,name=${{ steps.simulator.outputs.name }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
+            -destination-timeout 120 \
             CODE_SIGNING_ALLOWED=NO \
             test

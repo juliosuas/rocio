@@ -8,6 +8,7 @@ struct GardenPlant: Identifiable, Codable, Equatable, Hashable {
     var lastWateredAt: Date
     var status: PlantStatus
     var notes: String
+    var updatedAt: Date
 
     init(
         id: UUID = UUID(),
@@ -16,7 +17,8 @@ struct GardenPlant: Identifiable, Codable, Equatable, Hashable {
         addedAt: Date = Date(),
         lastWateredAt: Date = Date(),
         status: PlantStatus = .healthy,
-        notes: String = ""
+        notes: String = "",
+        updatedAt: Date = Date()
     ) {
         self.id = id
         self.flowerId = flowerId
@@ -25,6 +27,23 @@ struct GardenPlant: Identifiable, Codable, Equatable, Hashable {
         self.lastWateredAt = lastWateredAt
         self.status = status
         self.notes = notes
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, flowerId, nickname, addedAt, lastWateredAt, status, notes, updatedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        flowerId = try container.decode(String.self, forKey: .flowerId)
+        nickname = try container.decode(String.self, forKey: .nickname)
+        addedAt = try container.decode(Date.self, forKey: .addedAt)
+        lastWateredAt = try container.decode(Date.self, forKey: .lastWateredAt)
+        status = try container.decode(PlantStatus.self, forKey: .status)
+        notes = try container.decode(String.self, forKey: .notes)
+        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? addedAt
     }
 }
 

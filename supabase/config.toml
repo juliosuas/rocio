@@ -1,4 +1,4 @@
 project_id = "gnumzynfewmurvykopxq"
 
 [functions.identify-flower]
-verify_jwt = false
+verify_jwt = true

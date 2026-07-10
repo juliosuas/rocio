@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
+const auditTimeoutMs = 60_000;
 const checks = [
   ['Flower classifier', 'readonly-flower-classifier-harness.mjs', ['--strict']],
   ['Privacy controls', 'privacy-data-controls-audit.mjs', []],
@@ -11,6 +12,7 @@ const checks = [
   ['Mobile scanner', 'mobile-scanner-readiness-audit.mjs', []],
   ['Public App Store pages', 'appstore-static-readiness-audit.mjs', []],
   ['Native iOS release configuration', 'ios-app-store-readiness-audit.mjs', []],
+  ['Cloud AI security', 'cloud-ai-security-audit.mjs', []],
 ];
 
 let failures = 0;
@@ -20,6 +22,7 @@ for (const [label, script, args] of checks) {
   const result = spawnSync(process.execPath, [path.join(projectRoot, 'qa', script), ...args], {
     cwd: projectRoot,
     stdio: 'inherit',
+    timeout: auditTimeoutMs,
   });
 
   if (result.status !== 0) {

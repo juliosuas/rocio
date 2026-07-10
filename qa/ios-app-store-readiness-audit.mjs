@@ -17,6 +17,14 @@ const appShortcutsCatalog = fs.existsSync(appShortcutsCatalogPath)
 const iconsDirectory = path.join(iosRoot, 'Resources', 'Assets.xcassets', 'AppIcon.appiconset');
 const iconFiles = fs.readdirSync(iconsDirectory).filter((name) => name.endsWith('.png'));
 
+function filesRecursively(directory, extension) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = path.join(directory, entry.name);
+    if (entry.isDirectory()) return filesRecursively(entryPath, extension);
+    return entry.name.endsWith(extension) ? [entryPath] : [];
+  });
+}
+
 function pngHasAlpha(filePath) {
   const buffer = fs.readFileSync(filePath);
   const pngSignature = '89504e470d0a1a0a';
@@ -53,6 +61,17 @@ const incompleteLocalizationKeys = requiredLocalizationKeys.filter((key) => {
   const localizations = stringCatalog.strings[key]?.localizations ?? {};
   return !localizations.en?.stringUnit?.value || !localizations.es?.stringUnit?.value;
 });
+const usedLocalizationKeys = [...new Set(filesRecursively(iosRoot, '.swift').flatMap((filePath) => {
+  const source = fs.readFileSync(filePath, 'utf8');
+  return [...source.matchAll(/L10n\.(?:text|format)\("([^"]+)/g)]
+    .map((match) => match[1])
+    .filter((key) => !key.includes('\\('));
+}))].sort();
+const missingUsedLocalizationKeys = usedLocalizationKeys.filter((key) => !stringCatalog.strings[key]);
+const incompleteUsedLocalizationKeys = usedLocalizationKeys.filter((key) => {
+  const localizations = stringCatalog.strings[key]?.localizations ?? {};
+  return !localizations.en?.stringUnit?.value || !localizations.es?.stringUnit?.value;
+});
 const requiredAppShortcutKeys = [
   'Open my garden in ${applicationName}',
   'Show my garden in ${applicationName}',
@@ -76,6 +95,7 @@ const checks = [
   ['Spanish localization region', /knownRegions = \([\s\S]*\bes,/.test(projectFile)],
   ['string catalog included', projectFile.includes('Localizable.xcstrings') && fs.existsSync(stringCatalogPath)],
   ['catalog and critical copy localized EN/ES', missingLocalizationKeys.length === 0 && incompleteLocalizationKeys.length === 0],
+  ['all static app copy localized EN/ES', missingUsedLocalizationKeys.length === 0 && incompleteUsedLocalizationKeys.length === 0],
   ['App Shortcuts catalog localized EN/ES', projectFile.includes('AppShortcuts.xcstrings') && incompleteAppShortcutKeys.length === 0],
   ['localization helper included', projectFile.includes('Localization.swift') && fs.existsSync(path.join(iosRoot, 'Localization.swift'))],
   ['1024 marketing icon', fs.existsSync(path.join(iconsDirectory, 'AppIcon-1024.png'))],
@@ -96,6 +116,8 @@ console.log(JSON.stringify({
   alphaIcons,
   missingLocalizationKeys,
   incompleteLocalizationKeys,
+  missingUsedLocalizationKeys,
+  incompleteUsedLocalizationKeys,
   incompleteAppShortcutKeys,
   unsignedReady: failed === 0,
   signedReady: failed === 0 && Boolean(configuredTeam),

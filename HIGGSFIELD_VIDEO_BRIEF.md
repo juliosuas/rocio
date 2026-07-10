@@ -17,8 +17,8 @@ Create a 15-25 second product demo for Rocio, a bilingual English/Spanish native
 
 ## Shot Sequence
 
-1. Lavender and roses in morning light, text: "Rocio".
-2. Real Rocio catalog screen, text: "Elige tus flores".
+1. Real Rocio onboarding screen, text: "Rocio".
+2. Real Rocio catalog screen with licensed flower photography, text: "Elige tus flores".
 3. Real Rocio Mi Jardin screen, text: "Riega a tiempo".
 4. Real Rocio calendar screen, text: "Calendario simple".
 5. Real Rocio scanner/tips screen, text: "Candidatos, no magia".
@@ -27,11 +27,11 @@ Create a 15-25 second product demo for Rocio, a bilingual English/Spanish native
 
 - Spanish first.
 - Do not claim perfect AI or diagnosis.
-- Use "scanner experimental", "candidatos", "recordatorios locales", "sin cuentas en v1".
+- Use "scanner experimental", "candidatos", "recordatorios locales", "jardín sincronizado".
 
 ## Export
 
 - MP4, H.264, 16:9, 1280x720 or 1920x1080.
-- 10-12 seconds.
+- 15-25 seconds.
 - Muted/autoplay friendly.
 - Save over `assets/video/rocio-demo.mp4` and keep the same filename so `launch.html` updates automatically.
