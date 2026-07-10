@@ -22,10 +22,11 @@ const checks = [
     id: 'privacy-page-is-public-safe',
     area: 'privacy',
     pass: privacyHtml.includes('Política de privacidad') &&
-      privacyHtml.includes('Rocio guarda tu jardín localmente') &&
-      privacyHtml.includes('no se envían a servidores') &&
+      privacyHtml.includes('sincroniza con Supabase') &&
+      privacyHtml.includes('Plant.id/Kindwise') &&
+      privacyHtml.includes('eliminar permanentemente tu cuenta') &&
       !internalPublicCopy.test(privacyHtml),
-    evidence: 'Privacy page explains local app behavior without internal release language.',
+    evidence: 'Privacy page discloses account sync, third-party photo processing, and deletion without internal release language.',
   },
   {
     id: 'support-page-is-public-safe',

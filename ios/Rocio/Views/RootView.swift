@@ -2,9 +2,25 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var sessionStore: SessionStore
+    @EnvironmentObject private var gardenStore: GardenStore
     @AppStorage("rocio.ios.hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
+        switch sessionStore.state {
+        case .checking:
+            ProgressView(L10n.text("cloud.loading", fallback: "Opening Rocio"))
+        case .unconfigured:
+            CloudConfigurationRequiredView()
+        case .signedOut:
+            AuthView()
+        case .signedIn:
+            authenticatedContent
+        }
+    }
+
+    @ViewBuilder
+    private var authenticatedContent: some View {
         if hasSeenOnboarding {
             TabView(selection: $router.selectedTab) {
                 CatalogView()
@@ -46,7 +62,7 @@ private struct OnboardingView: View {
             VStack(spacing: 10) {
                 Text("Rocio")
                     .font(.largeTitle.bold())
-                Text(L10n.text("onboarding.subtitle", fallback: "Care for your flowers, privately and without the fuss."))
+                Text(L10n.text("onboarding.subtitle", fallback: "Care for your flowers with simple guidance and secure cloud sync."))
                     .font(.title3)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -65,9 +81,9 @@ private struct OnboardingView: View {
                     copy: L10n.text("onboarding.reminders.copy", fallback: "Rocio uses local notifications only after you enable them in Settings.")
                 )
                 OnboardingStep(
-                    systemImage: "lock.shield",
-                    title: L10n.text("onboarding.private.title", fallback: "Your private garden"),
-                    copy: L10n.text("onboarding.private.copy", fallback: "Your plants stay on this iPhone. You can export or delete your data.")
+                    systemImage: "icloud",
+                    title: L10n.text("onboarding.private.title", fallback: "Your garden, synced"),
+                    copy: L10n.text("onboarding.private.copy", fallback: "Your account keeps your garden available across devices. You can export or delete it anytime.")
                 )
             }
             .padding(.horizontal)
@@ -119,4 +135,5 @@ private struct OnboardingStep: View {
     RootView()
         .environmentObject(AppRouter())
         .environmentObject(GardenStore(plants: []))
+        .environmentObject(SessionStore(configuration: nil))
 }

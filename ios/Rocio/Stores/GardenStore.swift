@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 final class GardenStore: ObservableObject {
     @Published private(set) var plants: [GardenPlant]
+    var cloudChangeHandler: ((GardenChange) -> Void)?
 
     init(plants: [GardenPlant] = GardenPersistence.loadPlants()) {
         self.plants = plants
@@ -11,17 +12,21 @@ final class GardenStore: ObservableObject {
     func add(_ flower: Flower) {
         let existing = plants.first { $0.flowerId == flower.id }
         guard existing == nil else { return }
-        plants.append(GardenPlant(flowerId: flower.id, nickname: flower.name))
+        let plant = GardenPlant(flowerId: flower.id, nickname: flower.name)
+        plants.append(plant)
         persist()
+        cloudChangeHandler?(.upsert(plant))
     }
 
     func water(_ plant: GardenPlant, at date: Date = Date()) {
         guard let index = plants.firstIndex(where: { $0.id == plant.id }) else { return }
         plants[index].lastWateredAt = date
+        plants[index].updatedAt = date
         if plants[index].status == .needsWater {
             plants[index].status = .healthy
         }
         persist()
+        cloudChangeHandler?(.upsert(plants[index]))
     }
 
     func update(_ plant: GardenPlant, nickname: String, status: PlantStatus, notes: String) {
@@ -29,15 +34,24 @@ final class GardenStore: ObservableObject {
         plants[index].nickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? plant.nickname : nickname
         plants[index].status = status
         plants[index].notes = notes
+        plants[index].updatedAt = Date()
         persist()
+        cloudChangeHandler?(.upsert(plants[index]))
     }
 
     func delete(_ plant: GardenPlant) {
         plants.removeAll { $0.id == plant.id }
         persist()
+        cloudChangeHandler?(.delete(plant.id))
     }
 
     func reset() {
+        plants.removeAll()
+        GardenPersistence.clearPlants()
+        cloudChangeHandler?(.reset)
+    }
+
+    func clearLocalCache() {
         plants.removeAll()
         GardenPersistence.clearPlants()
     }
@@ -46,6 +60,12 @@ final class GardenStore: ObservableObject {
         let savedPlants = GardenPersistence.loadPlants()
         guard savedPlants != plants else { return }
         plants = savedPlants
+    }
+
+    func replaceFromCloud(_ cloudPlants: [GardenPlant]) {
+        guard cloudPlants != plants else { return }
+        plants = cloudPlants.sorted { $0.addedAt < $1.addedAt }
+        persist()
     }
 
     func flower(for plant: GardenPlant) -> Flower? {
@@ -101,6 +121,12 @@ final class GardenStore: ObservableObject {
     private func persist() {
         GardenPersistence.savePlants(plants)
     }
+}
+
+enum GardenChange {
+    case upsert(GardenPlant)
+    case delete(UUID)
+    case reset
 }
 
 struct GardenSummary: Equatable {

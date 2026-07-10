@@ -3,6 +3,8 @@ import SwiftUI
 import UIKit
 
 struct ScannerView: View {
+    @EnvironmentObject private var sessionStore: SessionStore
+    @AppStorage("rocio.cloud.photoConsent") private var hasCloudPhotoConsent = false
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var result: IdentificationResult?
@@ -10,8 +12,10 @@ struct ScannerView: View {
     @State private var isShowingCamera = false
     @State private var isProcessing = false
     @State private var cameraUnavailableMessage: String?
+    @State private var pendingConsentImage: UIImage?
+    @State private var isShowingPhotoConsent = false
 
-    private let identifier = FlowerIdentifier()
+    private let identifier = HybridFlowerIdentifier()
     private var canUseCamera: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
     }
@@ -70,7 +74,7 @@ struct ScannerView: View {
                         }
                     }
 
-                    Text(L10n.text("scanner.disclaimer", fallback: "Rocio's on-device identification is experimental. It uses color and simple visual traits; always verify the care guide before acting."))
+                    Text(L10n.text("scanner.disclaimer", fallback: "Flower identification is experimental. Cloud results use Plant.id when available; Rocio falls back to a simple on-device visual match. Always verify before acting."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,11 +85,23 @@ struct ScannerView: View {
             .sheet(isPresented: $isShowingCamera) {
                 CameraCaptureView { image in
                     selectedImage = image
-                    analyze(image)
+                    requestAnalysis(image)
                 }
             }
             .sheet(item: $selectedFlower) { flower in
                 FlowerDetailView(flower: flower)
+            }
+            .alert(L10n.text("scanner.consent.title", fallback: "Use cloud identification?"), isPresented: $isShowingPhotoConsent) {
+                Button(L10n.text("scanner.consent.continue", fallback: "Send this photo")) {
+                    hasCloudPhotoConsent = true
+                    if let image = pendingConsentImage { Task { await analyze(image) } }
+                    pendingConsentImage = nil
+                }
+                Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {
+                    pendingConsentImage = nil
+                }
+            } message: {
+                Text(L10n.text("scanner.consent.copy", fallback: "Rocio will send a compressed copy of this flower photo to Plant.id through Rocio Cloud. The photo is used for identification and is not stored by Rocio."))
             }
             .onChange(of: selectedItem) { _, item in
                 Task { await load(item) }
@@ -114,13 +130,23 @@ struct ScannerView: View {
         guard let data = try? await item?.loadTransferable(type: Data.self),
               let image = UIImage(data: data) else { return }
         selectedImage = image
-        analyze(image)
+        requestAnalysis(image)
     }
 
-    private func analyze(_ image: UIImage) {
+    private func requestAnalysis(_ image: UIImage) {
+        guard hasCloudPhotoConsent else {
+            pendingConsentImage = image
+            isShowingPhotoConsent = true
+            return
+        }
+        Task { await analyze(image) }
+    }
+
+    @MainActor
+    private func analyze(_ image: UIImage) async {
         isProcessing = true
         defer { isProcessing = false }
-        result = identifier.identify(image: image)
+        result = await identifier.identify(image: image, sessionStore: sessionStore)
     }
 }
 
@@ -160,11 +186,19 @@ private struct ScannerResultCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                FlowerImage(flower: result.flower, size: 64)
+                if result.usesExternalSuggestion {
+                    Image(systemName: "camera.macro")
+                        .font(.title)
+                        .foregroundStyle(Color.rocioLeafDeep)
+                        .frame(width: 64, height: 64)
+                        .background(Color.rocioLeafSoft, in: RoundedRectangle(cornerRadius: 8))
+                } else {
+                    FlowerImage(flower: result.flower, size: 64)
+                }
                 VStack(alignment: .leading) {
-                    Text(result.flower.name)
+                    Text(result.displayName)
                         .font(.title3.bold())
-                    Text(result.flower.scientific)
+                    Text(result.displayScientificName)
                         .foregroundStyle(.secondary)
                     Label(result.confidenceBand.label, systemImage: "waveform.path.ecg")
                         .font(.caption.bold())
@@ -176,7 +210,7 @@ private struct ScannerResultCard: View {
                 ProgressView(value: min(100, max(0, result.confidence)), total: 100)
                     .tint(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
                 HStack {
-                    Text(L10n.format("scanner.match", fallback: "%d%% on-device match", Int(result.confidence.rounded())))
+                    Text(L10n.format("scanner.match", fallback: "%d%% visual match", Int(result.confidence.rounded())))
                     Spacer()
                     Text(result.confidenceBand.reviewSafeCopy)
                 }
@@ -184,16 +218,46 @@ private struct ScannerResultCard: View {
                 .foregroundStyle(.secondary)
             }
 
+            HStack {
+                Label(result.provider.label, systemImage: result.provider == .cloud ? "sparkles" : "iphone")
+                Spacer()
+                if let remaining = result.remainingCloudScans {
+                    Text(L10n.format("scanner.remaining", fallback: "%d cloud scans left", remaining))
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+
             Button {
                 onSelectFlower(result.flower)
             } label: {
                 Label(
-                    L10n.format("scanner.view.guide", fallback: "View %@ care guide", result.flower.name),
+                    result.usesExternalSuggestion
+                        ? L10n.format("scanner.view.closest.guide", fallback: "View closest Rocio guide: %@", result.flower.name)
+                        : L10n.format("scanner.view.guide", fallback: "View %@ care guide", result.flower.name),
                     systemImage: "doc.text"
                 )
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+
+            if !result.externalCandidates.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(L10n.text("scanner.ai.candidates", fallback: "AI candidates"))
+                        .font(.headline)
+                    ForEach(result.externalCandidates) { candidate in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(candidate.name)
+                                Text(candidate.scientificName).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text("\(Int(candidate.confidence.rounded()))%")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
 
             VStack(alignment: .leading, spacing: 8) {
                 Text(L10n.text("scanner.candidates", fallback: "Candidates"))

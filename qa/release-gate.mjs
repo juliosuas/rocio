@@ -11,6 +11,7 @@ const checks = [
   ['Mobile scanner', 'mobile-scanner-readiness-audit.mjs', []],
   ['Public App Store pages', 'appstore-static-readiness-audit.mjs', []],
   ['Native iOS release configuration', 'ios-app-store-readiness-audit.mjs', []],
+  ['Cloud AI security', 'cloud-ai-security-audit.mjs', []],
 ];
 
 let failures = 0;

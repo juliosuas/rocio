@@ -2,9 +2,9 @@
 
 **Cuida tus flores con amor**
 
-Rocío (meaning "dew" in Spanish) is a beautiful, mobile-first plant care web app focused on flowers. Built with pure HTML, CSS, and JavaScript — no frameworks, no dependencies. The current build uses an honest local flower matcher while the Supabase/Plant.id recognition proxy remains blocked until secure credentials and QA are restored.
+Rocío (meaning "dew" in Spanish) is a flower-care product with a zero-dependency web demo and a native SwiftUI iOS app. The web demo keeps an honest local flower matcher. The native iOS track now includes an authenticated Supabase/Plant.id path, while deployment credentials remain a release blocker.
 
-Rocio is also moving through a native iOS App Store launch track under `ios/`. The iOS version is SwiftUI, not a WebView wrapper, and is designed around local garden data, local notifications, App Intents, an honest local scanner, and privacy-first review notes.
+The iOS version is SwiftUI, not a WebView wrapper. It uses a required account for garden sync and AI quota, keeps a local cache for resilience, stores sessions in Keychain, and retains local notifications and App Intents.
 
 ## ✨ Features
 
@@ -15,7 +15,7 @@ Rocio is also moving through a native iOS App Store launch track under `ios/`. T
 - **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and an honest local fallback while real recognition is blocked
 - **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
 - **🌙 Dark Mode** — Beautiful dark theme toggle
-- **🌐 Real recognition path** — Supabase + Plant.id is the intended production architecture, but it must stay disabled until secrets, deployment, and real-photo QA are ready
+- **🌐 Cloud recognition path** — Authenticated Supabase Edge Function + Plant.id, explicit photo consent, monthly quota, no raw image database storage, and local fallback
 
 ## 🎨 Design
 
@@ -42,9 +42,10 @@ Rocio is also moving through a native iOS App Store launch track under `ios/`. T
 - Bundle id: `com.juliosuas.rocio`
 - Catalog, Garden, Calendar, Scanner, and Settings tabs
 - Native onboarding, catalog filters, garden summary, and scanner confidence bands
+- Supabase email accounts, Keychain session storage, and account-owned garden sync
 - Native local notifications for watering reminders
 - App Intents for opening the garden, opening scanner, and logging watering
-- Local export/delete controls for user data
+- Export, cloud garden deletion, analytics opt-out, sign out, and permanent in-app account deletion
 - Privacy manifest and App Store privacy answers
 - GitHub Actions build/test/archive gates on macOS runners
 

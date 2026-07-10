@@ -24,6 +24,10 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - Signed archive upload succeeds.
 - Privacy policy URL and support URL are live and entered in App Store Connect.
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
+- Supabase migration and authenticated Edge Function are deployed.
+- Production anonymous key is injected through release configuration; Plant.id secret exists only in Supabase.
+- Account creation, login, sync, analytics opt-out, photo consent, quota, sign out, and in-app account deletion pass on a device.
+- App Review demo account is active and included in Review Information.
 - Final app icon and screenshots are ready.
 - App Store Connect metadata draft is filled.
 
@@ -45,9 +49,9 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 
 ## App Store Notes Draft
 
-Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. The app stores the user's garden locally on the device, schedules local watering reminders, and uses camera/photo input for an experimental on-device flower matching helper. No Plant.id or Supabase provider calls are enabled in the native app in this release.
+Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id flower identification after explicit photo-transfer consent.
 
-Camera permission is used only when the user taps the scanner camera action. Photo library permission is used only when the user chooses a photo for local analysis. Notification permission is requested only from Settings when the user enables watering reminders.
+Camera and photo access are used only after a scanner action. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. Notification permission is requested only from Settings.
 
 Detailed App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md` and must be rechecked before App Store Connect submission.
 
