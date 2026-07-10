@@ -23,9 +23,9 @@ enum BackendError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .unavailable:
-            "Rocio Cloud is not configured in this build."
+            L10n.text("error.cloud.generic", fallback: "Rocio Cloud is temporarily unavailable. Try again.")
         case .invalidResponse:
-            "Rocio Cloud returned an invalid response."
+            L10n.text("error.cloud.generic", fallback: "Rocio Cloud is temporarily unavailable. Try again.")
         case let .server(code, _):
             switch code {
             case "invalid_credentials":

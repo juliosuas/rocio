@@ -45,6 +45,15 @@ final class CloudFoundationTests: XCTestCase {
         )
         XCTAssertFalse(error.errorDescription?.contains("sensitive") ?? true)
     }
+
+    func testKnownAuthErrorUsesLocalizedMessage() {
+        let error = BackendError.server(code: "invalid_credentials", message: "Invalid login credentials")
+
+        XCTAssertEqual(
+            error.errorDescription,
+            L10n.text("error.auth.invalid", fallback: "The email or password is incorrect.")
+        )
+    }
 }
 private struct LegacyGardenPlant: Codable {
     let id: UUID

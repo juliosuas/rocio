@@ -138,8 +138,8 @@ actor RocioBackendClient {
         guard (200..<300).contains(http.statusCode) else {
             let error = try? decoder.decode(ServerError.self, from: data)
             throw BackendError.server(
-                code: error?.code ?? error?.error ?? "http_\(http.statusCode)",
-                message: error?.message ?? Self.message(for: http.statusCode)
+                code: error?.errorCode ?? error?.error ?? "http_\(http.statusCode)",
+                message: error?.message ?? error?.msg ?? Self.message(for: http.statusCode)
             )
         }
         return data
@@ -180,9 +180,10 @@ private struct AuthResponse: Decodable {
 }
 
 private struct ServerError: Decodable {
-    let code: String?
+    let errorCode: String?
     let error: String?
     let message: String?
+    let msg: String?
 }
 
 private struct CloudGardenPlant: Codable {
