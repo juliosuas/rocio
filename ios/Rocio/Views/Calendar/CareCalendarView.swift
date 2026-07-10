@@ -73,7 +73,7 @@ private struct CalendarOverview: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .background(
-                        Calendar.current.isDateInToday(day) ? Color.rocioLeafDeep : Color.rocioSurface,
+                        Calendar.current.isDateInToday(day) ? Color.rocioLeafAction : Color.rocioSurface,
                         in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                     )
                 }

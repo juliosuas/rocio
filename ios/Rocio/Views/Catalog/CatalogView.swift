@@ -73,7 +73,7 @@ private struct CatalogHero: View {
             if let flower {
                 FlowerArtwork(flower: flower, height: 190)
             } else {
-                Color.rocioLeafDeep.frame(height: 190)
+                Color.rocioLeafAction.frame(height: 190)
             }
 
             VStack(alignment: .leading, spacing: 5) {
@@ -103,7 +103,7 @@ private struct CatalogFlowerCard: View {
                     Image(systemName: "checkmark.seal.fill")
                         .font(.title3)
                         .symbolRenderingMode(.palette)
-                        .foregroundStyle(.white, Color.rocioLeafDeep)
+                        .foregroundStyle(.white, Color.rocioLeafAction)
                         .padding(9)
                         .accessibilityLabel(L10n.text("catalog.in.garden", fallback: "In your garden"))
                 }

@@ -49,8 +49,7 @@ private struct EmptyGardenView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             if let flower {
-                FlowerArtwork(flower: flower, height: 220)
-                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                FlowerArtwork(flower: flower, height: 220, cornerRadius: 8)
             }
 
             VStack(alignment: .leading, spacing: 7) {
@@ -115,7 +114,7 @@ private struct GardenSummaryView: View {
             }
         }
         .padding(18)
-        .background(Color.rocioLeafDeep, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.rocioLeafAction, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 
@@ -148,7 +147,7 @@ private struct GardenRow: View {
     private var urgencyTint: Color {
         switch urgency {
         case .overdue: .rocioRose
-        case .soon: .orange
+        case .soon: .rocioAmber
         case .good: .rocioTeal
         }
     }

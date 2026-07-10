@@ -18,7 +18,7 @@ struct AuthView: View {
                         if let heroFlower {
                             FlowerArtwork(flower: heroFlower, height: 250)
                         } else {
-                            Color.rocioLeafDeep.frame(height: 250)
+                            Color.rocioLeafAction.frame(height: 250)
                         }
 
                         VStack(alignment: .leading, spacing: 5) {
@@ -110,11 +110,11 @@ struct AuthView: View {
 
 private struct AuthField<Content: View>: View {
     let systemImage: String
-    let content: Content
+    let content: () -> Content
 
-    init(systemImage: String, @ViewBuilder content: () -> Content) {
+    init(systemImage: String, @ViewBuilder content: @escaping () -> Content) {
         self.systemImage = systemImage
-        self.content = content()
+        self.content = content
     }
 
     var body: some View {
@@ -122,7 +122,7 @@ private struct AuthField<Content: View>: View {
             Image(systemName: systemImage)
                 .foregroundStyle(Color.rocioLeafDeep)
                 .frame(width: 22)
-            content
+            content()
         }
         .padding(.horizontal, 14)
         .frame(minHeight: 50)

@@ -3,7 +3,8 @@ import UIKit
 
 extension Color {
     static let rocioLeaf = Color(red: 0.33, green: 0.51, blue: 0.29)
-    static let rocioLeafDeep = Color(red: 0.10, green: 0.30, blue: 0.23)
+    static let rocioLeafDeep = adaptive(light: .init(red: 0.10, green: 0.30, blue: 0.23, alpha: 1), dark: .init(red: 0.65, green: 0.82, blue: 0.60, alpha: 1))
+    static let rocioLeafAction = Color(red: 0.10, green: 0.30, blue: 0.23)
     static let rocioLeafSoft = adaptive(light: .init(red: 0.89, green: 0.94, blue: 0.87, alpha: 1), dark: .init(red: 0.12, green: 0.22, blue: 0.16, alpha: 1))
     static let rocioRose = Color(red: 0.78, green: 0.29, blue: 0.45)
     static let rocioRoseSoft = adaptive(light: .init(red: 0.98, green: 0.89, blue: 0.91, alpha: 1), dark: .init(red: 0.24, green: 0.12, blue: 0.16, alpha: 1))
@@ -13,6 +14,7 @@ extension Color {
     static let rocioCanvas = adaptive(light: .init(red: 0.98, green: 0.98, blue: 0.96, alpha: 1), dark: .init(red: 0.06, green: 0.07, blue: 0.06, alpha: 1))
     static let rocioSurface = adaptive(light: .white, dark: .init(red: 0.12, green: 0.13, blue: 0.12, alpha: 1))
     static let rocioLine = adaptive(light: .black.withAlphaComponent(0.10), dark: .white.withAlphaComponent(0.14))
+    static let rocioAmber = adaptive(light: .init(red: 0.67, green: 0.38, blue: 0.04, alpha: 1), dark: .init(red: 0.96, green: 0.68, blue: 0.30, alpha: 1))
 
     private static func adaptive(light: UIColor, dark: UIColor) -> Color {
         Color(uiColor: UIColor { traits in
@@ -114,9 +116,9 @@ struct RocioFilterChip: View {
             .font(.subheadline.weight(.semibold))
             .lineLimit(1)
             .padding(.horizontal, 12)
-            .frame(height: 38)
+            .frame(height: 44)
             .foregroundStyle(isSelected ? Color.white : Color.rocioSoil)
-            .background(isSelected ? Color.rocioLeafDeep : Color.rocioSurface, in: Capsule())
+            .background(isSelected ? Color.rocioLeafAction : Color.rocioSurface, in: Capsule())
             .overlay {
                 if !isSelected {
                     Capsule().stroke(Color.rocioLine)
@@ -148,7 +150,7 @@ struct RocioPrimaryButtonStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .frame(minHeight: 46)
             .frame(maxWidth: .infinity)
-            .background(Color.rocioLeafDeep, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(Color.rocioLeafAction, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .foregroundStyle(.white)
             .opacity(configuration.isPressed ? 0.78 : 1)
     }

@@ -128,7 +128,7 @@ struct ScannerView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(4 / 3, contentMode: .fit)
         .padding(24)
-        .background(Color.rocioLeafDeep, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(Color.rocioLeafAction, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
     private func load(_ item: PhotosPickerItem?) async {
@@ -205,13 +205,13 @@ private struct ScannerResultCard: View {
                         .foregroundStyle(.secondary)
                     Label(result.confidenceBand.label, systemImage: "waveform.path.ecg")
                         .font(.caption.bold())
-                        .foregroundStyle(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
+                        .foregroundStyle(result.confidenceBand == .experimental ? Color.rocioAmber : Color.rocioLeafDeep)
                 }
             }
 
             VStack(alignment: .leading, spacing: 8) {
                 ProgressView(value: min(100, max(0, result.confidence)), total: 100)
-                    .tint(result.confidenceBand == .experimental ? .orange : Color.rocioLeafDeep)
+                    .tint(result.confidenceBand == .experimental ? Color.rocioAmber : Color.rocioLeafDeep)
                 HStack {
                     Text(L10n.format("scanner.match", fallback: "%d%% visual match", Int(result.confidence.rounded())))
                     Spacer()

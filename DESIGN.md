@@ -23,6 +23,7 @@ web page placed inside an iPhone shell.
 - Leaf deep: primary actions and strong botanical surfaces.
 - Teal: water, scanner device processing, and healthy care states.
 - Rose: flowers, attention, and cloud AI accents.
+- Amber: care that is due soon and low-confidence scanner states.
 - Warm canvas: app background. White: elevated interactive surfaces.
 - Corners: 8 points maximum for cards, images, fields, and buttons. Pills and circles
   are reserved for filters, compact statuses, and familiar icon actions.

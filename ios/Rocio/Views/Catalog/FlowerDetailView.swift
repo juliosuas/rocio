@@ -45,7 +45,7 @@ struct FlowerDetailView: View {
                                 title: L10n.text("detail.temperature", fallback: "Temperature"),
                                 value: L10n.format("detail.temperature.value", fallback: "%d-%d C", flower.tempRange.lowerBound, flower.tempRange.upperBound),
                                 systemImage: "thermometer.medium",
-                                tint: .orange
+                                tint: .rocioAmber
                             )
                         }
 
@@ -64,7 +64,7 @@ struct FlowerDetailView: View {
                                         .font(.caption.bold())
                                         .foregroundStyle(.white)
                                         .frame(width: 26, height: 26)
-                                        .background(Color.rocioLeafDeep, in: Circle())
+                                        .background(Color.rocioLeafAction, in: Circle())
                                     Text(step)
                                 }
                             }

@@ -28,6 +28,7 @@ struct FlowerImage: View {
 struct FlowerArtwork: View {
     let flower: Flower
     var height: CGFloat = 220
+    var cornerRadius: CGFloat = 0
 
     var body: some View {
         Group {
@@ -44,7 +45,7 @@ struct FlowerArtwork: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
-        .clipped()
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .accessibilityLabel(flower.name)
     }
 }
