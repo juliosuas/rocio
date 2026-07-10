@@ -34,4 +34,4 @@ Capture five iPhone screenshots from the native app:
 
 - Capture the primary App Store screenshot set in English, then verify the Spanish localized set for the same layouts.
 - Avoid "AI precisa", "diagnostico", "garantizado", or "identificacion perfecta".
-- Prefer "candidatos", "scanner experimental", "jardin privado", "recordatorios locales", and "sin cuentas en v1".
+- Prefer "candidatos", "scanner experimental", "jardín sincronizado", "cuenta segura", and "recordatorios locales".

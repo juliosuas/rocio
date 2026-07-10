@@ -114,6 +114,21 @@ create policy "analytics_events_insert_own" on public.analytics_events
 create policy "analytics_events_select_own" on public.analytics_events
   for select using (auth.uid() = user_id);
 
+create or replace function public.set_analytics_enabled(enabled boolean)
+returns void
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required';
+  end if;
+  update public.profiles
+  set analytics_enabled = enabled, updated_at = now()
+  where id = auth.uid();
+end;
+$$;
+
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -132,32 +147,37 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+insert into public.profiles (id, locale)
+select id, case when raw_user_meta_data->>'locale' = 'es' then 'es' else 'en' end
+from auth.users
+on conflict (id) do nothing;
+
 create or replace function public.consume_scan_quota()
 returns table(allowed boolean, used integer, quota integer, remaining integer)
 language plpgsql
 security definer set search_path = public
 as $$
 declare
-  current_user uuid := auth.uid();
+  current_uid uuid := auth.uid();
   current_period date := date_trunc('month', now())::date;
   current_plan text;
   max_scans integer;
   next_used integer;
 begin
-  if current_user is null then
+  if current_uid is null then
     raise exception 'authentication_required';
   end if;
 
-  select plan into current_plan from public.profiles where id = current_user;
+  select plan into current_plan from public.profiles where id = current_uid;
   max_scans := case when current_plan = 'pro' then 50 else 5 end;
 
   insert into public.scan_usage(user_id, period_start, used)
-  values (current_user, current_period, 0)
+  values (current_uid, current_period, 0)
   on conflict (user_id, period_start) do nothing;
 
   update public.scan_usage
   set used = scan_usage.used + 1, updated_at = now()
-  where user_id = current_user
+  where user_id = current_uid
     and period_start = current_period
     and scan_usage.used < max_scans
   returning scan_usage.used into next_used;
@@ -165,7 +185,7 @@ begin
   if next_used is null then
     select scan_usage.used into next_used
     from public.scan_usage
-    where user_id = current_user and period_start = current_period;
+    where user_id = current_uid and period_start = current_period;
     return query select false, next_used, max_scans, 0;
   else
     return query select true, next_used, max_scans, greatest(0, max_scans - next_used);
@@ -188,5 +208,7 @@ $$;
 
 revoke all on function public.consume_scan_quota() from public;
 revoke all on function public.delete_my_account() from public;
+revoke all on function public.set_analytics_enabled(boolean) from public;
 grant execute on function public.consume_scan_quota() to authenticated;
 grant execute on function public.delete_my_account() to authenticated;
+grant execute on function public.set_analytics_enabled(boolean) to authenticated;

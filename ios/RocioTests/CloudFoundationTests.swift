@@ -35,6 +35,16 @@ final class CloudFoundationTests: XCTestCase {
             L10n.text("scanner.provider.fallback", fallback: "On-device fallback")
         )
     }
+
+    func testBackendErrorsNeverExposeRawServerMessages() {
+        let error = BackendError.server(code: "unexpected_provider_error", message: "sensitive upstream detail")
+
+        XCTAssertEqual(
+            error.errorDescription,
+            L10n.text("error.cloud.generic", fallback: "Rocio Cloud is temporarily unavailable. Try again.")
+        )
+        XCTAssertFalse(error.errorDescription?.contains("sensitive") ?? true)
+    }
 }
 private struct LegacyGardenPlant: Codable {
     let id: UUID

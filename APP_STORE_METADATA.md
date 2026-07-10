@@ -28,31 +28,31 @@ Rocio does not promise perfect identification or professional diagnosis. Always 
 
 Keywords: flowers,plants,garden,watering,flower care,plant care,identify flowers,reminders
 
-## Espanol
+## Español
 
 Nombre: Rocio
 
-Subtitulo: Cuidado simple de flores
+Subtítulo: Cuidado simple de flores
 
 Texto promocional:
-Crea un jardin sincronizado con fichas claras, recordatorios simples y un scanner experimental con IA.
+Crea un jardín sincronizado con fichas claras, recordatorios simples y un scanner experimental con IA.
 
-Descripcion:
-Rocio te ayuda a cuidar flores sin convertir la jardineria en otra tarea complicada. Guarda flores en Mi Jardin, sincroniza el cuidado entre dispositivos, revisa cuando toca regar y usa un scanner experimental con IA que muestra posibles coincidencias con incertidumbre visible.
+Descripción:
+Rocio te ayuda a cuidar flores sin convertir la jardinería en otra tarea complicada. Guarda flores en Mi Jardín, sincroniza el cuidado entre dispositivos, revisa cuándo toca regar y usa un scanner experimental con IA que muestra posibles coincidencias con incertidumbre visible.
 
-La v1 gratuita esta pensada para ser util y privada:
+La v1 gratuita está pensada para ser útil y privada:
 
-- Onboarding nativo y un catalogo enfocado en 15 flores.
-- Cuenta segura y jardin sincronizado entre dispositivos.
-- Recordatorios de riego activados solo cuando tu decides.
+- Onboarding nativo y un catálogo enfocado en 15 flores.
+- Cuenta segura y jardín sincronizado entre dispositivos.
+- Recordatorios de riego activados solo cuando tú decides.
 - Calendario semanal y estado de riego simple.
-- Cinco escaneos con IA al mes, candidatos, guia de confianza y fallback local.
-- Exportacion, borrado en la nube y eliminacion permanente de cuenta.
-- Acciones de Siri y Atajos para jardin, riego y scanner.
+- Cinco escaneos con IA al mes, candidatos, guía de confianza y fallback local.
+- Exportación, borrado en la nube y eliminación permanente de cuenta.
+- Acciones de Siri y Atajos para jardín, riego y scanner.
 
-Rocio no promete identificacion perfecta ni diagnostico profesional. Verifica siempre la ficha antes de actuar.
+Rocio no promete identificación perfecta ni diagnóstico profesional. Verifica siempre la ficha antes de actuar.
 
-Palabras clave: flores,plantas,jardin,riego,cuidado de flores,macetas,identificar,recordatorios
+Palabras clave: flores,plantas,jardín,riego,cuidado de flores,macetas,identificar,recordatorios
 
 ## Category
 

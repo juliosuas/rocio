@@ -42,6 +42,8 @@ Camera and selected photos are used only after a scanner action. Before the firs
 
 Notification permission is requested only from Settings. Reminders are generated locally from the user's garden.
 
+When the user deletes local data in Settings, Rocio also cancels pending local watering reminders.
+
 ## Review Notes Draft
 
 Rocio is a bilingual flower-care app with a required account because the account provides cross-device garden sync, scan history/quota enforcement, and account deletion. Provide App Review with a working demo account.

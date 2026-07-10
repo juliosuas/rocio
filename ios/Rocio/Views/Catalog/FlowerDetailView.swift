@@ -30,7 +30,7 @@ struct FlowerDetailView: View {
                         DetailMetric(title: L10n.text("detail.watering", fallback: "Watering"), value: L10n.format("watering.interval", fallback: "%d ml every %d days", flower.waterMl, flower.waterDays), systemImage: "drop")
                         DetailMetric(title: L10n.text("detail.light", fallback: "Light"), value: flower.sunlightLabel, systemImage: "sun.max")
                         DetailMetric(title: L10n.text("detail.difficulty", fallback: "Difficulty"), value: flower.difficultyLabel, systemImage: "chart.bar")
-                        DetailMetric(title: L10n.text("detail.temperature", fallback: "Temperature"), value: "\(flower.tempRange.lowerBound)-\(flower.tempRange.upperBound) C", systemImage: "thermometer")
+                        DetailMetric(title: L10n.text("detail.temperature", fallback: "Temperature"), value: L10n.format("detail.temperature.value", fallback: "%d-%d C", flower.tempRange.lowerBound, flower.tempRange.upperBound), systemImage: "thermometer")
                     }
 
                     DetailSection(title: L10n.text("detail.soil", fallback: "Soil"), bodyText: flower.soil)

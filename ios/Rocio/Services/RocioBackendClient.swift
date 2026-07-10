@@ -90,6 +90,12 @@ actor RocioBackendClient {
         _ = try? await responseData(for: request)
     }
 
+    func setAnalyticsEnabled(_ enabled: Bool, session: AuthSession) async throws {
+        let payload = AnalyticsPreferencePayload(enabled: enabled)
+        let request = try request(path: "/rest/v1/rpc/set_analytics_enabled", method: "POST", token: session.accessToken, body: payload)
+        _ = try await responseData(for: request)
+    }
+
     private func authSession(for request: URLRequest) async throws -> AuthSession {
         let data = try await responseData(for: request)
         let response = try decoder.decode(AuthResponse.self, from: data)
@@ -163,6 +169,7 @@ private struct SignUpPayload: Encodable { let email: String; let password: Strin
 private struct EmptyPayload: Encodable {}
 private struct ScanPayload: Encodable { let image: String; let consent: Bool }
 private struct AnalyticsPayload: Encodable { let userID: UUID; let name: String; let properties: [String: String] }
+private struct AnalyticsPreferencePayload: Encodable { let enabled: Bool }
 
 private struct AuthResponse: Decodable {
     let accessToken: String?

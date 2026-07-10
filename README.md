@@ -12,7 +12,7 @@ The iOS version is SwiftUI, not a WebView wrapper. It uses a required account fo
 - **🌱 Mi Jardín** — Track your personal garden, watering schedule, and plant health
 - **📅 Calendario** — Weekly care schedule with color-coded urgency
 - **💡 Tips** — Seasonal gardening tips that rotate monthly
-- **📸 Identificador experimental** — Camera/file upload flow with uncertainty, top candidates, correction buttons, and an honest local fallback while real recognition is blocked
+- **📸 Identificador experimental** — Authenticated Plant.id recognition with explicit consent, uncertainty, top candidates, and an honest local fallback
 - **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
 - **🌙 Dark Mode** — Beautiful dark theme toggle
 - **🌐 Cloud recognition path** — Authenticated Supabase Edge Function + Plant.id, explicit photo consent, monthly quota, no raw image database storage, and local fallback

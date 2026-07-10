@@ -27,6 +27,7 @@ P0 and P1 findings block merge and publication. P2 findings must be documented w
 - Native app: `ios/Rocio.xcodeproj`, bundle id `com.juliosuas.rocio`.
 - Web fallback/demo: GitHub Pages.
 - Marketing: canonical Lovable project only.
-- Scanner: local and experimental in v1.
-- App data: local, exportable, deletable, no tracking.
+- Scanner: authenticated Plant.id operation after consent, with an experimental local fallback.
+- App data: account-scoped Supabase sync with local cache, export, garden deletion, and permanent account deletion.
+- Analytics: limited first-party product events only, with an in-app opt-out and no cross-app tracking.
 - Marketing waitlist: email collection only after explicit consent and privacy disclosure.

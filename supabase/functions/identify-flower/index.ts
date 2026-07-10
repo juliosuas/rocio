@@ -67,7 +67,8 @@ serve(async (req) => {
   const { data: quotaRows, error: quotaError } = await client.rpc("consume_scan_quota");
   const quota = quotaRows?.[0];
   if (quotaError) return json(req, { error: "quota_unavailable" }, 503);
-  if (!quota?.allowed) {
+  if (!quota) return json(req, { error: "quota_unavailable" }, 503);
+  if (!quota.allowed) {
     return json(req, { error: "quota_exhausted", quota: quota.quota, remaining: 0 }, 429);
   }
 

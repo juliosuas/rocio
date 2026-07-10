@@ -24,7 +24,7 @@
 - **Plant.id needs a new/healthy Supabase deploy** — Real recognition requires restoring or replacing the old `rocio` Supabase project, deploying `identify-flower`, setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret, and then re-enabling the public URL/key in `index.html`.
 - **Local matcher is fallback only** — It samples image colors and compares against hardcoded flower profiles when Plant.id/Supabase is unavailable. It is clearly labeled as uncertain and never presented as market-grade recognition.
 - **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
-- **No Backend / Sync** — Everything is localStorage. No accounts, no cloud backup, no multi-device sync.
+- **Native cloud deployment pending** — The SwiftUI app implements required accounts, Keychain sessions, account-scoped Supabase garden sync, analytics opt-out, quotas, and account deletion. The web demo remains localStorage-only. Production still requires reactivating Supabase and deploying the migration/function.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
 - **No Weather Integration** — Watering calculator still uses manual climate input.
 - **Disease/treatment evidence is not source-audited yet** — Existing symptom and treatment guidance is visible only as PENDING verification and must be checked against reliable horticultural sources before being sold as diagnosis or treatment advice.
@@ -43,9 +43,9 @@ Add Web Push subscriptions plus a daily job that sends watering reminders even w
 
 The Supabase proxy is now the intended architecture. Next: add generic care guidance for Plant.id species that are outside the 15-flower local catalog.
 
-### 3. Multi-Device Sync + Family Sharing
+### 3. Family Sharing
 
-Add optional sign-in and shared garden access so Julio/Rocío can manage the same garden from multiple devices.
+Extend the implemented account sync with explicit shared-garden invitations and roles.
 
 ---
 

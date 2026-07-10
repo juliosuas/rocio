@@ -30,7 +30,6 @@ struct SettingsView: View {
                         Label(L10n.text("settings.account.delete", fallback: "Delete account"), systemImage: "person.crop.circle.badge.minus")
                     }
                 }
-
                 Section(L10n.text("settings.permissions", fallback: "Permissions")) {
                     Text(L10n.text("settings.notifications.copy", fallback: "Rocio can send local reminders for your saved plants. They are enabled only after you tap this button and allow them in iOS."))
                         .font(.footnote)
@@ -76,6 +75,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(L10n.text("settings.title", fallback: "Settings"))
+            .onChange(of: analyticsEnabled) { _, enabled in
+                Task { await sessionStore.setAnalyticsEnabled(enabled) }
+            }
             .confirmationDialog(L10n.text("settings.delete", fallback: "Delete local data"), isPresented: $showingResetConfirmation, titleVisibility: .visible) {
                 Button(L10n.text("settings.delete.confirm", fallback: "Delete garden"), role: .destructive) {
                     localDataResetter.reset(gardenStore: gardenStore)
@@ -92,6 +94,17 @@ struct SettingsView: View {
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
             } message: {
                 Text(L10n.text("settings.account.delete.message", fallback: "This permanently deletes your account, synced garden, scan history, and analytics events. This cannot be undone."))
+            }
+            .alert(
+                L10n.text("settings.error.title", fallback: "Could not complete the request"),
+                isPresented: Binding(
+                    get: { sessionStore.errorMessage != nil },
+                    set: { if !$0 { sessionStore.clearError() } }
+                )
+            ) {
+                Button(L10n.text("action.ok", fallback: "OK")) { sessionStore.clearError() }
+            } message: {
+                Text(sessionStore.errorMessage ?? "")
             }
         }
     }

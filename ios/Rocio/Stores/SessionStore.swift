@@ -80,8 +80,21 @@ final class SessionStore: ObservableObject {
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
             state = .signedOut
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = userMessage(for: error)
         }
+    }
+
+    func setAnalyticsEnabled(_ enabled: Bool) async {
+        guard let client, let session else { return }
+        do {
+            try await client.setAnalyticsEnabled(enabled, session: try await activeSession(from: session))
+        } catch {
+            errorMessage = userMessage(for: error)
+        }
+    }
+
+    func clearError() {
+        errorMessage = nil
     }
 
     func enqueueGardenChange(_ change: GardenChange) {
@@ -120,7 +133,7 @@ final class SessionStore: ObservableObject {
             }
             await syncGarden(gardenStore)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = userMessage(for: error)
         }
     }
 
@@ -161,6 +174,16 @@ final class SessionStore: ObservableObject {
 
     private var analyticsEnabled: Bool {
         UserDefaults.standard.object(forKey: "rocio.analytics.enabled") as? Bool ?? true
+    }
+
+    private func userMessage(for error: Error) -> String {
+        if let backendError = error as? BackendError {
+            return backendError.errorDescription ?? L10n.text("error.cloud.generic", fallback: "Rocio Cloud is temporarily unavailable. Try again.")
+        }
+        if error is URLError {
+            return L10n.text("error.network", fallback: "Check your internet connection and try again.")
+        }
+        return L10n.text("error.generic", fallback: "Something went wrong. Try again.")
     }
 
     private func startPendingFlush() {

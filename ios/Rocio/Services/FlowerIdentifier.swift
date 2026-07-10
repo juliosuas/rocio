@@ -166,14 +166,7 @@ struct HybridFlowerIdentifier {
                     remainingCloudScans: remote.remaining,
                     externalName: top.commonNames.first ?? top.name,
                     externalScientificName: top.scientificName,
-                    externalCandidates: remote.suggestions.prefix(3).map { suggestion in
-                        IdentificationResult.ExternalCandidate(
-                            id: "\(suggestion.scientificName)-\(suggestion.name)",
-                            name: suggestion.commonNames.first ?? suggestion.name,
-                            scientificName: suggestion.scientificName,
-                            confidence: min(99, max(1, suggestion.probability * 100))
-                        )
-                    }
+                    externalCandidates: externalCandidates(remote.suggestions)
                 )
             }
             return IdentificationResult(
@@ -183,14 +176,7 @@ struct HybridFlowerIdentifier {
                 isUncertain: best.confidence < 64 || best.confidence - (candidates.dropFirst().first?.confidence ?? 0) < 8,
                 provider: .cloud,
                 remainingCloudScans: remote.remaining,
-                externalCandidates: remote.suggestions.prefix(3).map { suggestion in
-                    IdentificationResult.ExternalCandidate(
-                        id: "\(suggestion.scientificName)-\(suggestion.name)",
-                        name: suggestion.commonNames.first ?? suggestion.name,
-                        scientificName: suggestion.scientificName,
-                        confidence: min(99, max(1, suggestion.probability * 100))
-                    )
-                }
+                externalCandidates: externalCandidates(remote.suggestions)
             )
         } catch {
             return localResult.map { result in
@@ -227,6 +213,19 @@ struct HybridFlowerIdentifier {
             }
         }
         return bestByFlower.values.sorted { $0.confidence > $1.confidence }
+    }
+
+    private func externalCandidates(
+        _ suggestions: [RemoteIdentificationResponse.Suggestion]
+    ) -> [IdentificationResult.ExternalCandidate] {
+        suggestions.prefix(3).enumerated().map { index, suggestion in
+            IdentificationResult.ExternalCandidate(
+                id: "\(index)-\(suggestion.scientificName)-\(suggestion.name)",
+                name: suggestion.commonNames.first ?? suggestion.name,
+                scientificName: suggestion.scientificName,
+                confidence: min(99, max(1, suggestion.probability * 100))
+            )
+        }
     }
 
     private func normalize(_ value: String) -> String {
