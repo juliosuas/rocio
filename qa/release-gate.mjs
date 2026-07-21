@@ -12,6 +12,7 @@ const checks = [
   ['Botanical content', 'botanical-content-audit.mjs', []],
   ['Mobile scanner', 'mobile-scanner-readiness-audit.mjs', []],
   ['Public App Store pages', 'appstore-static-readiness-audit.mjs', []],
+  ['Privacy manifest validator', 'privacy-manifest-validation.test.mjs', []],
   ['Native iOS release configuration', 'ios-app-store-readiness-audit.mjs', []],
   ['Cloud AI security', 'cloud-ai-security-audit.mjs', []],
 ];

@@ -36,6 +36,49 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(summary.nextWateringDate, calendar.date(byAdding: .day, value: 3, to: overdueDate))
     }
 
+    func testWateringScheduleSeparatesPlantOverdueByThreeDaysAndCountsIt() {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 7, day: 10, hour: 9))!
+        let lastWateredAt = calendar.date(byAdding: .day, value: -6, to: now)!
+        let overduePlant = GardenPlant(flowerId: "rosa", nickname: "Rosa", lastWateredAt: lastWateredAt)
+        let store = GardenStore(plants: [overduePlant])
+
+        let schedule = store.wateringSchedule(startingAt: now, calendar: calendar)
+
+        XCTAssertEqual(schedule.overduePlants.map(\.id), [overduePlant.id])
+        XCTAssertTrue(schedule.days.allSatisfy(\.plants.isEmpty))
+        XCTAssertEqual(schedule.totalDueCount, 1)
+    }
+
+    func testWateringSchedulePreservesTodayThroughNextSixDays() {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 7, day: 10, hour: 9))!
+        let dueToday = GardenPlant(
+            flowerId: "rosa",
+            nickname: "Rosa",
+            lastWateredAt: calendar.date(byAdding: .day, value: -3, to: now)!
+        )
+        let dueOnLastVisibleDay = GardenPlant(
+            flowerId: "orquidea",
+            nickname: "Orquidea",
+            lastWateredAt: calendar.date(byAdding: .day, value: -1, to: now)!
+        )
+        let dueOutsideVisibleRange = GardenPlant(
+            flowerId: "orquidea",
+            nickname: "Orquidea futura",
+            lastWateredAt: now
+        )
+        let store = GardenStore(plants: [dueToday, dueOnLastVisibleDay, dueOutsideVisibleRange])
+
+        let schedule = store.wateringSchedule(startingAt: now, calendar: calendar)
+
+        XCTAssertEqual(schedule.days.count, 7)
+        XCTAssertEqual(schedule.days[0].plants.map(\.id), [dueToday.id])
+        XCTAssertEqual(schedule.days[6].plants.map(\.id), [dueOnLastVisibleDay.id])
+        XCTAssertFalse(schedule.days.flatMap(\.plants).contains { $0.id == dueOutsideVisibleRange.id })
+        XCTAssertEqual(schedule.totalDueCount, 2)
+    }
+
     func testGardenExportPayloadContainsLocalData() {
         let exportedAt = Date(timeIntervalSince1970: 1_800_000_000)
         let plant = GardenPlant(flowerId: "cempasuchil", nickname: "Cempasuchil")
