@@ -2985,7 +2985,8 @@ const rocioLocalStorage = safeStorageArea('localStorage');
 const rocioSessionStorage = safeStorageArea('sessionStorage');
 const ROCIO_GARDEN_KEY = 'rocio_garden';
 const ROCIO_SCAN_HISTORY_KEY = 'rocio_scan_history';
-const ROCIO_LAST_NOTIFICATION_KEY = 'rocio_last_notification_day';
+const ROCIO_LAST_NOTIFICATION_LEGACY_KEY = 'rocio_last_notification_day';
+const ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY = 'rocio_last_notification_local_day_v2';
 
 function safeStorageGet(storage, key, fallback = null) {
   try {
@@ -3028,6 +3029,12 @@ function safeJSONGet(storage, key, fallback) {
 }
 
 function localDateKey(value = new Date()) {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const calendarDate = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(calendarDate.getTime()) && calendarDate.toISOString().slice(0, 10) === value
+      ? value
+      : null;
+  }
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   const year = date.getFullYear();
@@ -3105,7 +3112,8 @@ function clearLocalUserData() {
   scanHistory = [];
   safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY);
   safeStorageRemove(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY);
-  safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LEGACY_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY);
   renderGarden();
   renderCalendar();
   renderScanHistory();
@@ -4136,14 +4144,16 @@ function checkWateringNotifications() {
   try {
     if (!garden.length || !('Notification' in window) || Notification.permission !== 'granted') return;
     const today = localDateKey();
-    const lastShown = safeStorageGet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY);
+    const lastShown = safeStorageGet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY);
+    // UTC-day values from older builds are ambiguous locally, so discard rather than promote them.
+    safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LEGACY_KEY);
     if (lastShown === today) return;
     const due = garden
       .map(g => ({ item: g, flower: FLOWERS.find(f => f.id === g.flowerId), urgency: getUrgency(g) }))
       .filter(x => x.flower && x.urgency !== 'good');
     if (!due.length) return;
     showLocalPlantNotification('Rocío te recuerda regar 🌿', `${due[0].flower.name}${due.length > 1 ? ` y ${due.length - 1} planta(s) más` : ''} necesitan agua.`);
-    safeStorageSet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY, today);
+    safeStorageSet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY, today);
   } catch(e) {}
 }
 

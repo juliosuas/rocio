@@ -15,7 +15,8 @@ const checks = [
   ['clear local data flow exists', indexHtml.includes('function clearLocalUserData()')],
   ['garden key is centralized', indexHtml.includes("const ROCIO_GARDEN_KEY = 'rocio_garden'")],
   ['scan history key is centralized', indexHtml.includes("const ROCIO_SCAN_HISTORY_KEY = 'rocio_scan_history'")],
-  ['notification key is cleared with user data', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY)')],
+  ['legacy notification key is cleared with user data', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LEGACY_KEY)')],
+  ['local-day notification key is cleared with user data', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY)')],
   ['garden data is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY)')],
   ['scan history data is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY)')],
   ['launch plan tracks export/delete controls', /export a local JSON copy and delete garden data plus scan history/i.test(launchPlan)]
