@@ -19,7 +19,9 @@ final class SessionStore: ObservableObject {
 
     private let client: RocioBackendClient?
     private var hasBootstrapped = false
+    private var isEndingSession = false
     private var gardenSyncTask: Task<Void, Never>?
+    private var gardenSyncTaskGeneration = GardenSyncTaskGeneration()
 
     init(configuration: BackendConfiguration? = .bundled) {
         client = configuration.map { RocioBackendClient(configuration: $0) }
@@ -74,24 +76,36 @@ final class SessionStore: ObservableObject {
     }
 
     func signOut(gardenStore: GardenStore) async {
-        gardenSyncTask?.cancel()
-        if let client, let session { await client.signOut(session: session) }
+        guard !isEndingSession else { return }
+        isEndingSession = true
+        let sessionToSignOut = session
+        let cancelledSyncTask = cancelGardenSyncTask()
         KeychainSessionStore.clear()
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
         gardenStore.clearLocalCache()
         state = client == nil ? .unconfigured : .signedOut
+        await cancelledSyncTask?.value
+        if let client, let sessionToSignOut { await client.signOut(session: sessionToSignOut) }
+        isEndingSession = false
     }
 
     func deleteAccount(gardenStore: GardenStore) async {
-        guard let client, let session else { return }
+        guard !isEndingSession, let client, let session else { return }
+        isEndingSession = true
+        let cancelledSyncTask = cancelGardenSyncTask()
+        await cancelledSyncTask?.value
         do {
             try await client.deleteAccount(session: try await activeSession(from: session))
+            savePendingChanges([], userID: session.user.id)
             gardenStore.clearLocalCache()
             KeychainSessionStore.clear()
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
             state = .signedOut
+            isEndingSession = false
         } catch {
+            isEndingSession = false
             errorMessage = userMessage(for: error)
+            startPendingFlush()
         }
     }
 
@@ -110,7 +124,7 @@ final class SessionStore: ObservableObject {
 
 #if DEBUG
     func enterDemo(gardenStore: GardenStore) {
-        gardenSyncTask?.cancel()
+        cancelGardenSyncTask()
         errorMessage = nil
         syncMessage = L10n.text("demo.local.only", fallback: "Demo - local only")
         gardenStore.beginDemo()
@@ -186,6 +200,7 @@ final class SessionStore: ObservableObject {
         guard session.needsRefresh else { return session }
         guard let client else { throw BackendError.unavailable }
         let refreshed = try await client.refresh(session)
+        try Task.checkCancellation()
         try KeychainSessionStore.save(refreshed)
         state = .signedIn(refreshed)
         return refreshed
@@ -214,18 +229,38 @@ final class SessionStore: ObservableObject {
     }
 
     private func startPendingFlush() {
-        guard gardenSyncTask == nil else { return }
+        guard !isEndingSession, gardenSyncTask == nil else { return }
+        let generation = gardenSyncTaskGeneration.begin()
         gardenSyncTask = Task { [weak self] in
-            guard let self, let client = self.client, let session = self.session else { return }
-            let completed = await self.flushPendingChanges(client: client, session: session)
-            self.syncMessage = completed
-                ? L10n.text("cloud.synced", fallback: "Synced")
-                : L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
-            self.gardenSyncTask = nil
-            if let userID = self.session?.user.id, !self.loadPendingChanges(userID: userID).isEmpty {
-                self.startPendingFlush()
-            }
+            guard let self else { return }
+            var completed = false
+            defer { self.finishPendingFlush(generation: generation, completed: completed) }
+            guard let client = self.client, let session = self.session else { return }
+            completed = await self.flushPendingChanges(client: client, session: session)
         }
+    }
+
+    @discardableResult
+    private func cancelGardenSyncTask() -> Task<Void, Never>? {
+        let task = gardenSyncTask
+        gardenSyncTaskGeneration.cancel()
+        task?.cancel()
+        gardenSyncTask = nil
+        return task
+    }
+
+    private func finishPendingFlush(generation: UUID, completed: Bool) {
+        guard gardenSyncTaskGeneration.finish(generation) else { return }
+        gardenSyncTask = nil
+        syncMessage = completed
+            ? L10n.text("cloud.synced", fallback: "Synced")
+            : L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        guard
+            completed,
+            let userID = session?.user.id,
+            !loadPendingChanges(userID: userID).isEmpty
+        else { return }
+        startPendingFlush()
     }
 
     private func flushPendingChanges(client: RocioBackendClient, session: AuthSession) async -> Bool {
@@ -243,6 +278,7 @@ final class SessionStore: ObservableObject {
                 case .reset:
                     try await client.deleteGarden(session: active)
                 }
+                guard !Task.isCancelled else { return false }
                 var latest = loadPendingChanges(userID: session.user.id)
                 latest.removeAll { $0.id == next.id }
                 savePendingChanges(latest, userID: session.user.id)
@@ -271,6 +307,26 @@ final class SessionStore: ObservableObject {
 
     private func pendingKey(_ userID: UUID) -> String {
         "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+    }
+}
+
+struct GardenSyncTaskGeneration {
+    private(set) var current: UUID?
+
+    mutating func begin() -> UUID {
+        let generation = UUID()
+        current = generation
+        return generation
+    }
+
+    mutating func cancel() {
+        current = nil
+    }
+
+    mutating func finish(_ generation: UUID) -> Bool {
+        guard current == generation else { return false }
+        current = nil
+        return true
     }
 }
 

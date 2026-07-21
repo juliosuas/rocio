@@ -144,12 +144,10 @@ Acceptance criteria:
 
 ## Current Smallest Shippable PR
 
-Harden the native foundation for App Store review:
+Harden native session and cloud queue reliability:
 
-- Keep the SwiftUI app native, not WebView-based.
-- Keep App Intents narrow: open garden, log watering, open scanner.
-- Add local export/delete controls for user data.
-- Prevent overdue watering reminders from scheduling in the past.
-- Refresh garden state when App Intents modify persistence while the app is inactive.
-- Keep the Debug-only demo local, ephemeral, and impossible to compile into Release.
-- Update launch docs so every next agent starts from the current iOS reality.
+- Cancel and release the active queue task before sign-out, account deletion, or Debug demo entry.
+- Ignore stale completion callbacks from cancelled tasks after a replacement task starts.
+- Keep failed changes pending without an immediate retry loop that can hammer the backend.
+- Cover the queue task generation state with focused unit tests.
+- Remove the Swift concurrency warning from the backend date decoder.
