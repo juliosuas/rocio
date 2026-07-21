@@ -1,10 +1,30 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import {
+  parseXmlPlist,
+  validatePrivacyAccessedApiTypes,
+  validatePrivacyCollectedDataTypes,
+} from './privacy-manifest-validation.mjs';
+
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const iosRoot = path.join(projectRoot, 'ios', 'Rocio');
 const projectFile = fs.readFileSync(path.join(projectRoot, 'ios', 'Rocio.xcodeproj', 'project.pbxproj'), 'utf8');
 const privacyManifest = fs.readFileSync(path.join(iosRoot, 'Resources', 'PrivacyInfo.xcprivacy'), 'utf8');
+let parsedPrivacyManifest = null;
+let privacyManifestParseError = null;
+try {
+  parsedPrivacyManifest = parseXmlPlist(privacyManifest);
+} catch (error) {
+  privacyManifestParseError = error instanceof Error ? error.message : String(error);
+}
+const privacyCollectedDataErrors = privacyManifestParseError
+  ? [`Invalid privacy manifest: ${privacyManifestParseError}`]
+  : validatePrivacyCollectedDataTypes(parsedPrivacyManifest);
+const privacyAccessedApiErrors = privacyManifestParseError
+  ? [`Invalid privacy manifest: ${privacyManifestParseError}`]
+  : validatePrivacyAccessedApiTypes(parsedPrivacyManifest);
+const privacyManifestErrors = [...privacyCollectedDataErrors, ...privacyAccessedApiErrors];
 const settingsView = fs.readFileSync(path.join(iosRoot, 'Views', 'Settings', 'SettingsView.swift'), 'utf8');
 const stringCatalogPath = path.join(iosRoot, 'Resources', 'Localizable.xcstrings');
 const stringCatalog = fs.existsSync(stringCatalogPath)
@@ -90,7 +110,8 @@ const checks = [
   ['marketing version', projectFile.includes('MARKETING_VERSION = 1.0;')],
   ['camera purpose string', projectFile.includes('INFOPLIST_KEY_NSCameraUsageDescription')],
   ['photo purpose string', projectFile.includes('INFOPLIST_KEY_NSPhotoLibraryUsageDescription')],
-  ['privacy manifest', privacyManifest.includes('NSPrivacyAccessedAPICategoryUserDefaults') && privacyManifest.includes('CA92.1')],
+  ['privacy manifest collected data declarations', privacyCollectedDataErrors.length === 0],
+  ['privacy manifest UserDefaults declaration', privacyAccessedApiErrors.length === 0],
   ['English localization region', /knownRegions = \([\s\S]*\ben,/.test(projectFile)],
   ['Spanish localization region', /knownRegions = \([\s\S]*\bes,/.test(projectFile)],
   ['string catalog included', projectFile.includes('Localizable.xcstrings') && fs.existsSync(stringCatalogPath)],
@@ -119,6 +140,7 @@ console.log(JSON.stringify({
   missingUsedLocalizationKeys,
   incompleteUsedLocalizationKeys,
   incompleteAppShortcutKeys,
+  privacyManifestErrors,
   unsignedReady: failed === 0,
   signedReady: failed === 0 && Boolean(configuredTeam),
   signingBlocker: configuredTeam ? null : 'DEVELOPMENT_TEAM is not configured',

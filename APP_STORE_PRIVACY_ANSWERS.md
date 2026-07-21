@@ -1,12 +1,13 @@
 # Rocio App Store Privacy Answers Draft
 
-Date: 2026-07-09
+Date: 2026-07-21
 
 This draft describes the cloud-enabled native iOS build. Reconfirm it against the deployed Supabase project and Plant.id agreement before submission.
 
 ## Data Flow
 
 - Account: email address and Supabase user ID are stored for authentication and account management.
+- Locale: the app language is sent during account creation and persisted in the account profile so Rocio can provide localized app functionality.
 - Garden: plants, nicknames, care status, notes, and watering dates are cached on-device and synced to the user's Supabase account.
 - Scanner: after a one-time explicit disclosure and consent, Rocio sends a compressed selected photo through an authenticated Supabase Edge Function to Plant.id/Kindwise. Rocio does not persist the raw image in its database. Plant.id processes the image under the applicable provider agreement.
 - Scan records: Rocio stores provider name, top scientific name, confidence, candidate count, quota use, and timestamp. It does not store the raw scanner image.
@@ -26,7 +27,8 @@ No. Rocio does not combine data with third-party data for advertising, share dat
 - Identifiers > User ID: app functionality and analytics.
 - User Content > Other User Content: synced garden, notes, care status, and watering history; app functionality.
 - User Content > Photos or Videos: flower photo sent for identification after consent; app functionality.
-- Usage Data > Product Interaction: first-party product improvement analytics when enabled.
+- Usage Data > Product Interaction: authenticated scan usage enforces the account quota; first-party product improvement analytics are stored when enabled. App functionality and analytics.
+- Other Data > Other Data Types: app locale sent during account creation and persisted in the account profile; app functionality.
 
 ### Data Not Linked To The User
 
