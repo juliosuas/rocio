@@ -12,7 +12,9 @@ actor RocioBackendClient {
         self.urlSession = urlSession
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .custom(Self.decodeDate)
+        decoder.dateDecodingStrategy = .custom { decoder in
+            try Self.decodeDate(decoder)
+        }
         self.decoder = decoder
         let encoder = JSONEncoder()
         encoder.keyEncodingStrategy = .convertToSnakeCase

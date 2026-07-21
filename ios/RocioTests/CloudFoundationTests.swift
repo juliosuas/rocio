@@ -55,6 +55,27 @@ final class CloudFoundationTests: XCTestCase {
         )
     }
 
+    func testCancelledGardenSyncGenerationCannotFinishAReplacementTask() {
+        var generations = GardenSyncTaskGeneration()
+        let cancelled = generations.begin()
+
+        generations.cancel()
+        let replacement = generations.begin()
+
+        XCTAssertFalse(generations.finish(cancelled))
+        XCTAssertEqual(generations.current, replacement)
+        XCTAssertTrue(generations.finish(replacement))
+        XCTAssertNil(generations.current)
+    }
+
+    func testGardenSyncGenerationFinishesOnlyOnce() {
+        var generations = GardenSyncTaskGeneration()
+        let active = generations.begin()
+
+        XCTAssertTrue(generations.finish(active))
+        XCTAssertFalse(generations.finish(active))
+    }
+
 #if DEBUG
     @MainActor
     func testDebugDemoDoesNotCreateAnAuthenticatedSession() {
