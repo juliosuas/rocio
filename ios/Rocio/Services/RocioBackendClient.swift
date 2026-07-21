@@ -59,7 +59,7 @@ actor RocioBackendClient {
 
     func upsertGarden(_ plants: [GardenPlant], session: AuthSession) async throws {
         guard !plants.isEmpty else { return }
-        let payload = plants.map { CloudGardenPlant(plant: $0, userID: session.user.id) }
+        let payload = plants.map { GardenPlantUpsertPayload(plant: $0, userID: session.user.id) }
         var request = try request(path: "/rest/v1/garden_plants?on_conflict=id", method: "POST", token: session.accessToken, body: payload)
         request.setValue("resolution=merge-duplicates,return=minimal", forHTTPHeaderField: "Prefer")
         _ = try await responseData(for: request)
@@ -188,9 +188,9 @@ private struct ServerError: Decodable {
     let msg: String?
 }
 
-private struct CloudGardenPlant: Codable {
+struct GardenPlantUpsertPayload: Encodable {
     let id: UUID
-    let userID: UUID?
+    let userID: UUID
     let flowerID: String
     let nickname: String
     let addedAt: Date
@@ -200,16 +200,29 @@ private struct CloudGardenPlant: Codable {
     let updatedAt: Date
 
     init(plant: GardenPlant, userID: UUID) {
-        id = plant.id
+        let normalizedPlant = plant.normalizingTextFields()
+        id = normalizedPlant.id
         self.userID = userID
-        flowerID = plant.flowerId
-        nickname = plant.nickname
-        addedAt = plant.addedAt
-        lastWateredAt = plant.lastWateredAt
-        status = plant.status.rawValue
-        notes = plant.notes
-        updatedAt = plant.updatedAt
+        flowerID = normalizedPlant.flowerId
+        nickname = normalizedPlant.nickname
+        addedAt = normalizedPlant.addedAt
+        lastWateredAt = normalizedPlant.lastWateredAt
+        status = normalizedPlant.status.rawValue
+        notes = normalizedPlant.notes
+        updatedAt = normalizedPlant.updatedAt
     }
+}
+
+private struct CloudGardenPlant: Decodable {
+    let id: UUID
+    let userID: UUID?
+    let flowerID: String
+    let nickname: String
+    let addedAt: Date
+    let lastWateredAt: Date
+    let status: String
+    let notes: String
+    let updatedAt: Date
 
     var gardenPlant: GardenPlant {
         GardenPlant(

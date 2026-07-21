@@ -18,16 +18,20 @@ function clientSourceUnder(relativeDirectory) {
   }).join('\n');
 }
 
-function allMigrations() {
+function migrationSources() {
   return fs.readdirSync(path.join(root, 'supabase/migrations'))
     .filter((file) => file.endsWith('.sql'))
     .sort()
-    .map((file) => read(path.join('supabase/migrations', file)))
-    .join('\n');
+    .map((file) => ({ file, sql: read(path.join('supabase/migrations', file)) }));
 }
 
 const config = read('supabase/config.toml');
-const migration = allMigrations();
+const migrations = migrationSources();
+const singleCanonicalMigration = migrations.length === 1;
+// This repository currently treats its one migration as the canonical schema.
+// Never concatenate migration history and call it effective state: before adding
+// a second migration, replace this strategy with an ephemeral DB or schema snapshot.
+const migration = singleCanonicalMigration ? migrations[0].sql : '';
 const edge = read('supabase/functions/identify-flower/index.ts');
 const project = read('ios/Rocio.xcodeproj/project.pbxproj');
 const clientSource = `${read('index.html')}\n${clientSourceUnder('ios')}`;
@@ -41,21 +45,22 @@ const settings = read('ios/Rocio/Views/Settings/SettingsView.swift');
 const privacy = read('APP_STORE_PRIVACY_ANSWERS.md');
 const policyStatements = migration.match(/create policy[\s\S]*?;/gi) || [];
 const grantStatements = migration.match(/grant[\s\S]*?;/gi) || [];
-const securityDefinerSettings = migration.match(/security definer set search_path = [^\n]+/gi) || [];
 const clientSecretPattern = /\b(?:SUPABASE_SERVICE_ROLE_KEY|PLANT_ID_API_KEY)\b|\bsb_secret_[A-Za-z0-9_-]{16,}\b|\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/;
-const serviceRoleKeyReferences = edge.match(/\bserviceRoleKey\b/g) || [];
-const adminClientReferences = edge.match(/\badminClient\b/g) || [];
 
 const listedFiles = spawnSync(
   'git',
   ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
   { cwd: root, encoding: 'utf8' },
 );
+if (listedFiles.error) {
+  throw new Error(`Unable to enumerate repository files: ${listedFiles.error.message}`);
+}
 if (listedFiles.status !== 0) {
-  throw new Error(`Unable to enumerate repository files: ${listedFiles.stderr.trim()}`);
+  const detail = typeof listedFiles.stderr === 'string' ? listedFiles.stderr.trim() : '';
+  throw new Error(`Unable to enumerate repository files${detail ? `: ${detail}` : ` (git exit ${listedFiles.status ?? 'unknown'})`}`);
 }
 
-const repositoryFiles = listedFiles.stdout.split('\0').filter(Boolean);
+const repositoryFiles = (listedFiles.stdout ?? '').split('\0').filter(Boolean);
 const localConfigPath = 'ios/Config/Local.xcconfig';
 const textDecoder = new TextDecoder('utf-8', { fatal: true });
 const maximumAuditedFileSize = 2 * 1024 * 1024;
@@ -107,15 +112,70 @@ const credentialFiles = textFiles.filter((file) => {
   }
 });
 
-const occurrences = (contents, value) => contents.split(value).length - 1;
-const validateClientKey = (key) => spawnSync('/bin/sh', [clientKeyValidatorPath], {
+const validateClientKey = (key, buildEnvironment) => spawnSync('/bin/sh', [clientKeyValidatorPath], {
   cwd: root,
-  env: { ...process.env, ROCIO_SUPABASE_PUBLISHABLE_KEY: key },
+  env: { ...process.env, ...buildEnvironment, ROCIO_SUPABASE_PUBLISHABLE_KEY: key },
 }).status;
 const fakePublishableKey = `sb_publishable_${'q'.repeat(24)}`;
 const fakeSecretKey = `sb_secret_${'q'.repeat(24)}`;
+const debugBuild = { CONFIGURATION: 'Debug', CODE_SIGNING_ALLOWED: 'YES' };
+const unsignedReleaseBuild = { CONFIGURATION: 'Release', CODE_SIGNING_ALLOWED: 'NO' };
+const signedReleaseBuild = { CONFIGURATION: 'Release', CODE_SIGNING_ALLOWED: 'YES' };
+
+function identifierUsageIsLimitedTo(contents, identifier, allowedLinePatterns) {
+  const lines = contents.split(/\r?\n/).filter((line) => new RegExp(`\\b${identifier}\\b`).test(line));
+  return lines.length > 0 && lines.every((line) => allowedLinePatterns.some((pattern) => pattern.test(line)));
+}
+
+const serviceRoleKeyUsageIsConstrained = identifierUsageIsLimitedTo(edge, 'serviceRoleKey', [
+  /const\s+serviceRoleKey\s*=\s*Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/,
+  /createClient\(supabaseUrl,\s*serviceRoleKey\b/,
+  /!serviceRoleKey\b/,
+]);
+const adminClientUsageIsConstrained = identifierUsageIsLimitedTo(edge, 'adminClient', [
+  /const\s+adminClient\s*=\s*createClient\(/,
+  /adminClient\.from\("scan_results"\)\.insert\(/,
+]);
+
+function appBuildConfigurations(contents) {
+  const configurations = [];
+  const pattern = /^\t\t[A-F0-9]+ \/\* (Debug|Release) \*\/ = \{\n\t\t\tisa = XCBuildConfiguration;([\s\S]*?)^\t\t\};/gm;
+  for (const match of contents.matchAll(pattern)) {
+    if (/\bPRODUCT_BUNDLE_IDENTIFIER\s*=\s*com\.juliosuas\.rocio\s*;/.test(match[2])) {
+      configurations.push({ name: match[1], body: match[2] });
+    }
+  }
+  return configurations;
+}
+
+const rocioBuildConfigurations = appBuildConfigurations(project);
+const requiredBuildConfigurationNames = ['Debug', 'Release'];
+const rocioBuildConfigurationNamed = (name) =>
+  rocioBuildConfigurations.find((configuration) => configuration.name === name);
+
+function functionHeader(functionName) {
+  const escapedName = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const start = migration.search(new RegExp(
+    `create\\s+(?:or\\s+replace\\s+)?function\\s+${escapedName}\\s*\\(`,
+    'i',
+  ));
+  if (start < 0) return '';
+  const definition = migration.slice(start);
+  const bodyStart = definition.search(/\bas\s+\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/i);
+  return bodyStart < 0 ? '' : definition.slice(0, bodyStart);
+}
+
+const requiredSecurityDefinerFunctions = [
+  'public.set_analytics_enabled',
+  'public.handle_new_user',
+  'public.consume_scan_quota',
+  'public.delete_my_account',
+];
+const allSecurityDefinersHaveEmptySearchPath =
+  !/\bsecurity\s+definer\b(?!\s+set\s+search_path\s*=\s*'')/i.test(migration);
 
 const checks = [
+  ['single-canonical-migration', singleCanonicalMigration],
   ['manual-jwt-configured', config.includes('verify_jwt = false') && config.includes('validates it with auth.getUser')],
   ['preflight-allowed', edge.includes('if (req.method === "OPTIONS")')],
   ['row-level-security', migration.includes('enable row level security') && migration.includes('auth.uid() = user_id')],
@@ -139,7 +199,10 @@ const checks = [
   ['analytics-opt-out-rpc', migration.includes('set_analytics_enabled(enabled boolean)') && settings.includes('setAnalyticsEnabled(enabled)')],
   ['quota-variable-safe', migration.includes('current_uid uuid := auth.uid()') && !migration.includes('current_user uuid :=')],
   ['security-definer-search-path',
-    securityDefinerSettings.length === 4 && securityDefinerSettings.every((setting) => setting.endsWith("= ''"))],
+    requiredSecurityDefinerFunctions.every((functionName) => {
+      const header = functionHeader(functionName);
+      return /\bsecurity\s+definer\b/i.test(header) && /\bset\s+search_path\s*=\s*''(?:\s|$)/i.test(header);
+    }) && allSecurityDefinersHaveEmptySearchPath],
   ['locale-normalized',
     migration.includes("pg_catalog.lower(coalesce(new.raw_user_meta_data->>'locale', '')) = 'es'")],
   ['bounded-client-data',
@@ -153,7 +216,7 @@ const checks = [
     edge.includes('Deno.env.get("PLANT_ID_API_KEY")') &&
     edge.includes('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")')],
   ['no-client-secret-leakage', !clientSecretPattern.test(clientSource)],
-  ['service-role-key-not-leaked', serviceRoleKeyReferences.length === 3 && adminClientReferences.length === 2],
+  ['service-role-key-not-leaked', serviceRoleKeyUsageIsConstrained && adminClientUsageIsConstrained],
   ['separate-user-admin-clients',
     edge.includes('createClient(supabaseUrl, anonKey') &&
     edge.includes('createClient(supabaseUrl, serviceRoleKey') &&
@@ -172,22 +235,35 @@ const checks = [
   ['local-config-ignored', gitignore.split(/\r?\n/).includes(localConfigPath) && !repositoryFiles.includes(localConfigPath)],
   ['example-public-key-only', localXcconfigExample.includes('sb_publishable_<project-key>') && !localXcconfigExample.includes('sb_secret_<')],
   ['debug-release-consume-shared-config',
-    occurrences(project, 'baseConfigurationReference = 020000000000000000000040 /* Rocio.xcconfig */;') === 2 &&
-      occurrences(project, 'INFOPLIST_FILE = Rocio/Resources/Info.plist;') === 2 &&
+    requiredBuildConfigurationNames.every((name) => {
+      const configuration = rocioBuildConfigurationNamed(name);
+      return configuration &&
+        /baseConfigurationReference\s*=\s*020000000000000000000040 \/\* Rocio\.xcconfig \*\/;/.test(configuration.body) &&
+        /INFOPLIST_FILE\s*=\s*Rocio\/Resources\/Info\.plist;/.test(configuration.body);
+    }) &&
       appInfoPlist.includes('<string>$(ROCIO_SUPABASE_PUBLISHABLE_KEY)</string>')],
   ['client-build-rejects-secret-keys',
     project.includes('0C0000000000000000000040 /* Validate Supabase Client Key */') &&
-      validateClientKey('') === 0 &&
-      validateClientKey(fakePublishableKey) === 0 &&
-      validateClientKey(fakeSecretKey) !== 0 &&
-      validateClientKey('legacy-service-role-jwt') !== 0],
-  ['project-url-retained', occurrences(project, 'ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";') === 2],
+      validateClientKey('', debugBuild) === 0 &&
+      validateClientKey('', unsignedReleaseBuild) === 0 &&
+      validateClientKey('', signedReleaseBuild) !== 0 &&
+      validateClientKey(fakePublishableKey, signedReleaseBuild) === 0 &&
+      validateClientKey(fakeSecretKey, signedReleaseBuild) !== 0 &&
+      validateClientKey('legacy-service-role-jwt', signedReleaseBuild) !== 0],
+  ['project-url-retained', requiredBuildConfigurationNames.every((name) =>
+    rocioBuildConfigurationNamed(name)?.body.includes('ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";'))],
   ['no-supabase-client-key-committed', credentialFiles.length === 0 && oversizedTextFiles.length === 0],
   ['privacy-disclosure', privacy.includes('Plant.id/Kindwise') && privacy.includes('Data Linked To The User')],
 ];
 
 console.table(checks.map(([id, pass]) => ({ id, pass })));
 const failed = checks.filter(([, pass]) => !pass).map(([id]) => id);
+if (!singleCanonicalMigration) {
+  console.error(
+    `Expected exactly one canonical SQL migration, found ${migrations.length}. ` +
+    'Before adding migration history, move this audit to an ephemeral database or schema snapshot.',
+  );
+}
 if (credentialFiles.length) {
   console.error(`Supabase client/server credential detected in: ${credentialFiles.join(', ')}`);
 }
@@ -195,4 +271,4 @@ if (oversizedTextFiles.length) {
   console.error(`Text files exceed the credential audit size limit: ${oversizedTextFiles.join(', ')}`);
 }
 console.log(JSON.stringify({ total: checks.length, passed: checks.length - failed.length, failed }, null, 2));
-if (failed.length) process.exit(1);
+if (failed.length || credentialFiles.length || oversizedTextFiles.length) process.exitCode = 1;

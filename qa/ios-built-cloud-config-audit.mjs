@@ -12,12 +12,23 @@ const converted = spawnSync(
   ['-convert', 'json', '-o', '-', infoPlistPath],
   { encoding: 'utf8' },
 );
+if (converted.error) {
+  console.error(`Unable to inspect built Info.plist: ${converted.error.message}`);
+  process.exit(2);
+}
 if (converted.status !== 0) {
-  console.error(converted.stderr.trim());
+  const detail = typeof converted.stderr === 'string' ? converted.stderr.trim() : '';
+  console.error(detail || `plutil failed with exit status ${converted.status ?? 'unknown'}`);
   process.exit(2);
 }
 
-const info = JSON.parse(converted.stdout);
+let info;
+try {
+  info = JSON.parse(converted.stdout ?? '');
+} catch (error) {
+  console.error(`plutil returned invalid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(2);
+}
 const checks = [
   ['project URL is bundled', info.ROCIOSupabaseURL === 'https://gnumzynfewmurvykopxq.supabase.co'],
   ['public key entry exists', Object.hasOwn(info, 'ROCIOSupabaseAnonKey')],

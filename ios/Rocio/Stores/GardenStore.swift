@@ -33,10 +33,13 @@ final class GardenStore: ObservableObject {
 
     func update(_ plant: GardenPlant, nickname: String, status: PlantStatus, notes: String) {
         guard let index = plants.firstIndex(where: { $0.id == plant.id }) else { return }
-        plants[index].nickname = nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? plant.nickname : nickname
-        plants[index].status = status
-        plants[index].notes = notes
-        plants[index].updatedAt = Date()
+        let previousNickname = plants[index].nickname
+        var updatedPlant = plants[index]
+        updatedPlant.nickname = nickname
+        updatedPlant.status = status
+        updatedPlant.notes = notes
+        updatedPlant.updatedAt = Date()
+        plants[index] = updatedPlant.normalizingTextFields(nicknameFallback: previousNickname)
         persist()
         cloudChangeHandler?(.upsert(plants[index]))
     }
@@ -68,8 +71,11 @@ final class GardenStore: ObservableObject {
     }
 
     func replaceFromCloud(_ cloudPlants: [GardenPlant]) {
-        guard cloudPlants != plants else { return }
-        plants = cloudPlants.sorted { $0.addedAt < $1.addedAt }
+        let normalizedPlants = cloudPlants
+            .map { $0.normalizingTextFields() }
+            .sorted { $0.addedAt < $1.addedAt }
+        guard normalizedPlants != plants else { return }
+        plants = normalizedPlants
         persist()
     }
 

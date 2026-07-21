@@ -45,6 +45,59 @@ struct GardenPlant: Identifiable, Codable, Equatable, Hashable {
         notes = try container.decode(String.self, forKey: .notes)
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? addedAt
     }
+
+    func normalizingTextFields(nicknameFallback: String? = nil) -> GardenPlant {
+        var normalized = self
+        normalized.nickname = GardenPlantTextNormalizer.normalizeNickname(
+            nickname,
+            fallback: nicknameFallback ?? flowerId
+        )
+        normalized.notes = GardenPlantTextNormalizer.normalizeNotes(notes)
+        return normalized
+    }
+}
+
+enum GardenPlantTextNormalizer {
+    static let nicknameMaximumUnicodeScalarCount = 80
+    static let notesMaximumUnicodeScalarCount = 2_000
+
+    static func normalizeNickname(_ value: String, fallback: String) -> String {
+        for candidate in [value, fallback, "Plant"] {
+            let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalized = prefixWithoutSplittingCharacter(
+                trimmed,
+                maximumUnicodeScalarCount: nicknameMaximumUnicodeScalarCount
+            )
+            if !normalized.isEmpty {
+                return normalized
+            }
+        }
+        return "Plant"
+    }
+
+    static func normalizeNotes(_ value: String) -> String {
+        prefixWithoutSplittingCharacter(
+            value,
+            maximumUnicodeScalarCount: notesMaximumUnicodeScalarCount
+        )
+    }
+
+    private static func prefixWithoutSplittingCharacter(
+        _ value: String,
+        maximumUnicodeScalarCount: Int
+    ) -> String {
+        guard value.unicodeScalars.count > maximumUnicodeScalarCount else { return value }
+
+        var result = ""
+        var unicodeScalarCount = 0
+        for character in value {
+            let characterScalarCount = character.unicodeScalars.count
+            guard unicodeScalarCount + characterScalarCount <= maximumUnicodeScalarCount else { break }
+            result.append(character)
+            unicodeScalarCount += characterScalarCount
+        }
+        return result
+    }
 }
 
 enum PlantStatus: String, Codable, CaseIterable, Identifiable {
