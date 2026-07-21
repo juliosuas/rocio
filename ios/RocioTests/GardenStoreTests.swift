@@ -159,6 +159,30 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertTrue(store.plants.isEmpty)
     }
 
+    func testDeleteAndResetEmitDatedCloudTombstones() {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Rosa")
+        let deleteDate = Date(timeIntervalSince1970: 1_800_000_100)
+        let resetDate = Date(timeIntervalSince1970: 1_800_000_200)
+        let store = GardenStore(plants: [plant])
+        var changes: [GardenChange] = []
+        store.cloudChangeHandler = { changes.append($0) }
+
+        store.delete(plant, at: deleteDate)
+        store.reset(at: resetDate)
+
+        XCTAssertEqual(changes.count, 2)
+        guard case let .delete(deletedID, at: occurredAt) = changes[0] else {
+            return XCTFail("Expected a dated plant tombstone")
+        }
+        XCTAssertEqual(deletedID, plant.id)
+        XCTAssertEqual(occurredAt, deleteDate)
+
+        guard case let .reset(at: occurredAt) = changes[1] else {
+            return XCTFail("Expected a dated garden reset")
+        }
+        XCTAssertEqual(occurredAt, resetDate)
+    }
+
     func testLocalDataResetClearsPlantsAndCancelsPendingNotifications() {
         let store = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
         var didCancelPendingNotifications = false

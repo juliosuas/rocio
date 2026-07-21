@@ -27,11 +27,16 @@ function migrationSources() {
 
 const config = read('supabase/config.toml');
 const migrations = migrationSources();
-const singleCanonicalMigration = migrations.length === 1;
-// This repository currently treats its one migration as the canonical schema.
-// Never concatenate migration history and call it effective state: before adding
-// a second migration, replace this strategy with an ephemeral DB or schema snapshot.
-const migration = singleCanonicalMigration ? migrations[0].sql : '';
+const foundationMigrationFile = '20260709000100_rocio_cloud_foundation.sql';
+const tombstoneMigrationFile = '20260721000100_preserve_garden_deletions.sql';
+const canonicalMigrationFiles = [foundationMigrationFile, tombstoneMigrationFile];
+const migrationFiles = migrations.map(({ file }) => file);
+const canonicalMigrationHistory =
+  JSON.stringify(migrationFiles) === JSON.stringify(canonicalMigrationFiles);
+const foundationMigration =
+  migrations.find(({ file }) => file === foundationMigrationFile)?.sql ?? '';
+const tombstoneMigration =
+  migrations.find(({ file }) => file === tombstoneMigrationFile)?.sql ?? '';
 const edge = read('supabase/functions/identify-flower/index.ts');
 const project = read('ios/Rocio.xcodeproj/project.pbxproj');
 const clientSource = `${read('index.html')}\n${clientSourceUnder('ios')}`;
@@ -43,8 +48,8 @@ const gitignore = read('.gitignore');
 const scanner = read('ios/Rocio/Views/Scanner/ScannerView.swift');
 const settings = read('ios/Rocio/Views/Settings/SettingsView.swift');
 const privacy = read('APP_STORE_PRIVACY_ANSWERS.md');
-const policyStatements = migration.match(/create policy[\s\S]*?;/gi) || [];
-const grantStatements = migration.match(/grant[\s\S]*?;/gi) || [];
+const policyStatements = foundationMigration.match(/create policy[\s\S]*?;/gi) || [];
+const grantStatements = foundationMigration.match(/grant[\s\S]*?;/gi) || [];
 const clientSecretPattern = /\b(?:SUPABASE_SERVICE_ROLE_KEY|PLANT_ID_API_KEY)\b|\bsb_secret_[A-Za-z0-9_-]{16,}\b|\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/;
 
 const listedFiles = spawnSync(
@@ -153,65 +158,112 @@ const requiredBuildConfigurationNames = ['Debug', 'Release'];
 const rocioBuildConfigurationNamed = (name) =>
   rocioBuildConfigurations.find((configuration) => configuration.name === name);
 
-function functionHeader(functionName) {
+function functionHeader(functionName, source) {
   const escapedName = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const start = migration.search(new RegExp(
+  const start = source.search(new RegExp(
     `create\\s+(?:or\\s+replace\\s+)?function\\s+${escapedName}\\s*\\(`,
     'i',
   ));
   if (start < 0) return '';
-  const definition = migration.slice(start);
+  const definition = source.slice(start);
   const bodyStart = definition.search(/\bas\s+\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/i);
   return bodyStart < 0 ? '' : definition.slice(0, bodyStart);
 }
 
 const requiredSecurityDefinerFunctions = [
-  'public.set_analytics_enabled',
-  'public.handle_new_user',
-  'public.consume_scan_quota',
-  'public.delete_my_account',
+  ['public.set_analytics_enabled', foundationMigration],
+  ['public.handle_new_user', foundationMigration],
+  ['public.consume_scan_quota', foundationMigration],
+  ['public.delete_my_account', foundationMigration],
+  ['public.reject_stale_garden_update', tombstoneMigration],
+  ['public.reject_watering_for_deleted_plant', tombstoneMigration],
+  ['public.reset_my_garden', tombstoneMigration],
 ];
 const allSecurityDefinersHaveEmptySearchPath =
-  !/\bsecurity\s+definer\b(?!\s+set\s+search_path\s*=\s*'')/i.test(migration);
+  [foundationMigration, tombstoneMigration].every((source) =>
+    !/\bsecurity\s+definer\b(?!\s+set\s+search_path\s*=\s*'')/i.test(source));
+
+const oldTombstoneGuard = tombstoneMigration.search(/if\s+old\.deleted_at\s+is\s+not\s+null\s+then/i);
+const incomingTombstoneHandler = tombstoneMigration.indexOf(
+  'if new.deleted_at is not null then',
+  oldTombstoneGuard,
+);
+const staleActiveUpdateGuard = tombstoneMigration.search(/if\s+new\.updated_at\s*<\s*old\.updated_at\s+then/i);
+const tombstoneOrderingIsSafe =
+  oldTombstoneGuard >= 0 &&
+  incomingTombstoneHandler > oldTombstoneGuard &&
+  staleActiveUpdateGuard > incomingTombstoneHandler;
+const tombstoneMigrationDoesNotWeakenFoundation =
+  !/\b(?:create|alter|drop)\s+policy\b/i.test(tombstoneMigration) &&
+  !/\bdisable\s+row\s+level\s+security\b/i.test(tombstoneMigration) &&
+  !/\b(?:consume_scan_quota|scan_usage|scan_results|analytics_events)\b/i.test(tombstoneMigration);
 
 const checks = [
-  ['single-canonical-migration', singleCanonicalMigration],
+  ['canonical-migration-history', canonicalMigrationHistory && foundationMigration.length > 0 && tombstoneMigration.length > 0],
   ['manual-jwt-configured', config.includes('verify_jwt = false') && config.includes('validates it with auth.getUser')],
   ['preflight-allowed', edge.includes('if (req.method === "OPTIONS")')],
-  ['row-level-security', migration.includes('enable row level security') && migration.includes('auth.uid() = user_id')],
+  ['row-level-security', foundationMigration.includes('enable row level security') && foundationMigration.includes('auth.uid() = user_id')],
   ['scan-results-no-client-insert-policy',
-    !migration.includes('scan_results_insert_own') &&
+    !foundationMigration.includes('scan_results_insert_own') &&
     !policyStatements.some((statement) => /on public\.scan_results/i.test(statement) && /for insert/i.test(statement))],
   ['explicit-table-acls',
-    migration.includes('revoke all on table public.scan_results from public, anon, authenticated') &&
-    migration.includes('grant select on table public.scan_results to authenticated') &&
-    migration.includes('grant insert on table public.scan_results to service_role') &&
+    foundationMigration.includes('revoke all on table public.scan_results from public, anon, authenticated') &&
+    foundationMigration.includes('grant select on table public.scan_results to authenticated') &&
+    foundationMigration.includes('grant insert on table public.scan_results to service_role') &&
+    foundationMigration.includes('grant select, insert, update, delete on table public.garden_plants to authenticated') &&
+    tombstoneMigration.includes('revoke delete on table public.garden_plants from authenticated') &&
     !grantStatements.some((statement) =>
       /insert/i.test(statement) &&
       /on table public\.scan_results/i.test(statement) &&
       /to authenticated/i.test(statement))],
   ['watering-events-same-user-fk',
-    migration.includes('constraint garden_plants_owner_id_unique unique (user_id, id)') &&
-    migration.includes('foreign key (user_id, plant_id)') &&
-    migration.includes('references public.garden_plants(user_id, id)')],
-  ['atomic-quota', migration.includes('consume_scan_quota') && migration.includes("current_plan = 'pro' then 50 else 5")],
-  ['plan-not-user-editable', !migration.includes('profiles_update_own')],
-  ['analytics-opt-out-rpc', migration.includes('set_analytics_enabled(enabled boolean)') && settings.includes('setAnalyticsEnabled(enabled)')],
-  ['quota-variable-safe', migration.includes('current_uid uuid := auth.uid()') && !migration.includes('current_user uuid :=')],
+    foundationMigration.includes('constraint garden_plants_owner_id_unique unique (user_id, id)') &&
+    foundationMigration.includes('foreign key (user_id, plant_id)') &&
+    foundationMigration.includes('references public.garden_plants(user_id, id)')],
+  ['watering-events-reject-tombstones',
+    tombstoneMigration.includes('create or replace function public.reject_watering_for_deleted_plant()') &&
+    /before\s+insert\s+on\s+public\.watering_events/i.test(tombstoneMigration) &&
+    tombstoneMigration.includes('and plants.deleted_at is null') &&
+    /for\s+share/i.test(tombstoneMigration) &&
+    tombstoneMigration.includes('watering_requires_active_plant') &&
+    tombstoneMigration.includes('revoke update on table public.watering_events from authenticated')],
+  ['atomic-quota', foundationMigration.includes('consume_scan_quota') && foundationMigration.includes("current_plan = 'pro' then 50 else 5")],
+  ['plan-not-user-editable', !foundationMigration.includes('profiles_update_own')],
+  ['analytics-opt-out-rpc', foundationMigration.includes('set_analytics_enabled(enabled boolean)') && settings.includes('setAnalyticsEnabled(enabled)')],
+  ['quota-variable-safe', foundationMigration.includes('current_uid uuid := auth.uid()') && !foundationMigration.includes('current_user uuid :=')],
   ['security-definer-search-path',
-    requiredSecurityDefinerFunctions.every((functionName) => {
-      const header = functionHeader(functionName);
+    requiredSecurityDefinerFunctions.every(([functionName, source]) => {
+      const header = functionHeader(functionName, source);
       return /\bsecurity\s+definer\b/i.test(header) && /\bset\s+search_path\s*=\s*''(?:\s|$)/i.test(header);
     }) && allSecurityDefinersHaveEmptySearchPath],
   ['locale-normalized',
-    migration.includes("pg_catalog.lower(coalesce(new.raw_user_meta_data->>'locale', '')) = 'es'")],
+    foundationMigration.includes("pg_catalog.lower(coalesce(new.raw_user_meta_data->>'locale', '')) = 'es'")],
   ['bounded-client-data',
-    migration.includes('garden_plants_nickname_length') &&
-    migration.includes('garden_plants_notes_length') &&
-    migration.includes('analytics_events_properties_size') &&
-    migration.includes('scan_results_confidence_range') &&
-    migration.includes('scan_results_candidate_count_range')],
-  ['no-raw-image-column', !migration.match(/create table[\s\S]*?(image|photo)(_url|_data| bytea)/i)],
+    foundationMigration.includes('garden_plants_nickname_length') &&
+    foundationMigration.includes('garden_plants_notes_length') &&
+    foundationMigration.includes('analytics_events_properties_size') &&
+    foundationMigration.includes('scan_results_confidence_range') &&
+    foundationMigration.includes('scan_results_candidate_count_range')],
+  ['no-raw-image-column', !foundationMigration.match(/create table[\s\S]*?(image|photo)(_url|_data| bytea)/i)],
+  ['garden-deletion-tombstones',
+    tombstoneMigration.includes('add column if not exists garden_reset_at timestamptz') &&
+    tombstoneMigration.includes('add column if not exists garden_epoch uuid not null default gen_random_uuid()') &&
+    tombstoneMigration.includes('add column if not exists deleted_at timestamptz') &&
+    tombstoneMigration.includes('add column if not exists garden_epoch uuid') &&
+    /before\s+insert\s+or\s+update\s+on\s+public\.garden_plants/i.test(tombstoneMigration) &&
+    /current_uid\s+is\s+null\s+or\s+current_uid\s*<>\s*new\.user_id/i.test(tombstoneMigration) &&
+    tombstoneMigration.includes('garden_owner_mismatch') &&
+    tombstoneMigration.includes('create or replace function public.reset_my_garden(request_id uuid)') &&
+    tombstoneMigration.includes('grant execute on function public.reset_my_garden(uuid) to authenticated') &&
+    tombstoneOrderingIsSafe],
+  ['garden-reset-idempotent-server-epoch',
+    tombstoneMigration.includes('create table if not exists public.garden_reset_requests') &&
+    tombstoneMigration.includes('primary key (user_id, request_id)') &&
+    tombstoneMigration.includes('requests.request_id = reset_my_garden.request_id') &&
+    tombstoneMigration.includes('return next_epoch') &&
+    tombstoneMigration.includes('new.garden_epoch is distinct from current_epoch') &&
+    tombstoneMigration.includes('revoke all on table public.garden_reset_requests from public, anon, authenticated')],
+  ['tombstone-migration-preserves-security-boundaries', tombstoneMigrationDoesNotWeakenFoundation],
   ['server-only-secrets-loaded',
     edge.includes('Deno.env.get("PLANT_ID_API_KEY")') &&
     edge.includes('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")')],
@@ -229,7 +281,7 @@ const checks = [
   ['service-role-fails-closed', edge.includes('!serviceRoleKey') && edge.includes('service_not_configured')],
   ['quota-empty-result-guarded', edge.includes('if (!quota) return json(req, { error: "quota_unavailable" }, 503)')],
   ['client-photo-consent', scanner.includes('rocio.cloud.photoConsent') && scanner.includes('Send this photo')],
-  ['account-deletion', migration.includes('delete_my_account') && settings.includes('Permanently delete account')],
+  ['account-deletion', foundationMigration.includes('delete_my_account') && settings.includes('Permanently delete account')],
   ['shared-key-default-empty', /^ROCIO_SUPABASE_PUBLISHABLE_KEY =\s*$/m.test(sharedXcconfig)],
   ['optional-local-config', sharedXcconfig.includes('#include? "Local.xcconfig"')],
   ['local-config-ignored', gitignore.split(/\r?\n/).includes(localConfigPath) && !repositoryFiles.includes(localConfigPath)],
@@ -258,10 +310,11 @@ const checks = [
 
 console.table(checks.map(([id, pass]) => ({ id, pass })));
 const failed = checks.filter(([, pass]) => !pass).map(([id]) => id);
-if (!singleCanonicalMigration) {
+if (!canonicalMigrationHistory) {
   console.error(
-    `Expected exactly one canonical SQL migration, found ${migrations.length}. ` +
-    'Before adding migration history, move this audit to an ephemeral database or schema snapshot.',
+    `Expected ordered migration history ${canonicalMigrationFiles.join(', ')}, ` +
+    `found ${migrationFiles.join(', ') || '(none)'}. Update this source audit when the migration chain changes; ` +
+    'the PostgreSQL integration harness remains authoritative for effective state.',
   );
 }
 if (credentialFiles.length) {

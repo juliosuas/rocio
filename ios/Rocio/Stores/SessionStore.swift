@@ -22,6 +22,7 @@ final class SessionStore: ObservableObject {
     private let refreshSession: (AuthSession) async throws -> AuthSession
     private var hasBootstrapped = false
     private var isEndingSession = false
+    private var isPreparingGardenSync = false
     private var gardenSyncTask: Task<Void, Never>?
     private var gardenSyncTaskGeneration = GardenSyncTaskGeneration()
 
@@ -120,6 +121,7 @@ final class SessionStore: ObservableObject {
         do {
             try await client.deleteAccount(session: try await activeSession(from: session))
             savePendingChanges([], userID: session.user.id)
+            clearGardenEpochs(userID: session.user.id)
             gardenStore.clearLocalCache()
             sessionPersistence.clear()
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
@@ -203,16 +205,81 @@ final class SessionStore: ObservableObject {
 
     private func syncGarden(_ gardenStore: GardenStore) async {
         guard let client, let session else { return }
+        isPreparingGardenSync = true
+        defer {
+            isPreparingGardenSync = false
+            if !loadPendingChanges(userID: session.user.id).isEmpty {
+                startPendingFlush()
+            }
+        }
         syncMessage = L10n.text("cloud.syncing", fallback: "Syncing")
         do {
-            guard await flushPendingChanges(client: client, session: session) else {
+            let authoritativeEpochBeforeSync = loadAuthoritativeGardenEpoch(userID: session.user.id)
+            let provisionalEpochBeforeSync = loadProvisionalGardenEpoch(userID: session.user.id)
+            var initialMutationEpoch: UUID?
+            if authoritativeEpochBeforeSync == nil,
+               provisionalEpochBeforeSync == nil,
+               !loadPendingChanges(userID: session.user.id).isEmpty {
+                let initialState = try await client.fetchGardenSyncState(session: session)
+                // Legacy pending changes are safe to adopt only when this
+                // account has never been reset. Otherwise an unmatched epoch
+                // deliberately makes the server tombstone them.
+                if initialState.gardenResetAt == nil {
+                    initialMutationEpoch = initialState.gardenEpoch
+                }
+            }
+
+            guard await flushPendingChanges(
+                client: client,
+                session: session,
+                initialEpoch: initialMutationEpoch
+            ) else {
                 syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
                 return
             }
+            let provisionalEpochAfterFlush = loadProvisionalGardenEpoch(userID: session.user.id)
+            let syncState = try await client.fetchGardenSyncState(session: session)
+            let localBaseline = gardenStore.plants
             let remote = try await client.fetchGarden(session: session)
-            let merged = merge(local: gardenStore.plants, remote: remote)
-            try await client.upsertGarden(merged, session: session)
-            gardenStore.replaceFromCloud(merged)
+            let mayUploadLocalBaseline =
+                authoritativeEpochBeforeSync == syncState.gardenEpoch ||
+                provisionalEpochAfterFlush == syncState.gardenEpoch ||
+                (
+                    authoritativeEpochBeforeSync == nil &&
+                    provisionalEpochAfterFlush == nil &&
+                    syncState.gardenResetAt == nil
+                )
+
+            let authoritativeRemote: [CloudGardenRecord]
+            if mayUploadLocalBaseline {
+                let merged = GardenSyncResolver.resolve(local: localBaseline, remote: remote)
+                try await client.upsertGarden(
+                    merged,
+                    gardenEpoch: syncState.gardenEpoch,
+                    session: session
+                )
+                // Successful no-ops and server-created tombstones must be read
+                // back before the epoch is considered authoritative locally.
+                authoritativeRemote = try await client.fetchGarden(session: session)
+            } else {
+                // The server reset in a different epoch. Do not relabel stale
+                // local rows with the new epoch; the cloud snapshot wins.
+                authoritativeRemote = remote
+            }
+            let finalSyncState = try await client.fetchGardenSyncState(session: session)
+            guard finalSyncState.gardenEpoch == syncState.gardenEpoch else {
+                // A reset raced this multi-request snapshot. Keep the older
+                // local cursor so all writes fail closed until the next sync.
+                throw BackendError.invalidResponse
+            }
+            let reconciled = GardenSyncResolver.reconcileAuthoritative(
+                baseline: localBaseline,
+                current: gardenStore.plants,
+                remote: authoritativeRemote
+            )
+            gardenStore.replaceFromCloud(reconciled)
+            saveAuthoritativeGardenEpoch(syncState.gardenEpoch, userID: session.user.id)
+            clearProvisionalGardenEpoch(userID: session.user.id)
             syncMessage = L10n.text("cloud.synced", fallback: "Synced")
         } catch {
             syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
@@ -226,14 +293,6 @@ final class SessionStore: ObservableObject {
         try sessionPersistence.save(refreshed)
         state = .signedIn(refreshed)
         return refreshed
-    }
-
-    private func merge(local: [GardenPlant], remote: [GardenPlant]) -> [GardenPlant] {
-        var merged = Dictionary(uniqueKeysWithValues: remote.map { ($0.id, $0) })
-        for plant in local where plant.updatedAt >= (merged[plant.id]?.updatedAt ?? .distantPast) {
-            merged[plant.id] = plant
-        }
-        return merged.values.sorted { $0.addedAt < $1.addedAt }
     }
 
     private var analyticsEnabled: Bool {
@@ -251,7 +310,7 @@ final class SessionStore: ObservableObject {
     }
 
     private func startPendingFlush() {
-        guard !isEndingSession, gardenSyncTask == nil else { return }
+        guard !isEndingSession, !isPreparingGardenSync, gardenSyncTask == nil else { return }
         let generation = gardenSyncTaskGeneration.begin()
         gardenSyncTask = Task { [weak self] in
             guard let self else { return }
@@ -285,7 +344,12 @@ final class SessionStore: ObservableObject {
         startPendingFlush()
     }
 
-    private func flushPendingChanges(client: RocioBackendClient, session: AuthSession) async -> Bool {
+    private func flushPendingChanges(
+        client: RocioBackendClient,
+        session: AuthSession,
+        initialEpoch: UUID? = nil
+    ) async -> Bool {
+        var activeEpoch = initialEpoch ?? loadMutationGardenEpoch(userID: session.user.id) ?? UUID()
         while !Task.isCancelled {
             guard let next = loadPendingChanges(userID: session.user.id).first else { return true }
             do {
@@ -293,12 +357,24 @@ final class SessionStore: ObservableObject {
                 switch next.kind {
                 case .upsert:
                     guard let plant = next.plant else { throw BackendError.invalidResponse }
-                    try await client.upsertGarden([plant], session: active)
+                    try await client.upsertGarden(
+                        [plant],
+                        gardenEpoch: activeEpoch,
+                        session: active
+                    )
                 case .delete:
                     guard let id = next.plantID else { throw BackendError.invalidResponse }
-                    try await client.deletePlant(id: id, session: active)
+                    try await client.deletePlant(
+                        id: id,
+                        deletedAt: next.occurredAt ?? Date(),
+                        session: active
+                    )
                 case .reset:
-                    try await client.deleteGarden(session: active)
+                    activeEpoch = try await client.resetGarden(requestID: next.id, session: active)
+                    // This provisional epoch is safe for later mutations
+                    // because a locally initiated reset already cleared the
+                    // local garden. It is not used to bless a stale baseline.
+                    saveProvisionalGardenEpoch(activeEpoch, userID: session.user.id)
                 }
                 guard !Task.isCancelled else { return false }
                 var latest = loadPendingChanges(userID: session.user.id)
@@ -329,6 +405,47 @@ final class SessionStore: ObservableObject {
 
     private func pendingKey(_ userID: UUID) -> String {
         "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+    }
+
+    private func loadMutationGardenEpoch(userID: UUID) -> UUID? {
+        loadProvisionalGardenEpoch(userID: userID) ?? loadAuthoritativeGardenEpoch(userID: userID)
+    }
+
+    private func loadAuthoritativeGardenEpoch(userID: UUID) -> UUID? {
+        loadGardenEpoch(forKey: authoritativeGardenEpochKey(userID))
+    }
+
+    private func loadProvisionalGardenEpoch(userID: UUID) -> UUID? {
+        loadGardenEpoch(forKey: provisionalGardenEpochKey(userID))
+    }
+
+    private func loadGardenEpoch(forKey key: String) -> UUID? {
+        UserDefaults.standard.string(forKey: key).flatMap(UUID.init(uuidString:))
+    }
+
+    private func saveAuthoritativeGardenEpoch(_ epoch: UUID, userID: UUID) {
+        UserDefaults.standard.set(epoch.uuidString.lowercased(), forKey: authoritativeGardenEpochKey(userID))
+    }
+
+    private func saveProvisionalGardenEpoch(_ epoch: UUID, userID: UUID) {
+        UserDefaults.standard.set(epoch.uuidString.lowercased(), forKey: provisionalGardenEpochKey(userID))
+    }
+
+    private func clearProvisionalGardenEpoch(userID: UUID) {
+        UserDefaults.standard.removeObject(forKey: provisionalGardenEpochKey(userID))
+    }
+
+    private func clearGardenEpochs(userID: UUID) {
+        UserDefaults.standard.removeObject(forKey: authoritativeGardenEpochKey(userID))
+        clearProvisionalGardenEpoch(userID: userID)
+    }
+
+    private func authoritativeGardenEpochKey(_ userID: UUID) -> String {
+        "rocio.cloud.garden-epoch.authoritative.\(userID.uuidString.lowercased())"
+    }
+
+    private func provisionalGardenEpochKey(_ userID: UUID) -> String {
+        "rocio.cloud.garden-epoch.provisional.\(userID.uuidString.lowercased())"
     }
 }
 
@@ -383,12 +500,13 @@ struct GardenSyncTaskGeneration {
     }
 }
 
-private struct PendingCloudChange: Codable {
+struct PendingCloudChange: Codable {
     enum Kind: String, Codable { case upsert, delete, reset }
     let id: UUID
     let kind: Kind
     let plant: GardenPlant?
     let plantID: UUID?
+    let occurredAt: Date?
 
     init(_ change: GardenChange) {
         id = UUID()
@@ -397,14 +515,89 @@ private struct PendingCloudChange: Codable {
             kind = .upsert
             self.plant = plant
             plantID = nil
-        case let .delete(id):
+            occurredAt = nil
+        case let .delete(id, at: date):
             kind = .delete
             plant = nil
             plantID = id
-        case .reset:
+            occurredAt = date
+        case let .reset(at: date):
             kind = .reset
             plant = nil
             plantID = nil
+            occurredAt = date
+        }
+    }
+}
+
+struct GardenSyncResolver {
+    static func resolve(local: [GardenPlant], remote: [CloudGardenRecord]) -> [GardenPlant] {
+        let remoteByID = Dictionary(uniqueKeysWithValues: remote.map { ($0.id, $0) })
+        var activeByID = Dictionary(
+            uniqueKeysWithValues: remote.compactMap { record in
+                record.deletedAt == nil ? (record.id, record.gardenPlant) : nil
+            }
+        )
+
+        for plant in local {
+            if let remoteRecord = remoteByID[plant.id] {
+                // A tombstone is irreversible for this UUID. A user who wants
+                // the plant again creates a new garden entry with a new UUID.
+                guard remoteRecord.deletedAt == nil else {
+                    activeByID.removeValue(forKey: plant.id)
+                    continue
+                }
+
+                if plant.updatedAt >= remoteRecord.updatedAt {
+                    activeByID[plant.id] = plant
+                }
+            } else {
+                activeByID[plant.id] = plant
+            }
+        }
+
+        return sorted(activeByID.values)
+    }
+
+    static func reconcileAuthoritative(
+        baseline: [GardenPlant],
+        current: [GardenPlant],
+        remote: [CloudGardenRecord]
+    ) -> [GardenPlant] {
+        let baselineByID = Dictionary(uniqueKeysWithValues: baseline.map { ($0.id, $0) })
+        let currentByID = Dictionary(uniqueKeysWithValues: current.map { ($0.id, $0) })
+        let tombstonedIDs = Set(remote.compactMap { $0.deletedAt == nil ? nil : $0.id })
+        var activeByID = Dictionary(
+            uniqueKeysWithValues: remote.compactMap { record in
+                record.deletedAt == nil ? (record.id, record.gardenPlant) : nil
+            }
+        )
+
+        // Preserve only mutations that happened while the network sync was in
+        // flight. Unchanged baseline rows absent from the authoritative fetch
+        // were rejected by the server and must disappear locally.
+        let deletedDuringSync = Set(baselineByID.keys).subtracting(currentByID.keys)
+        for id in deletedDuringSync {
+            activeByID.removeValue(forKey: id)
+        }
+
+        for plant in current {
+            let changedDuringSync = baselineByID[plant.id].map { $0 != plant } ?? true
+            guard changedDuringSync, !tombstonedIDs.contains(plant.id) else { continue }
+
+            if let remotePlant = activeByID[plant.id], remotePlant.updatedAt > plant.updatedAt {
+                continue
+            }
+            activeByID[plant.id] = plant
+        }
+
+        return sorted(activeByID.values)
+    }
+
+    private static func sorted<S: Sequence>(_ plants: S) -> [GardenPlant] where S.Element == GardenPlant {
+        plants.sorted {
+            if $0.addedAt != $1.addedAt { return $0.addedAt < $1.addedAt }
+            return $0.id.uuidString < $1.id.uuidString
         }
     }
 }

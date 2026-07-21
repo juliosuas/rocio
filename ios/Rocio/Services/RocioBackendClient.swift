@@ -50,29 +50,57 @@ actor RocioBackendClient {
         _ = try await responseData(for: request)
     }
 
-    func fetchGarden(session: AuthSession) async throws -> [GardenPlant] {
-        let query = "/rest/v1/garden_plants?select=id,flower_id,nickname,added_at,last_watered_at,status,notes,updated_at&order=updated_at.desc"
+    func fetchGarden(session: AuthSession) async throws -> [CloudGardenRecord] {
+        let query = "/rest/v1/garden_plants?select=id,flower_id,nickname,added_at,last_watered_at,status,notes,updated_at,deleted_at&order=updated_at.desc"
         let request = try request(path: query, method: "GET", token: session.accessToken)
         let data = try await responseData(for: request)
-        return try decoder.decode([CloudGardenPlant].self, from: data).map(\.gardenPlant)
+        return try decoder.decode([CloudGardenRecord].self, from: data)
     }
 
-    func upsertGarden(_ plants: [GardenPlant], session: AuthSession) async throws {
+    func fetchGardenSyncState(session: AuthSession) async throws -> CloudGardenSyncState {
+        let query = "/rest/v1/profiles?select=garden_epoch,garden_reset_at&limit=1"
+        let request = try request(path: query, method: "GET", token: session.accessToken)
+        let data = try await responseData(for: request)
+        guard let state = try decoder.decode([CloudGardenSyncState].self, from: data).first else {
+            throw BackendError.invalidResponse
+        }
+        return state
+    }
+
+    func upsertGarden(_ plants: [GardenPlant], gardenEpoch: UUID, session: AuthSession) async throws {
         guard !plants.isEmpty else { return }
-        let payload = plants.map { GardenPlantUpsertPayload(plant: $0, userID: session.user.id) }
+        let payload = plants.map {
+            GardenPlantUpsertPayload(
+                plant: $0,
+                userID: session.user.id,
+                gardenEpoch: gardenEpoch
+            )
+        }
         var request = try request(path: "/rest/v1/garden_plants?on_conflict=id", method: "POST", token: session.accessToken, body: payload)
         request.setValue("resolution=merge-duplicates,return=minimal", forHTTPHeaderField: "Prefer")
         _ = try await responseData(for: request)
     }
 
-    func deletePlant(id: UUID, session: AuthSession) async throws {
-        let request = try request(path: "/rest/v1/garden_plants?id=eq.\(id.uuidString.lowercased())", method: "DELETE", token: session.accessToken)
+    func deletePlant(id: UUID, deletedAt: Date, session: AuthSession) async throws {
+        let payload = GardenDeletionPayload(deletedAt: deletedAt, updatedAt: deletedAt)
+        let request = try request(
+            path: "/rest/v1/garden_plants?id=eq.\(id.uuidString.lowercased())",
+            method: "PATCH",
+            token: session.accessToken,
+            body: payload
+        )
         _ = try await responseData(for: request)
     }
 
-    func deleteGarden(session: AuthSession) async throws {
-        let request = try request(path: "/rest/v1/garden_plants?user_id=eq.\(session.user.id.uuidString.lowercased())", method: "DELETE", token: session.accessToken)
-        _ = try await responseData(for: request)
+    func resetGarden(requestID: UUID, session: AuthSession) async throws -> UUID {
+        let request = try request(
+            path: "/rest/v1/rpc/reset_my_garden",
+            method: "POST",
+            token: session.accessToken,
+            body: GardenResetPayload(requestID: requestID)
+        )
+        let data = try await responseData(for: request)
+        return try decoder.decode(UUID.self, from: data)
     }
 
     func identify(image: UIImage, session: AuthSession) async throws -> RemoteIdentificationResponse {
@@ -169,6 +197,11 @@ private struct Credentials: Encodable { let email: String; let password: String 
 private struct RefreshPayload: Encodable { let refreshToken: String }
 private struct SignUpPayload: Encodable { let email: String; let password: String; let data: [String: String] }
 private struct EmptyPayload: Encodable {}
+private struct GardenResetPayload: Encodable { let requestID: UUID }
+struct GardenDeletionPayload: Encodable, Equatable {
+    let deletedAt: Date
+    let updatedAt: Date
+}
 private struct ScanPayload: Encodable { let image: String; let consent: Bool }
 private struct AnalyticsPayload: Encodable { let userID: UUID; let name: String; let properties: [String: String] }
 private struct AnalyticsPreferencePayload: Encodable { let enabled: Bool }
@@ -198,8 +231,9 @@ struct GardenPlantUpsertPayload: Encodable {
     let status: String
     let notes: String
     let updatedAt: Date
+    let gardenEpoch: UUID
 
-    init(plant: GardenPlant, userID: UUID) {
+    init(plant: GardenPlant, userID: UUID, gardenEpoch: UUID) {
         let normalizedPlant = plant.normalizingTextFields()
         id = normalizedPlant.id
         self.userID = userID
@@ -210,24 +244,47 @@ struct GardenPlantUpsertPayload: Encodable {
         status = normalizedPlant.status.rawValue
         notes = normalizedPlant.notes
         updatedAt = normalizedPlant.updatedAt
+        self.gardenEpoch = gardenEpoch
     }
 }
 
-private struct CloudGardenPlant: Decodable {
+struct CloudGardenSyncState: Decodable, Equatable {
+    let gardenEpoch: UUID
+    let gardenResetAt: Date?
+}
+
+struct CloudGardenRecord: Decodable, Equatable {
     let id: UUID
-    let userID: UUID?
-    let flowerID: String
+    // JSONDecoder.convertFromSnakeCase maps user_id/flower_id to Id, not ID.
+    // Keep these DTO names aligned with that behavior so production responses
+    // decode without custom per-field workarounds.
+    let userId: UUID?
+    let flowerId: String
     let nickname: String
     let addedAt: Date
     let lastWateredAt: Date
     let status: String
     let notes: String
     let updatedAt: Date
+    let deletedAt: Date?
+
+    init(plant: GardenPlant, userID: UUID? = nil, deletedAt: Date?) {
+        id = plant.id
+        userId = userID
+        flowerId = plant.flowerId
+        nickname = plant.nickname
+        addedAt = plant.addedAt
+        lastWateredAt = plant.lastWateredAt
+        status = plant.status.rawValue
+        notes = plant.notes
+        updatedAt = plant.updatedAt
+        self.deletedAt = deletedAt
+    }
 
     var gardenPlant: GardenPlant {
         GardenPlant(
             id: id,
-            flowerId: flowerID,
+            flowerId: flowerId,
             nickname: nickname,
             addedAt: addedAt,
             lastWateredAt: lastWateredAt,

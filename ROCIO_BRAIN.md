@@ -1,6 +1,6 @@
 # Rocio Project Brain
 
-Last updated: 2026-07-20
+Last updated: 2026-07-21
 
 This is the project brain for turning Rocio from a lovable MVP into an App Store-ready product. It is not Garry Tan's GBrain project. When this repo refers to GBrain or gstack, it means the external repositories `garrytan/gbrain` and `garrytan/gstack` may be used as supporting agent tooling.
 
@@ -31,6 +31,9 @@ Rocio is a global flower-care companion for people who want a gentle, practical 
 - Full Xcode 26.3 is selected locally; the unsigned iOS simulator build passed on 2026-07-20 with `xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and the iPhone 17 simulator tests passed with `xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO test`.
 - Debug builds now expose an isolated local demo when Supabase is unavailable. It uses three in-memory garden plants, on-device scanner matching, no cloud analytics or photo upload, and restores the pre-demo garden on exit. The feature is compiled out of Release.
 - Native cloud queue tasks now release their slot immediately on sign-out, account deletion, or Debug demo entry. Generation tracking prevents a cancelled task from clearing a newer task, and failed flushes stay pending instead of entering an immediate retry loop.
+- Rocio Cloud now uses irreversible, scrubbed garden tombstones plus a server-issued account epoch, so an offline device cannot recreate a plant deleted elsewhere even with a bad clock. Reset RPCs are idempotent by request ID, physical client deletes are revoked, and tombstones reject as well as purge watering history; account deletion remains the hard-purge path.
+- The ordered Supabase migration history is exercised against disposable PostgreSQL 16 in CI. The effective-schema harness verifies RLS, ACLs, cross-user isolation, delete-wins behavior, reset convergence, and account purge before rolling back; the companion source audit keeps the server-owned scan quota boundary explicit.
+- On 2026-07-21 the configured Debug app rendered Auth and stayed alive on an iOS 26.3.1 simulator; the complete XCTest suite passed 46/46. A signed build also installed on the connected iPhone, where first launch still waits for the free developer profile to be trusted in Settings.
 - An iPhone 16e simulator smoke on 2026-07-20 verified the demo entry, catalog, seeded garden, bundled flower photos, and local scanner disclosure. Real-device camera, photo picker, and notification permission/delivery still need testing.
 - Remaining App Store gaps: real-device permission smoke, Apple Developer Team/signing, App Store Connect app record, screenshots, native demo video, TestFlight upload, and final release review.
 
