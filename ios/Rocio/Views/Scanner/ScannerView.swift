@@ -5,15 +5,17 @@ import UIKit
 struct ScannerView: View {
     @EnvironmentObject private var sessionStore: SessionStore
     @AppStorage("rocio.cloud.photoConsent") private var hasCloudPhotoConsent = false
+    // Tab switches must not cancel an in-flight scan; this object owns it until replacement or completion.
+    @StateObject private var analysisCoordinator = ScannerAnalysisCoordinator()
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
-    @State private var result: IdentificationResult?
     @State private var selectedFlower: Flower?
     @State private var isShowingCamera = false
-    @State private var isProcessing = false
     @State private var cameraUnavailableMessage: String?
     @State private var pendingConsentImage: UIImage?
     @State private var isShowingPhotoConsent = false
+    @State private var imageLoadTask: Task<Void, Never>?
+    @State private var imageLoadGeneration: UInt = 0
 
     private let identifier = HybridFlowerIdentifier()
     private var canUseCamera: Bool {
@@ -77,11 +79,11 @@ struct ScannerView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    if isProcessing {
+                    if analysisCoordinator.isProcessing {
                         ProgressView(L10n.text("scanner.processing", fallback: "Checking colors and candidates"))
                     }
 
-                    if let result {
+                    if let result = analysisCoordinator.result {
                         ScannerResultCard(result: result) { flower in
                             selectedFlower = flower
                         }
@@ -98,8 +100,7 @@ struct ScannerView: View {
             .navigationTitle(L10n.text("scanner.title", fallback: "Scanner"))
             .sheet(isPresented: $isShowingCamera) {
                 CameraCaptureView { image in
-                    selectedImage = image
-                    requestAnalysis(image)
+                    accept(image)
                 }
             }
             .sheet(item: $selectedFlower) { flower in
@@ -108,7 +109,7 @@ struct ScannerView: View {
             .alert(L10n.text("scanner.consent.title", fallback: "Use cloud identification?"), isPresented: $isShowingPhotoConsent) {
                 Button(L10n.text("scanner.consent.continue", fallback: "Send this photo")) {
                     hasCloudPhotoConsent = true
-                    if let image = pendingConsentImage { Task { await analyze(image) } }
+                    if let image = pendingConsentImage { startAnalysis(image) }
                     pendingConsentImage = nil
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {
@@ -118,7 +119,7 @@ struct ScannerView: View {
                 Text(L10n.text("scanner.consent.copy", fallback: "Rocio will send a compressed copy of this flower photo to Plant.id through Rocio Cloud. The photo is used for identification and is not stored by Rocio."))
             }
             .onChange(of: selectedItem) { _, item in
-                Task { await load(item) }
+                load(item)
             }
         }
     }
@@ -142,17 +143,43 @@ struct ScannerView: View {
         .background(Color.rocioLeafAction, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 
-    private func load(_ item: PhotosPickerItem?) async {
-        guard let data = try? await item?.loadTransferable(type: Data.self),
-              let image = UIImage(data: data) else { return }
+    private func load(_ item: PhotosPickerItem?) {
+        imageLoadTask?.cancel()
+        imageLoadGeneration &+= 1
+        let generation = imageLoadGeneration
+        analysisCoordinator.cancel()
+        pendingConsentImage = nil
+
+        imageLoadTask = Task {
+            guard let data = try? await item?.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data),
+                  !Task.isCancelled,
+                  generation == imageLoadGeneration else { return }
+            imageLoadTask = nil
+            accept(image, cancellingImageLoad: false)
+        }
+    }
+
+    private func accept(_ image: UIImage, cancellingImageLoad: Bool = true) {
+        if cancellingImageLoad {
+            cancelImageLoad()
+        }
+        analysisCoordinator.cancel()
+        pendingConsentImage = nil
         selectedImage = image
         requestAnalysis(image)
+    }
+
+    private func cancelImageLoad() {
+        imageLoadGeneration &+= 1
+        imageLoadTask?.cancel()
+        imageLoadTask = nil
     }
 
     private func requestAnalysis(_ image: UIImage) {
 #if DEBUG
         if sessionStore.isDemoMode {
-            Task { await analyze(image) }
+            startAnalysis(image)
             return
         }
 #endif
@@ -161,14 +188,54 @@ struct ScannerView: View {
             isShowingPhotoConsent = true
             return
         }
-        Task { await analyze(image) }
+        startAnalysis(image)
     }
 
-    @MainActor
-    private func analyze(_ image: UIImage) async {
+    private func startAnalysis(_ image: UIImage) {
+        let identifier = identifier
+        let sessionStore = sessionStore
+        analysisCoordinator.start {
+            await identifier.identify(image: image, sessionStore: sessionStore)
+        }
+    }
+}
+
+@MainActor
+final class ScannerAnalysisCoordinator: ObservableObject {
+    @Published private(set) var result: IdentificationResult?
+    @Published private(set) var isProcessing = false
+
+    private var task: Task<Void, Never>?
+    private var generation: UInt = 0
+
+    deinit {
+        task?.cancel()
+    }
+
+    func start(operation: @escaping @MainActor () async -> IdentificationResult?) {
+        generation &+= 1
+        let requestGeneration = generation
+        task?.cancel()
+        result = nil
         isProcessing = true
-        defer { isProcessing = false }
-        result = await identifier.identify(image: image, sessionStore: sessionStore)
+
+        task = Task { [weak self] in
+            let nextResult = await operation()
+            guard let self,
+                  !Task.isCancelled,
+                  requestGeneration == self.generation else { return }
+            self.result = nextResult
+            self.isProcessing = false
+            self.task = nil
+        }
+    }
+
+    func cancel() {
+        generation &+= 1
+        task?.cancel()
+        task = nil
+        result = nil
+        isProcessing = false
     }
 }
 
