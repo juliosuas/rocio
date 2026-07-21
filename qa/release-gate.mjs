@@ -6,6 +6,7 @@ const auditTimeoutMs = 60_000;
 const checks = [
   ['Flower classifier', 'readonly-flower-classifier-harness.mjs', ['--strict']],
   ['Privacy controls', 'privacy-data-controls-audit.mjs', []],
+  ['Local calendar-day behavior', 'local-date-key.test.mjs', []],
   ['Photo assets', 'photo-asset-audit.mjs', ['--app-store-ready']],
   ['Commercial claims', 'commercial-claim-audit.mjs', []],
   ['Botanical content', 'botanical-content-audit.mjs', []],
