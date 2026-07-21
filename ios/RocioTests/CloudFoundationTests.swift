@@ -76,6 +76,117 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertFalse(generations.finish(active))
     }
 
+    @MainActor
+    func testOfflineRefreshFailurePreservesPersistedGardenAndSession() async {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Offline rose")
+        let savedSession = expiredSession()
+        var didClearSession = false
+        GardenPersistence.savePlants([plant])
+        defer { GardenPersistence.clearPlants() }
+        let gardenStore = GardenStore()
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { savedSession },
+                save: { _ in XCTFail("An offline refresh must not replace the saved session") },
+                clear: { didClearSession = true }
+            ),
+            refreshSession: { _ in throw URLError(.notConnectedToInternet) }
+        )
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedIn(savedSession))
+        XCTAssertEqual(
+            sessionStore.syncMessage,
+            L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        )
+        XCTAssertFalse(didClearSession)
+        XCTAssertEqual(gardenStore.plants, [plant])
+        XCTAssertEqual(GardenPersistence.loadPlants(), [plant])
+    }
+
+    @MainActor
+    func testAmbiguousUnauthorizedRefreshPreservesGardenAndSession() async {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Unauthorized rose")
+        let savedSession = expiredSession()
+        var didClearSession = false
+        let gardenStore = GardenStore(plants: [plant])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { savedSession },
+                save: { _ in XCTFail("An ambiguous refresh failure must not replace the saved session") },
+                clear: { didClearSession = true }
+            ),
+            refreshSession: { _ in
+                throw BackendError.server(code: "http_401", message: "Unauthorized")
+            }
+        )
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedIn(savedSession))
+        XCTAssertEqual(
+            sessionStore.syncMessage,
+            L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        )
+        XCTAssertFalse(didClearSession)
+        XCTAssertEqual(gardenStore.plants, [plant])
+    }
+
+    @MainActor
+    func testRevokedRefreshTokenClearsSessionAndGarden() async {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Revoked rose")
+        let savedSession = expiredSession()
+        var didClearSession = false
+        let gardenStore = GardenStore(plants: [plant])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { savedSession },
+                save: { _ in XCTFail("A revoked session must not be saved") },
+                clear: { didClearSession = true }
+            ),
+            refreshSession: { _ in
+                throw BackendError.server(code: "refresh_token_not_found", message: "Refresh token not found")
+            }
+        )
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedOut)
+        XCTAssertTrue(didClearSession)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+    }
+
+    @MainActor
+    func testExplicitSupabaseSessionInvalidationCodesClearSessionAndGarden() async {
+        for code in ["session_expired", "user_banned", "validation_failed"] {
+            let plant = GardenPlant(flowerId: "rosa", nickname: "Invalid session rose")
+            let savedSession = expiredSession()
+            var didClearSession = false
+            let gardenStore = GardenStore(plants: [plant])
+            let sessionStore = SessionStore(
+                configuration: testBackendConfiguration,
+                sessionPersistence: SessionPersistence(
+                    load: { savedSession },
+                    save: { _ in XCTFail("An explicitly invalid session must not be saved: \(code)") },
+                    clear: { didClearSession = true }
+                ),
+                refreshSession: { _ in
+                    throw BackendError.server(code: code, message: "Session invalid")
+                }
+            )
+
+            await sessionStore.bootstrap(gardenStore: gardenStore)
+
+            XCTAssertEqual(sessionStore.state, .signedOut, "code: \(code)")
+            XCTAssertTrue(didClearSession, "code: \(code)")
+            XCTAssertTrue(gardenStore.plants.isEmpty, "code: \(code)")
+        }
+    }
+
 #if DEBUG
     @MainActor
     func testDebugDemoDoesNotCreateAnAuthenticatedSession() {
@@ -94,6 +205,19 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertFalse(gardenStore.isDemoMode)
     }
 #endif
+
+    private var testBackendConfiguration: BackendConfiguration {
+        BackendConfiguration(baseURL: URL(string: "https://example.supabase.co")!, anonymousKey: "public-anon-key")
+    }
+
+    private func expiredSession() -> AuthSession {
+        AuthSession(
+            accessToken: "expired-access-token",
+            refreshToken: "refresh-token",
+            expiresAt: Date(timeIntervalSinceNow: -60),
+            user: AuthUser(id: UUID(), email: "gardener@example.com")
+        )
+    }
 }
 private struct LegacyGardenPlant: Codable {
     let id: UUID
