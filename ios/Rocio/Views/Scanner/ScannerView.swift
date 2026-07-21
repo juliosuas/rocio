@@ -26,6 +26,17 @@ struct ScannerView: View {
                 VStack(spacing: 16) {
                     ScannerPromiseCard()
 
+#if DEBUG
+                    if sessionStore.isDemoMode {
+                        Label(L10n.text("demo.scanner.notice", fallback: "Demo uses on-device matching. No photo leaves this iPhone."), systemImage: "iphone.gen3")
+                            .font(.footnote.weight(.medium))
+                            .foregroundStyle(Color.rocioLeafDeep)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                            .background(Color.rocioLeafSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    }
+#endif
+
                     if let selectedImage {
                         Image(uiImage: selectedImage)
                             .resizable()
@@ -139,6 +150,12 @@ struct ScannerView: View {
     }
 
     private func requestAnalysis(_ image: UIImage) {
+#if DEBUG
+        if sessionStore.isDemoMode {
+            Task { await analyze(image) }
+            return
+        }
+#endif
         guard hasCloudPhotoConsent else {
             pendingConsentImage = image
             isShowingPhotoConsent = true

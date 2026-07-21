@@ -152,6 +152,9 @@ struct HybridFlowerIdentifier {
 
     func identify(image: UIImage, sessionStore: SessionStore) async -> IdentificationResult? {
         let localResult = local.identify(image: image)
+        if sessionStore.isDemoMode {
+            return localResult
+        }
         do {
             let remote = try await sessionStore.identify(image: image)
             let candidates = matchedCandidates(remote.suggestions)

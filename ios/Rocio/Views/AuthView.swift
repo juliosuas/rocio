@@ -76,6 +76,16 @@ struct AuthView: View {
                         .buttonStyle(RocioPrimaryButtonStyle())
                         .disabled(!isValid || isWorking)
 
+#if DEBUG
+                        Button {
+                            sessionStore.enterDemo(gardenStore: gardenStore)
+                        } label: {
+                            Label(L10n.text("demo.enter", fallback: "Explore local demo"), systemImage: "ladybug")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(RocioSecondaryButtonStyle())
+#endif
+
                         Label {
                             Text(L10n.text("auth.privacy", fallback: "An account is required to sync your garden and enforce fair AI scan limits. Rocio does not sell your data or use advertising trackers."))
                         } icon: {
@@ -131,11 +141,29 @@ private struct AuthField<Content: View>: View {
     }
 }
 struct CloudConfigurationRequiredView: View {
+    @EnvironmentObject private var sessionStore: SessionStore
+    @EnvironmentObject private var gardenStore: GardenStore
+
     var body: some View {
+#if DEBUG
         ContentUnavailableView {
             Label("Rocio Cloud", systemImage: "cloud.slash")
         } description: {
-            Text("This development build is missing its Supabase anonymous key.")
+            Text(L10n.text("cloud.configuration.missing", fallback: "This build is missing its Supabase anonymous key."))
+        } actions: {
+            Button {
+                sessionStore.enterDemo(gardenStore: gardenStore)
+            } label: {
+                Label(L10n.text("demo.enter", fallback: "Explore local demo"), systemImage: "ladybug")
+            }
+            .buttonStyle(.borderedProminent)
         }
+#else
+        ContentUnavailableView {
+            Label("Rocio Cloud", systemImage: "cloud.slash")
+        } description: {
+            Text(L10n.text("cloud.configuration.missing", fallback: "This build is missing its Supabase anonymous key."))
+        }
+#endif
     }
 }

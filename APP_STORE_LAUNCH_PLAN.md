@@ -1,17 +1,19 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-07-05
+Date: 2026-07-20
 
 This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, and CI. The remaining release path is backend deployment, production credentials, local Xcode validation, signing, screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, CI, a locally verified unsigned simulator build, passing local simulator unit tests, and an isolated Debug-only local demo. The remaining release path is backend deployment, production credentials, real-device permission smoke, signing, screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
-1. Native build is not locally verified on this machine.
-   - Full Xcode is still required. Command Line Tools alone cannot run `xcodebuild` or `simctl`.
+1. Real-device permission smoke is not locally verified on this machine.
+   - Full Xcode 26.3 is selected; the unsigned simulator build and iPhone 17 simulator tests passed locally on 2026-07-20.
+   - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
+   - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
 2. Signing and App Store Connect are not configured.
    - Set Apple Developer Team, confirm bundle id `com.juliosuas.rocio`, create the App Store Connect app record, and produce an archive.
@@ -37,10 +39,10 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Su
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
-   - The opaque production icon is generated; screenshots and a native simulator video remain.
+   - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
 8. QA is still too narrow.
-   - Existing classifier harness is good. iOS CI exists for build, but native tests and a real-device smoke pass are still required before submission.
+   - Existing classifier harness is good. iOS CI exists for build, local simulator unit tests pass, and a trusted simulator smoke covers core Debug demo screens; real-device permission smoke is still required before submission.
 
 ## Garry Tan Tooling Context
 
@@ -149,4 +151,5 @@ Harden the native foundation for App Store review:
 - Add local export/delete controls for user data.
 - Prevent overdue watering reminders from scheduling in the past.
 - Refresh garden state when App Intents modify persistence while the app is inactive.
+- Keep the Debug-only demo local, ephemeral, and impossible to compile into Release.
 - Update launch docs so every next agent starts from the current iOS reality.
