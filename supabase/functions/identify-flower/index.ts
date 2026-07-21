@@ -6,6 +6,8 @@ const allowedOrigins = new Set([
   "https://rocio-flower-care.lovable.app",
 ]);
 const maxImageChars = 8 * 1024 * 1024;
+const maxProviderTextChars = 200;
+const maxProviderListItems = 16;
 
 type PlantIdSuggestion = {
   name?: string;
@@ -16,6 +18,23 @@ type PlantIdSuggestion = {
     synonyms?: string[];
   };
 };
+
+function safeText(value: unknown, maxChars = maxProviderTextChars) {
+  return typeof value === "string" ? value.trim().slice(0, maxChars) : "";
+}
+
+function safeTextList(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(0, maxProviderListItems)
+    .map((item) => safeText(item, maxProviderTextChars))
+    .filter(Boolean);
+}
+
+function safeProbability(value: unknown) {
+  const probability = Number(value);
+  return Number.isFinite(probability) ? Math.min(1, Math.max(0, probability)) : 0;
+}
 
 function corsHeaders(req: Request) {
   const origin = req.headers.get("origin");
@@ -40,17 +59,28 @@ serve(async (req) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const apiKey = Deno.env.get("PLANT_ID_API_KEY");
   const authorization = req.headers.get("authorization");
-  if (!supabaseUrl || !anonKey || !apiKey) return json(req, { error: "service_not_configured" }, 503);
+  if (!supabaseUrl || !anonKey || !serviceRoleKey || !apiKey) {
+    return json(req, { error: "service_not_configured" }, 503);
+  }
   if (!authorization?.startsWith("Bearer ")) return json(req, { error: "authentication_required" }, 401);
 
-  const client = createClient(supabaseUrl, anonKey, {
+  // The user's JWT remains attached only to the RLS-scoped client. It authenticates
+  // the caller and invokes the quota RPC without granting server privileges.
+  const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authorization } },
-    auth: { persistSession: false },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data: userData, error: userError } = await client.auth.getUser(authorization.slice(7));
+  const { data: userData, error: userError } = await userClient.auth.getUser(authorization.slice(7));
   if (userError || !userData.user) return json(req, { error: "invalid_session" }, 401);
+
+  // This client is server-only and never receives user-controlled headers. Its
+  // sole use in this handler is writing the protected scan_results audit row.
+  const adminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 
   let body: { image?: string; consent?: boolean };
   try {
@@ -64,7 +94,7 @@ serve(async (req) => {
   if (!image) return json(req, { error: "missing_image" }, 400);
   if (image.length > maxImageChars) return json(req, { error: "image_too_large" }, 413);
 
-  const { data: quotaRows, error: quotaError } = await client.rpc("consume_scan_quota");
+  const { data: quotaRows, error: quotaError } = await userClient.rpc("consume_scan_quota");
   const quota = quotaRows?.[0];
   if (quotaError) return json(req, { error: "quota_unavailable" }, 503);
   if (!quota) return json(req, { error: "quota_unavailable" }, 503);
@@ -89,20 +119,23 @@ serve(async (req) => {
 
     const raw: PlantIdSuggestion[] = providerData?.result?.classification?.suggestions || [];
     const suggestions = raw.slice(0, 8).map((item) => ({
-      name: item.name || "",
-      probability: Number(item.probability || 0),
-      scientific_name: item.details?.scientific_name || item.name || "",
-      common_names: item.details?.common_names || [],
-      synonyms: item.details?.synonyms || [],
+      name: safeText(item.name),
+      probability: safeProbability(item.probability),
+      scientific_name: safeText(item.details?.scientific_name || item.name),
+      common_names: safeTextList(item.details?.common_names),
+      synonyms: safeTextList(item.details?.synonyms),
     }));
 
-    await client.from("scan_results").insert({
+    const { error: scanResultError } = await adminClient.from("scan_results").insert({
       user_id: userData.user.id,
       provider: "plant_id",
       top_name: suggestions[0]?.scientific_name || null,
-      confidence: suggestions[0]?.probability || null,
+      confidence: suggestions[0]?.probability ?? null,
       candidate_count: suggestions.length,
     });
+    if (scanResultError) {
+      return json(req, { error: "scan_result_unavailable", remaining: quota.remaining }, 503);
+    }
 
     return json(req, {
       success: true,
