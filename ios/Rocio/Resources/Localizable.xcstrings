@@ -484,6 +484,23 @@
         }
       }
     },
+    "calendar.overdue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overdue"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrasadas"
+          }
+        }
+      }
+    },
     "calendar.title": {
       "extractionState": "manual",
       "localizations": {

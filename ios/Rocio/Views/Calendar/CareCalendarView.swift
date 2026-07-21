@@ -3,23 +3,32 @@ import SwiftUI
 struct CareCalendarView: View {
     @EnvironmentObject private var gardenStore: GardenStore
 
-    private var days: [Date] {
-        let calendar = Calendar.current
-        let start = calendar.startOfDay(for: Date())
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: $0, to: start) }
-    }
-
     var body: some View {
+        let schedule = gardenStore.wateringSchedule()
+
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 22) {
-                    CalendarOverview(days: days, dueCount: totalDueCount)
+                    CalendarOverview(
+                        days: schedule.days.map(\.date),
+                        dueCount: schedule.totalDueCount
+                    )
 
-                    ForEach(days, id: \.self) { day in
+                    if !schedule.overduePlants.isEmpty {
                         CalendarDaySection(
-                            day: day,
-                            plants: duePlants(on: day),
-                            gardenStore: gardenStore
+                            title: L10n.text("calendar.overdue", fallback: "Overdue"),
+                            plants: schedule.overduePlants,
+                            gardenStore: gardenStore,
+                            badgeTint: .rocioRose
+                        )
+                    }
+
+                    ForEach(schedule.days) { day in
+                        CalendarDaySection(
+                            title: day.date.formatted(date: .complete, time: .omitted),
+                            plants: day.plants,
+                            gardenStore: gardenStore,
+                            badgeTint: .rocioTeal
                         )
                     }
                 }
@@ -27,16 +36,6 @@ struct CareCalendarView: View {
             }
             .background(Color.rocioCanvas)
             .navigationTitle(L10n.text("calendar.title", fallback: "Calendar"))
-        }
-    }
-
-    private var totalDueCount: Int {
-        days.reduce(0) { $0 + duePlants(on: $1).count }
-    }
-
-    private func duePlants(on day: Date) -> [GardenPlant] {
-        gardenStore.plants.filter { plant in
-            Calendar.current.isDate(gardenStore.nextWateringDate(for: plant), inSameDayAs: day)
         }
     }
 }
@@ -83,18 +82,19 @@ private struct CalendarOverview: View {
 }
 
 private struct CalendarDaySection: View {
-    let day: Date
+    let title: String
     let plants: [GardenPlant]
     let gardenStore: GardenStore
+    let badgeTint: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text(day.formatted(date: .complete, time: .omitted))
+                Text(title)
                     .font(.headline)
                 Spacer()
                 if !plants.isEmpty {
-                    RocioStatusBadge(title: "\(plants.count)", systemImage: "drop.fill", tint: .rocioTeal)
+                    RocioStatusBadge(title: "\(plants.count)", systemImage: "drop.fill", tint: badgeTint)
                 }
             }
 

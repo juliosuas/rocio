@@ -85,9 +85,36 @@ final class GardenStore: ObservableObject {
         return .good
     }
 
-    func nextWateringDate(for plant: GardenPlant) -> Date {
+    func nextWateringDate(for plant: GardenPlant, calendar: Calendar = .current) -> Date {
         let days = flower(for: plant)?.waterDays ?? 3
-        return Calendar.current.date(byAdding: .day, value: days, to: plant.lastWateredAt) ?? plant.lastWateredAt
+        return calendar.date(byAdding: .day, value: days, to: plant.lastWateredAt) ?? plant.lastWateredAt
+    }
+
+    func wateringSchedule(
+        startingAt date: Date = Date(),
+        dayCount: Int = 7,
+        calendar: Calendar = .current
+    ) -> WateringSchedule {
+        let start = calendar.startOfDay(for: date)
+        let dates = (0..<max(0, dayCount)).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: start)
+        }
+        let scheduledPlants = plants.map { plant in
+            (plant: plant, dueDate: nextWateringDate(for: plant, calendar: calendar))
+        }
+        let overduePlants = scheduledPlants.compactMap {
+            $0.dueDate < start ? $0.plant : nil
+        }
+        let days = dates.map { day in
+            WateringScheduleDay(
+                date: day,
+                plants: scheduledPlants.compactMap {
+                    calendar.isDate($0.dueDate, inSameDayAs: day) ? $0.plant : nil
+                }
+            )
+        }
+
+        return WateringSchedule(overduePlants: overduePlants, days: days)
     }
 
     func summary(now: Date = Date()) -> GardenSummary {
@@ -207,4 +234,20 @@ struct GardenSummary: Equatable {
         if soonCount > 0 { return L10n.text("garden.summary.soon", fallback: "Check soon") }
         return L10n.text("garden.summary.good", fallback: "All on track")
     }
+}
+
+struct WateringSchedule {
+    let overduePlants: [GardenPlant]
+    let days: [WateringScheduleDay]
+
+    var totalDueCount: Int {
+        overduePlants.count + days.reduce(0) { $0 + $1.plants.count }
+    }
+}
+
+struct WateringScheduleDay: Identifiable {
+    let date: Date
+    let plants: [GardenPlant]
+
+    var id: Date { date }
 }
