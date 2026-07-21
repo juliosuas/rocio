@@ -3027,6 +3027,15 @@ function safeJSONGet(storage, key, fallback) {
   }
 }
 
+function localDateKey(value = new Date()) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 /* ═══════════════════════════════════════════
    STATE
    ═══════════════════════════════════════════ */
@@ -3082,7 +3091,7 @@ function downloadLocalDataExport() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `rocio-datos-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `rocio-datos-${localDateKey()}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -3391,8 +3400,8 @@ function getWateringStreak() {
   for (let d = 0; d < 365; d++) {
     const checkDate = new Date(start);
     checkDate.setDate(start.getDate() - d);
-    const dayStr = checkDate.toISOString().slice(0, 10);
-    const watered = garden.some(g => g.lastWatered && g.lastWatered.slice(0, 10) === dayStr);
+    const dayStr = localDateKey(checkDate);
+    const watered = garden.some(g => g.lastWatered && localDateKey(g.lastWatered) === dayStr);
     if (d === 0 && !watered) continue; // today hasn't happened yet, skip
     if (watered) streak++;
     else break;
@@ -4126,7 +4135,7 @@ function showLocalPlantNotification(title, body) {
 function checkWateringNotifications() {
   try {
     if (!garden.length || !('Notification' in window) || Notification.permission !== 'granted') return;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateKey();
     const lastShown = safeStorageGet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_KEY);
     if (lastShown === today) return;
     const due = garden
