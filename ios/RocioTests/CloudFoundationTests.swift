@@ -1,7 +1,12 @@
 import XCTest
+import UIKit
 @testable import Rocio
 
 final class CloudFoundationTests: XCTestCase {
+    func testCloudConfigurationFallbackUsesAnAvailableSystemSymbol() {
+        XCTAssertNotNil(UIImage(systemName: "icloud.slash"))
+    }
+
     func testLegacyGardenPlantDecodesWithMigrationTimestamp() throws {
         let id = UUID()
         let addedAt = Date(timeIntervalSinceReferenceDate: 1234)
@@ -19,6 +24,26 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertEqual(decoded.id, id)
         XCTAssertEqual(decoded.updatedAt, addedAt)
+    }
+
+    func testGardenUpsertPayloadNormalizesLegacyTextWithoutSplittingComposedEmoji() {
+        let composedEmoji = "👨‍👩‍👧‍👦"
+        let nicknamePrefix = String(repeating: "n", count: 79)
+        let notesPrefix = String(repeating: "x", count: 1_999)
+        let legacyPlant = GardenPlant(
+            flowerId: "rosa",
+            nickname: nicknamePrefix + composedEmoji,
+            notes: notesPrefix + composedEmoji
+        )
+
+        let payload = GardenPlantUpsertPayload(plant: legacyPlant, userID: UUID())
+
+        XCTAssertEqual(payload.nickname, nicknamePrefix)
+        XCTAssertEqual(payload.nickname.unicodeScalars.count, 79)
+        XCTAssertEqual(payload.notes, notesPrefix)
+        XCTAssertEqual(payload.notes.unicodeScalars.count, 1_999)
+        XCTAssertEqual(legacyPlant.nickname, nicknamePrefix + composedEmoji)
+        XCTAssertEqual(legacyPlant.notes, notesPrefix + composedEmoji)
     }
 
     func testBackendConfigurationStoresPublicEndpointAndKey() {

@@ -17,6 +17,67 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(store.plants[0].lastWateredAt, newDate)
     }
 
+    func testUpdateNormalizesLocalPlantAndCloudUpsertPayload() {
+        let original = GardenPlant(flowerId: "rosa", nickname: "Original")
+        let store = GardenStore(plants: [original])
+        var upsertedPlants: [GardenPlant] = []
+        store.cloudChangeHandler = { change in
+            guard case let .upsert(plant) = change else { return }
+            upsertedPlants.append(plant)
+        }
+        let composedEmoji = "👨‍👩‍👧‍👦"
+        let expectedNickname = String(repeating: composedEmoji, count: 11)
+        let expectedNotes = String(repeating: composedEmoji, count: 285)
+        XCTAssertEqual(composedEmoji.unicodeScalars.count, 7)
+
+        store.update(
+            original,
+            nickname: "  \(String(repeating: composedEmoji, count: 12))\n",
+            status: .needsSun,
+            notes: String(repeating: composedEmoji, count: 286)
+        )
+
+        XCTAssertEqual(store.plants[0].nickname, expectedNickname)
+        XCTAssertEqual(store.plants[0].nickname.unicodeScalars.count, 77)
+        XCTAssertEqual(store.plants[0].status, .needsSun)
+        XCTAssertEqual(store.plants[0].notes, expectedNotes)
+        XCTAssertEqual(store.plants[0].notes.unicodeScalars.count, 1_995)
+        XCTAssertEqual(upsertedPlants.count, 1)
+        XCTAssertEqual(upsertedPlants[0].nickname, expectedNickname)
+        XCTAssertEqual(upsertedPlants[0].status, .needsSun)
+        XCTAssertEqual(upsertedPlants[0].notes, expectedNotes)
+
+        store.update(
+            original,
+            nickname: " \n\t ",
+            status: .healthy,
+            notes: "Short note"
+        )
+
+        XCTAssertEqual(store.plants[0].nickname, expectedNickname)
+        XCTAssertEqual(upsertedPlants.count, 2)
+        XCTAssertEqual(upsertedPlants[1].nickname, expectedNickname)
+    }
+
+    func testReplaceFromCloudNormalizesLegacyTextBeforePersisting() {
+        let composedEmoji = "👨‍👩‍👧‍👦"
+        let nicknamePrefix = String(repeating: "n", count: 79)
+        let notesPrefix = String(repeating: "x", count: 1_999)
+        let legacyPlant = GardenPlant(
+            flowerId: "rosa",
+            nickname: nicknamePrefix + composedEmoji,
+            notes: notesPrefix + composedEmoji
+        )
+        let store = GardenStore(plants: [legacyPlant])
+        defer { GardenPersistence.clearPlants() }
+
+        store.replaceFromCloud([legacyPlant])
+
+        XCTAssertEqual(store.plants[0].nickname, nicknamePrefix)
+        XCTAssertEqual(store.plants[0].notes, notesPrefix)
+        XCTAssertEqual(GardenPersistence.loadPlants(), store.plants)
+    }
+
     func testGardenSummaryCountsAttentionAndNextWatering() {
         let calendar = Calendar.current
         let now = calendar.date(from: DateComponents(year: 2026, month: 7, day: 5, hour: 9))!

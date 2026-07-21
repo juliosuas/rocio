@@ -1,4 +1,6 @@
 project_id = "gnumzynfewmurvykopxq"
 
 [functions.identify-flower]
-verify_jwt = true
+# JWT verification is manual for current Supabase gateway compatibility: the
+# handler allows OPTIONS, requires Bearer, and validates it with auth.getUser.
+verify_jwt = false

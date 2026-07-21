@@ -28,6 +28,23 @@ Run tests:
 xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS Simulator,name=iPhone 16' test
 ```
 
+## Supabase Public Configuration Per Mac
+
+The project URL is committed because it is public. The Supabase publishable key is not committed and clean checkouts intentionally build with cloud features unconfigured.
+
+To enable Rocio Cloud on one Mac:
+
+```sh
+cp ios/Config/Local.xcconfig.example ios/Config/Local.xcconfig
+```
+
+Open `ios/Config/Local.xcconfig` and replace the placeholder with the project's `sb_publishable_...` key from Supabase API settings. `Local.xcconfig` is ignored by Git and is consumed by both Debug and Release. Never place `sb_secret_...`, a legacy `service_role` JWT, or `PLANT_ID_API_KEY` in any iOS configuration.
+
+Debug builds may omit the key so the local demo remains available. Unsigned CI
+archives may also omit it for verification, but a signed Release build fails
+early when the publishable key is missing; this prevents uploading an
+unconfigured TestFlight/App Store binary.
+
 ## Debug Demo Without Supabase
 
 When a Debug build has no Supabase public configuration, launch the app and tap **Explore local demo**. The demo:
@@ -43,6 +60,7 @@ The demo entry point and session state are wrapped in `#if DEBUG` and are absent
 ## Before TestFlight
 
 - Set `DEVELOPMENT_TEAM` in the Rocio target.
+- Confirm `Local.xcconfig` contains the project's `sb_publishable_...` key; a signed Release archive intentionally fails without it.
 - Confirm bundle id `com.juliosuas.rocio` in Apple Developer/App Store Connect.
 - Replace the provisional icon with final App Store artwork.
 - Capture iPhone screenshots from a real simulator/device.
