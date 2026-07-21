@@ -18,13 +18,31 @@ final class SessionStore: ObservableObject {
     @Published var errorMessage: String?
 
     private let client: RocioBackendClient?
+    private let sessionPersistence: SessionPersistence
+    private let refreshSession: (AuthSession) async throws -> AuthSession
     private var hasBootstrapped = false
     private var isEndingSession = false
     private var gardenSyncTask: Task<Void, Never>?
     private var gardenSyncTaskGeneration = GardenSyncTaskGeneration()
 
     init(configuration: BackendConfiguration? = .bundled) {
+        let client = configuration.map { RocioBackendClient(configuration: $0) }
+        self.client = client
+        sessionPersistence = .keychain
+        refreshSession = { session in
+            guard let client else { throw BackendError.unavailable }
+            return try await client.refresh(session)
+        }
+    }
+
+    init(
+        configuration: BackendConfiguration?,
+        sessionPersistence: SessionPersistence,
+        refreshSession: @escaping (AuthSession) async throws -> AuthSession
+    ) {
         client = configuration.map { RocioBackendClient(configuration: $0) }
+        self.sessionPersistence = sessionPersistence
+        self.refreshSession = refreshSession
     }
 
     var session: AuthSession? {
@@ -47,7 +65,7 @@ final class SessionStore: ObservableObject {
             state = .unconfigured
             return
         }
-        guard let saved = KeychainSessionStore.load() else {
+        guard let saved = sessionPersistence.load() else {
             state = .signedOut
             return
         }
@@ -56,9 +74,14 @@ final class SessionStore: ObservableObject {
             state = .signedIn(active)
             await syncGarden(gardenStore)
         } catch {
-            KeychainSessionStore.clear()
-            gardenStore.clearLocalCache()
-            state = .signedOut
+            if error.invalidatesSavedSession {
+                sessionPersistence.clear()
+                gardenStore.clearLocalCache()
+                state = .signedOut
+            } else {
+                state = .signedIn(saved)
+                syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+            }
         }
     }
 
@@ -80,7 +103,7 @@ final class SessionStore: ObservableObject {
         isEndingSession = true
         let sessionToSignOut = session
         let cancelledSyncTask = cancelGardenSyncTask()
-        KeychainSessionStore.clear()
+        sessionPersistence.clear()
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
         gardenStore.clearLocalCache()
         state = client == nil ? .unconfigured : .signedOut
@@ -98,7 +121,7 @@ final class SessionStore: ObservableObject {
             try await client.deleteAccount(session: try await activeSession(from: session))
             savePendingChanges([], userID: session.user.id)
             gardenStore.clearLocalCache()
-            KeychainSessionStore.clear()
+            sessionPersistence.clear()
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
             state = .signedOut
             isEndingSession = false
@@ -167,7 +190,7 @@ final class SessionStore: ObservableObject {
         errorMessage = nil
         do {
             let session = try await action(client)
-            try KeychainSessionStore.save(session)
+            try sessionPersistence.save(session)
             state = .signedIn(session)
             if analyticsEnabled {
                 await client.track(name: "account_session_started", properties: [:], session: session)
@@ -198,10 +221,9 @@ final class SessionStore: ObservableObject {
 
     private func activeSession(from session: AuthSession) async throws -> AuthSession {
         guard session.needsRefresh else { return session }
-        guard let client else { throw BackendError.unavailable }
-        let refreshed = try await client.refresh(session)
+        let refreshed = try await refreshSession(session)
         try Task.checkCancellation()
-        try KeychainSessionStore.save(refreshed)
+        try sessionPersistence.save(refreshed)
         state = .signedIn(refreshed)
         return refreshed
     }
@@ -307,6 +329,38 @@ final class SessionStore: ObservableObject {
 
     private func pendingKey(_ userID: UUID) -> String {
         "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+    }
+}
+
+@MainActor
+struct SessionPersistence {
+    let load: () -> AuthSession?
+    let save: (AuthSession) throws -> Void
+    let clear: () -> Void
+
+    static let keychain = SessionPersistence(
+        load: KeychainSessionStore.load,
+        save: KeychainSessionStore.save,
+        clear: KeychainSessionStore.clear
+    )
+}
+
+private extension Error {
+    var invalidatesSavedSession: Bool {
+        guard let backendError = self as? BackendError,
+              case let .server(code, _) = backendError else { return false }
+        // Only explicit refresh/session revocation codes may erase local account data.
+        return [
+            "invalid_grant",
+            "invalid_refresh_token",
+            "invalid_session",
+            "refresh_token_already_used",
+            "refresh_token_not_found",
+            "session_expired",
+            "session_not_found",
+            "user_banned",
+            "validation_failed",
+        ].contains(code)
     }
 }
 
