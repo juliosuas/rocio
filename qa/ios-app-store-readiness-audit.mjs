@@ -26,6 +26,7 @@ const privacyAccessedApiErrors = privacyManifestParseError
   : validatePrivacyAccessedApiTypes(parsedPrivacyManifest);
 const privacyManifestErrors = [...privacyCollectedDataErrors, ...privacyAccessedApiErrors];
 const settingsView = fs.readFileSync(path.join(iosRoot, 'Views', 'Settings', 'SettingsView.swift'), 'utf8');
+const scannerView = fs.readFileSync(path.join(iosRoot, 'Views', 'Scanner', 'ScannerView.swift'), 'utf8');
 const stringCatalogPath = path.join(iosRoot, 'Resources', 'Localizable.xcstrings');
 const stringCatalog = fs.existsSync(stringCatalogPath)
   ? JSON.parse(fs.readFileSync(stringCatalogPath, 'utf8'))
@@ -122,6 +123,11 @@ const checks = [
   ['1024 marketing icon', fs.existsSync(path.join(iconsDirectory, 'AppIcon-1024.png'))],
   ['all app icons opaque', alphaIcons.length === 0],
   ['no internal launch copy in Settings', !/Pendiente antes de publicar|Apple Developer Team|capturas finales/i.test(settingsView)],
+  [
+    'scanner work survives tab switches',
+    scannerView.includes('@StateObject private var analysisCoordinator')
+      && !/\.onDisappear\s*\{[\s\S]{0,240}(?:cancelImageLoad|analysisCoordinator\.cancel)/.test(scannerView),
+  ],
 ];
 
 let failed = 0;
