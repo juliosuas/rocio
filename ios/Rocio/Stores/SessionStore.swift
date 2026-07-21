@@ -359,7 +359,6 @@ private extension Error {
             "session_expired",
             "session_not_found",
             "user_banned",
-            "validation_failed",
         ].contains(code)
     }
 }
