@@ -161,8 +161,40 @@ final class CloudFoundationTests: XCTestCase {
     }
 
     @MainActor
+    func testValidationFailedPreservesPersistedGardenAndSession() async {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Validation rose")
+        let savedSession = expiredSession()
+        var didClearSession = false
+        GardenPersistence.savePlants([plant])
+        defer { GardenPersistence.clearPlants() }
+        let gardenStore = GardenStore()
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { savedSession },
+                save: { _ in XCTFail("A validation failure must not replace the saved session") },
+                clear: { didClearSession = true }
+            ),
+            refreshSession: { _ in
+                throw BackendError.server(code: "validation_failed", message: "Parameters are invalid")
+            }
+        )
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedIn(savedSession))
+        XCTAssertEqual(
+            sessionStore.syncMessage,
+            L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        )
+        XCTAssertFalse(didClearSession)
+        XCTAssertEqual(gardenStore.plants, [plant])
+        XCTAssertEqual(GardenPersistence.loadPlants(), [plant])
+    }
+
+    @MainActor
     func testExplicitSupabaseSessionInvalidationCodesClearSessionAndGarden() async {
-        for code in ["session_expired", "user_banned", "validation_failed"] {
+        for code in ["session_expired", "user_banned"] {
             let plant = GardenPlant(flowerId: "rosa", nickname: "Invalid session rose")
             let savedSession = expiredSession()
             var didClearSession = false
