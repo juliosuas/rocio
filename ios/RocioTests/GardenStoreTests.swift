@@ -67,4 +67,24 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertTrue(store.plants.isEmpty)
         XCTAssertTrue(didCancelPendingNotifications)
     }
+
+#if DEBUG
+    func testDemoGardenIsEphemeralAndRestoresExistingPlants() {
+        let existing = GardenPlant(flowerId: "girasol", nickname: "My sunflower")
+        let store = GardenStore(plants: [existing])
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+
+        store.beginDemo(now: now)
+
+        XCTAssertTrue(store.isDemoMode)
+        XCTAssertEqual(store.plants.count, 3)
+        XCTAssertFalse(store.plants.contains(existing))
+
+        store.water(store.plants[0], at: now)
+        store.endDemo()
+
+        XCTAssertFalse(store.isDemoMode)
+        XCTAssertEqual(store.plants, [existing])
+    }
+#endif
 }

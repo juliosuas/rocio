@@ -28,6 +28,7 @@ struct RocioApp: App {
                     router.applyPendingIntentRoute()
                 }
                 .task(id: gardenStore.plants) {
+                    guard !gardenStore.isDemoMode else { return }
                     await notificationScheduler.refreshNotifications(for: gardenStore.plants)
                 }
                 .task {

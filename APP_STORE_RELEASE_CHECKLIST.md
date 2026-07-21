@@ -1,14 +1,14 @@
 # Rocio App Store Release Checklist
 
-Date: 2026-07-05
+Date: 2026-07-20
 
 ## Current Build Strategy
 
-Local Xcode is still useful, but it is no longer the only gate. Because this machine has Command Line Tools active and no full Xcode selected, iOS build/test should be proven in GitHub Actions on `macos-latest`.
+Full Xcode 26.3 is selected locally. The unsigned simulator build passed on 2026-07-20 with the generic iOS Simulator destination, and the iPhone 17 simulator test run passed the native unit suite. GitHub Actions remains the shared gate for PR review, and local Xcode is now available for smoke testing, screenshots, and Xcode Organizer upload.
 
 The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
 
-Local Xcode remains optional until screenshots, simulator smoke testing, or Xcode Organizer upload are needed.
+An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, seeded garden, bundled photos, and the local scanner disclosure. Real-device camera/photo and notification permission/delivery testing is still required before external TestFlight or App Store submission.
 
 ## Tomorrow Publish Gate
 
