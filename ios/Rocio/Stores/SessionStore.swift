@@ -200,6 +200,7 @@ final class SessionStore: ObservableObject {
         guard session.needsRefresh else { return session }
         guard let client else { throw BackendError.unavailable }
         let refreshed = try await client.refresh(session)
+        try Task.checkCancellation()
         try KeychainSessionStore.save(refreshed)
         state = .signedIn(refreshed)
         return refreshed
@@ -236,9 +237,6 @@ final class SessionStore: ObservableObject {
             defer { self.finishPendingFlush(generation: generation, completed: completed) }
             guard let client = self.client, let session = self.session else { return }
             completed = await self.flushPendingChanges(client: client, session: session)
-            self.syncMessage = completed
-                ? L10n.text("cloud.synced", fallback: "Synced")
-                : L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
         }
     }
 
@@ -254,6 +252,9 @@ final class SessionStore: ObservableObject {
     private func finishPendingFlush(generation: UUID, completed: Bool) {
         guard gardenSyncTaskGeneration.finish(generation) else { return }
         gardenSyncTask = nil
+        syncMessage = completed
+            ? L10n.text("cloud.synced", fallback: "Synced")
+            : L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
         guard
             completed,
             let userID = session?.user.id,
@@ -277,6 +278,7 @@ final class SessionStore: ObservableObject {
                 case .reset:
                     try await client.deleteGarden(session: active)
                 }
+                guard !Task.isCancelled else { return false }
                 var latest = loadPendingChanges(userID: session.user.id)
                 latest.removeAll { $0.id == next.id }
                 savePendingChanges(latest, userID: session.user.id)
