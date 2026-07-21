@@ -1,0 +1,4 @@
+// Copy this file to Local.xcconfig. The copy is ignored by Git.
+// Use only the project's public publishable key from Supabase API settings.
+// Never put a secret/service-role key in an iOS build.
+ROCIO_SUPABASE_PUBLISHABLE_KEY = sb_publishable_<project-key>

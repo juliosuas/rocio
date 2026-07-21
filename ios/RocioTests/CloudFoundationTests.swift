@@ -1,7 +1,12 @@
 import XCTest
+import UIKit
 @testable import Rocio
 
 final class CloudFoundationTests: XCTestCase {
+    func testCloudConfigurationFallbackUsesAnAvailableSystemSymbol() {
+        XCTAssertNotNil(UIImage(systemName: "icloud.slash"))
+    }
+
     func testLegacyGardenPlantDecodesWithMigrationTimestamp() throws {
         let id = UUID()
         let addedAt = Date(timeIntervalSinceReferenceDate: 1234)

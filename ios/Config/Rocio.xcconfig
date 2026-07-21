@@ -1,0 +1,7 @@
+// Shared, non-secret iOS build configuration.
+// Keep the default empty so CI and clean checkouts build in unconfigured mode.
+ROCIO_SUPABASE_PUBLISHABLE_KEY =
+
+// Developers may copy Local.xcconfig.example to Local.xcconfig on each Mac.
+// The optional include keeps clean checkouts and CI independent of that file.
+#include? "Local.xcconfig"

@@ -4,12 +4,14 @@ on:
   pull_request:
     paths:
       - 'ios/**'
+      - 'qa/ios-built-cloud-config-audit.mjs'
       - '.github/workflows/ios-archive.yml'
   push:
     branches:
       - main
     paths:
       - 'ios/**'
+      - 'qa/ios-built-cloud-config-audit.mjs'
       - '.github/workflows/ios-archive.yml'
   workflow_dispatch:
 
@@ -37,6 +39,11 @@ jobs:
             -archivePath "$RUNNER_TEMP/Rocio.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             archive
+
+      - name: Verify archived cloud configuration
+        run: |
+          node qa/ios-built-cloud-config-audit.mjs \
+            "$RUNNER_TEMP/Rocio.xcarchive/Products/Applications/Rocio.app/Info.plist"
 
       - name: Upload archive artifact
         uses: actions/upload-artifact@v4

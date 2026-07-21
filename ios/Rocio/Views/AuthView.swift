@@ -147,7 +147,7 @@ struct CloudConfigurationRequiredView: View {
     var body: some View {
 #if DEBUG
         ContentUnavailableView {
-            Label("Rocio Cloud", systemImage: "cloud.slash")
+            Label("Rocio Cloud", systemImage: "icloud.slash")
         } description: {
             Text(L10n.text("cloud.configuration.missing", fallback: "This build is missing its Supabase anonymous key."))
         } actions: {
@@ -160,7 +160,7 @@ struct CloudConfigurationRequiredView: View {
         }
 #else
         ContentUnavailableView {
-            Label("Rocio Cloud", systemImage: "cloud.slash")
+            Label("Rocio Cloud", systemImage: "icloud.slash")
         } description: {
             Text(L10n.text("cloud.configuration.missing", fallback: "This build is missing its Supabase anonymous key."))
         }

@@ -10,6 +10,7 @@ import {
 const projectRoot = path.resolve(import.meta.dirname, '..');
 const iosRoot = path.join(projectRoot, 'ios', 'Rocio');
 const projectFile = fs.readFileSync(path.join(projectRoot, 'ios', 'Rocio.xcodeproj', 'project.pbxproj'), 'utf8');
+const appInfoPlist = fs.readFileSync(path.join(iosRoot, 'Resources', 'Info.plist'), 'utf8');
 const privacyManifest = fs.readFileSync(path.join(iosRoot, 'Resources', 'PrivacyInfo.xcprivacy'), 'utf8');
 let parsedPrivacyManifest = null;
 let privacyManifestParseError = null;
@@ -109,8 +110,8 @@ const incompleteAppShortcutKeys = requiredAppShortcutKeys.filter((key) => {
 const checks = [
   ['bundle id', projectFile.includes('PRODUCT_BUNDLE_IDENTIFIER = com.juliosuas.rocio;')],
   ['marketing version', projectFile.includes('MARKETING_VERSION = 1.0;')],
-  ['camera purpose string', projectFile.includes('INFOPLIST_KEY_NSCameraUsageDescription')],
-  ['photo purpose string', projectFile.includes('INFOPLIST_KEY_NSPhotoLibraryUsageDescription')],
+  ['camera purpose string', appInfoPlist.includes('<key>NSCameraUsageDescription</key>')],
+  ['photo purpose string', appInfoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>')],
   ['privacy manifest collected data declarations', privacyCollectedDataErrors.length === 0],
   ['privacy manifest UserDefaults declaration', privacyAccessedApiErrors.length === 0],
   ['English localization region', /knownRegions = \([\s\S]*\ben,/.test(projectFile)],

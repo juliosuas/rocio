@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { TextDecoder } from 'node:util';
 
 const root = path.resolve(import.meta.dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -29,6 +31,11 @@ const migration = allMigrations();
 const edge = read('supabase/functions/identify-flower/index.ts');
 const project = read('ios/Rocio.xcodeproj/project.pbxproj');
 const clientSource = `${read('index.html')}\n${clientSourceUnder('ios')}`;
+const sharedXcconfig = read('ios/Config/Rocio.xcconfig');
+const localXcconfigExample = read('ios/Config/Local.xcconfig.example');
+const appInfoPlist = read('ios/Rocio/Resources/Info.plist');
+const clientKeyValidatorPath = path.join(root, 'ios', 'Scripts', 'validate-supabase-client-key.sh');
+const gitignore = read('.gitignore');
 const scanner = read('ios/Rocio/Views/Scanner/ScannerView.swift');
 const settings = read('ios/Rocio/Views/Settings/SettingsView.swift');
 const privacy = read('APP_STORE_PRIVACY_ANSWERS.md');
@@ -38,6 +45,75 @@ const securityDefinerSettings = migration.match(/security definer set search_pat
 const clientSecretPattern = /\b(?:SUPABASE_SERVICE_ROLE_KEY|PLANT_ID_API_KEY)\b|\bsb_secret_[A-Za-z0-9_-]{16,}\b|\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/;
 const serviceRoleKeyReferences = edge.match(/\bserviceRoleKey\b/g) || [];
 const adminClientReferences = edge.match(/\badminClient\b/g) || [];
+
+const listedFiles = spawnSync(
+  'git',
+  ['ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+  { cwd: root, encoding: 'utf8' },
+);
+if (listedFiles.status !== 0) {
+  throw new Error(`Unable to enumerate repository files: ${listedFiles.stderr.trim()}`);
+}
+
+const repositoryFiles = listedFiles.stdout.split('\0').filter(Boolean);
+const localConfigPath = 'ios/Config/Local.xcconfig';
+const textDecoder = new TextDecoder('utf-8', { fatal: true });
+const maximumAuditedFileSize = 2 * 1024 * 1024;
+const textExtensions = new Set([
+  '.css', '.env', '.html', '.js', '.json', '.md', '.mjs', '.pbxproj', '.plist',
+  '.py', '.sh', '.sql', '.svg', '.swift', '.toml', '.ts', '.txt', '.webmanifest',
+  '.xcconfig', '.xcprivacy', '.xcscheme', '.xcstrings', '.xml', '.yaml', '.yml',
+]);
+const textBasenames = new Set(['.gitignore', 'Dockerfile', 'Makefile']);
+
+function hasSupabaseCredential(contents) {
+  // Current Supabase publishable and secret key formats. Placeholders containing
+  // punctuation (for example, <project-key>) intentionally do not match.
+  if (/\bsb_(?:publishable|secret)_[A-Za-z0-9_-]{20,}\b/.test(contents)) return true;
+
+  // Legacy anon and service_role keys are JWTs. Decode the payload rather than
+  // flagging arbitrary JWT fixtures or merely mentioning the role names.
+  const jwtPattern = /\b[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/g;
+  for (const token of contents.match(jwtPattern) ?? []) {
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString('utf8'));
+      if (payload.role === 'anon' || payload.role === 'service_role') return true;
+    } catch {
+      // Not a decodable JWT payload, so it is outside this Supabase-key audit.
+    }
+  }
+  return false;
+}
+
+const textFiles = repositoryFiles.filter((file) =>
+  textBasenames.has(path.basename(file)) ||
+    path.basename(file).startsWith('.env') ||
+    textExtensions.has(path.extname(file).toLowerCase()),
+);
+const oversizedTextFiles = textFiles.filter(
+  (file) => fs.statSync(path.join(root, file)).size > maximumAuditedFileSize,
+);
+const credentialFiles = textFiles.filter((file) => {
+  const absolutePath = path.join(root, file);
+  const metadata = fs.statSync(absolutePath);
+  if (!metadata.isFile() || metadata.size > maximumAuditedFileSize) return false;
+
+  const contents = fs.readFileSync(absolutePath);
+  if (contents.includes(0)) return false;
+  try {
+    return hasSupabaseCredential(textDecoder.decode(contents));
+  } catch {
+    return false;
+  }
+});
+
+const occurrences = (contents, value) => contents.split(value).length - 1;
+const validateClientKey = (key) => spawnSync('/bin/sh', [clientKeyValidatorPath], {
+  cwd: root,
+  env: { ...process.env, ROCIO_SUPABASE_PUBLISHABLE_KEY: key },
+}).status;
+const fakePublishableKey = `sb_publishable_${'q'.repeat(24)}`;
+const fakeSecretKey = `sb_secret_${'q'.repeat(24)}`;
 
 const checks = [
   ['manual-jwt-configured', config.includes('verify_jwt = false') && config.includes('validates it with auth.getUser')],
@@ -91,11 +167,32 @@ const checks = [
   ['quota-empty-result-guarded', edge.includes('if (!quota) return json(req, { error: "quota_unavailable" }, 503)')],
   ['client-photo-consent', scanner.includes('rocio.cloud.photoConsent') && scanner.includes('Send this photo')],
   ['account-deletion', migration.includes('delete_my_account') && settings.includes('Permanently delete account')],
-  ['release-key-not-committed', project.includes('ROCIO_SUPABASE_ANON_KEY = "";')],
+  ['shared-key-default-empty', /^ROCIO_SUPABASE_PUBLISHABLE_KEY =\s*$/m.test(sharedXcconfig)],
+  ['optional-local-config', sharedXcconfig.includes('#include? "Local.xcconfig"')],
+  ['local-config-ignored', gitignore.split(/\r?\n/).includes(localConfigPath) && !repositoryFiles.includes(localConfigPath)],
+  ['example-public-key-only', localXcconfigExample.includes('sb_publishable_<project-key>') && !localXcconfigExample.includes('sb_secret_<')],
+  ['debug-release-consume-shared-config',
+    occurrences(project, 'baseConfigurationReference = 020000000000000000000040 /* Rocio.xcconfig */;') === 2 &&
+      occurrences(project, 'INFOPLIST_FILE = Rocio/Resources/Info.plist;') === 2 &&
+      appInfoPlist.includes('<string>$(ROCIO_SUPABASE_PUBLISHABLE_KEY)</string>')],
+  ['client-build-rejects-secret-keys',
+    project.includes('0C0000000000000000000040 /* Validate Supabase Client Key */') &&
+      validateClientKey('') === 0 &&
+      validateClientKey(fakePublishableKey) === 0 &&
+      validateClientKey(fakeSecretKey) !== 0 &&
+      validateClientKey('legacy-service-role-jwt') !== 0],
+  ['project-url-retained', occurrences(project, 'ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";') === 2],
+  ['no-supabase-client-key-committed', credentialFiles.length === 0 && oversizedTextFiles.length === 0],
   ['privacy-disclosure', privacy.includes('Plant.id/Kindwise') && privacy.includes('Data Linked To The User')],
 ];
 
 console.table(checks.map(([id, pass]) => ({ id, pass })));
 const failed = checks.filter(([, pass]) => !pass).map(([id]) => id);
+if (credentialFiles.length) {
+  console.error(`Supabase client/server credential detected in: ${credentialFiles.join(', ')}`);
+}
+if (oversizedTextFiles.length) {
+  console.error(`Text files exceed the credential audit size limit: ${oversizedTextFiles.join(', ')}`);
+}
 console.log(JSON.stringify({ total: checks.length, passed: checks.length - failed.length, failed }, null, 2));
 if (failed.length) process.exit(1);
