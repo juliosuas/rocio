@@ -8,6 +8,9 @@ final class SessionStore: ObservableObject {
         case unconfigured
         case signedOut
         case signedIn(AuthSession)
+#if DEBUG
+        case demo
+#endif
     }
 
     @Published private(set) var state: State = .checking
@@ -25,6 +28,14 @@ final class SessionStore: ObservableObject {
     var session: AuthSession? {
         guard case let .signedIn(session) = state else { return nil }
         return session
+    }
+
+    var isDemoMode: Bool {
+#if DEBUG
+        state == .demo
+#else
+        false
+#endif
     }
 
     func bootstrap(gardenStore: GardenStore) async {
@@ -96,6 +107,22 @@ final class SessionStore: ObservableObject {
     func clearError() {
         errorMessage = nil
     }
+
+#if DEBUG
+    func enterDemo(gardenStore: GardenStore) {
+        gardenSyncTask?.cancel()
+        errorMessage = nil
+        syncMessage = L10n.text("demo.local.only", fallback: "Demo - local only")
+        gardenStore.beginDemo()
+        state = .demo
+    }
+
+    func exitDemo(gardenStore: GardenStore) {
+        gardenStore.endDemo()
+        syncMessage = ""
+        state = client == nil ? .unconfigured : .signedOut
+    }
+#endif
 
     func enqueueGardenChange(_ change: GardenChange) {
         guard let session else { return }

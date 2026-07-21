@@ -3,7 +3,9 @@ import Foundation
 @MainActor
 final class GardenStore: ObservableObject {
     @Published private(set) var plants: [GardenPlant]
+    @Published private(set) var isDemoMode = false
     var cloudChangeHandler: ((GardenChange) -> Void)?
+    private var plantsBeforeDemo: [GardenPlant]?
 
     init(plants: [GardenPlant] = GardenPersistence.loadPlants()) {
         self.plants = plants
@@ -47,7 +49,9 @@ final class GardenStore: ObservableObject {
 
     func reset() {
         plants.removeAll()
-        GardenPersistence.clearPlants()
+        if !isDemoMode {
+            GardenPersistence.clearPlants()
+        }
         cloudChangeHandler?(.reset)
     }
 
@@ -57,6 +61,7 @@ final class GardenStore: ObservableObject {
     }
 
     func reloadFromPersistence() {
+        guard !isDemoMode else { return }
         let savedPlants = GardenPersistence.loadPlants()
         guard savedPlants != plants else { return }
         plants = savedPlants
@@ -119,8 +124,65 @@ final class GardenStore: ObservableObject {
     }
 
     private func persist() {
+        guard !isDemoMode else { return }
         GardenPersistence.savePlants(plants)
     }
+
+#if DEBUG
+    func beginDemo(now: Date = Date()) {
+        guard !isDemoMode else { return }
+        plantsBeforeDemo = plants
+        isDemoMode = true
+        plants = Self.demoPlants(now: now)
+    }
+
+    func endDemo() {
+        guard isDemoMode else { return }
+        plants = plantsBeforeDemo ?? GardenPersistence.loadPlants()
+        plantsBeforeDemo = nil
+        isDemoMode = false
+    }
+
+    private static func demoPlants(now: Date) -> [GardenPlant] {
+        let calendar = Calendar.current
+        func date(daysAgo: Int) -> Date {
+            calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        }
+
+        return [
+            GardenPlant(
+                id: UUID(uuidString: "A10CF2F7-8EC0-4F20-95A7-75FD70D8C101")!,
+                flowerId: "rosa",
+                nickname: L10n.text("demo.plant.rose", fallback: "Balcony rose"),
+                addedAt: date(daysAgo: 42),
+                lastWateredAt: date(daysAgo: 5),
+                status: .needsWater,
+                notes: L10n.text("demo.plant.rose.notes", fallback: "Morning light near the balcony."),
+                updatedAt: date(daysAgo: 5)
+            ),
+            GardenPlant(
+                id: UUID(uuidString: "A10CF2F7-8EC0-4F20-95A7-75FD70D8C102")!,
+                flowerId: "lavanda",
+                nickname: L10n.text("demo.plant.lavender", fallback: "Kitchen lavender"),
+                addedAt: date(daysAgo: 24),
+                lastWateredAt: date(daysAgo: 1),
+                status: .healthy,
+                notes: L10n.text("demo.plant.lavender.notes", fallback: "Rotate the pot every weekend."),
+                updatedAt: date(daysAgo: 1)
+            ),
+            GardenPlant(
+                id: UUID(uuidString: "A10CF2F7-8EC0-4F20-95A7-75FD70D8C103")!,
+                flowerId: "orquidea",
+                nickname: L10n.text("demo.plant.orchid", fallback: "Studio orchid"),
+                addedAt: date(daysAgo: 16),
+                lastWateredAt: date(daysAgo: 6),
+                status: .needsSun,
+                notes: L10n.text("demo.plant.orchid.notes", fallback: "Keep away from direct afternoon sun."),
+                updatedAt: date(daysAgo: 2)
+            )
+        ]
+    }
+#endif
 }
 
 enum GardenChange {

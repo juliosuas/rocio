@@ -15,20 +15,30 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section(L10n.text("settings.account", fallback: "Account")) {
-                    if let email = sessionStore.session?.user.email {
-                        LabeledContent(L10n.text("settings.email", fallback: "Email"), value: email)
+#if DEBUG
+                    if sessionStore.isDemoMode {
+                        LabeledContent(
+                            L10n.text("settings.mode", fallback: "Mode"),
+                            value: L10n.text("demo.title", fallback: "Debug demo")
+                        )
+                        LabeledContent(
+                            L10n.text("settings.sync", fallback: "Cloud sync"),
+                            value: L10n.text("demo.local.only", fallback: "Demo - local only")
+                        )
+                        Text(L10n.text("demo.data.notice", fallback: "Demo changes stay in memory and never reach Rocio Cloud."))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Button {
+                            sessionStore.exitDemo(gardenStore: gardenStore)
+                        } label: {
+                            Label(L10n.text("demo.exit", fallback: "Exit demo"), systemImage: "rectangle.portrait.and.arrow.right")
+                        }
+                    } else {
+                        signedInAccountRows
                     }
-                    LabeledContent(L10n.text("settings.sync", fallback: "Cloud sync"), value: sessionStore.syncMessage)
-                    Button {
-                        Task { await sessionStore.signOut(gardenStore: gardenStore) }
-                    } label: {
-                        Label(L10n.text("settings.signout", fallback: "Sign out"), systemImage: "rectangle.portrait.and.arrow.right")
-                    }
-                    Button(role: .destructive) {
-                        showingAccountDeletion = true
-                    } label: {
-                        Label(L10n.text("settings.account.delete", fallback: "Delete account"), systemImage: "person.crop.circle.badge.minus")
-                    }
+#else
+                    signedInAccountRows
+#endif
                 }
                 Section(L10n.text("settings.permissions", fallback: "Permissions")) {
                     Text(L10n.text("settings.notifications.copy", fallback: "Rocio can send local reminders for your saved plants. They are enabled only after you tap this button and allow them in iOS."))
@@ -51,11 +61,15 @@ struct SettingsView: View {
                 }
 
                 Section(L10n.text("settings.privacy", fallback: "Privacy")) {
-                    Text(L10n.text("settings.privacy.copy", fallback: "Rocio syncs your garden to your account. Scanner photos are sent only after consent and are not stored by Rocio."))
-                    Toggle(L10n.text("settings.analytics", fallback: "Share product analytics"), isOn: $analyticsEnabled)
-                    Text(L10n.text("settings.analytics.copy", fallback: "Analytics contain product events tied to your Rocio account, never scanner photos or advertising identifiers."))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    if sessionStore.isDemoMode {
+                        Text(L10n.text("demo.privacy.copy", fallback: "Demo garden changes stay on this device. Scanner photos are analyzed on-device and are not uploaded."))
+                    } else {
+                        Text(L10n.text("settings.privacy.copy", fallback: "Rocio syncs your garden to your account. Scanner photos are sent only after consent and are not stored by Rocio."))
+                        Toggle(L10n.text("settings.analytics", fallback: "Share product analytics"), isOn: $analyticsEnabled)
+                        Text(L10n.text("settings.analytics.copy", fallback: "Analytics contain product events tied to your Rocio account, never scanner photos or advertising identifiers."))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                     ShareLink(item: exportPayload) {
                         Label(L10n.text("settings.export", fallback: "Export local data"), systemImage: "square.and.arrow.up")
                     }
@@ -88,7 +102,9 @@ struct SettingsView: View {
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
             } message: {
-                Text(L10n.text("settings.delete.message", fallback: "This removes your garden from this device and Rocio Cloud, and cancels pending reminders."))
+                Text(sessionStore.isDemoMode
+                     ? L10n.text("demo.delete.message", fallback: "This clears the in-memory demo garden and cancels pending reminders.")
+                     : L10n.text("settings.delete.message", fallback: "This removes your garden from this device and Rocio Cloud, and cancels pending reminders."))
             }
             .confirmationDialog(L10n.text("settings.account.delete", fallback: "Delete account"), isPresented: $showingAccountDeletion, titleVisibility: .visible) {
                 Button(L10n.text("settings.account.delete.confirm", fallback: "Permanently delete account"), role: .destructive) {
@@ -114,6 +130,24 @@ struct SettingsView: View {
 
     private var exportPayload: String {
         GardenExport.payload(plants: gardenStore.plants)
+    }
+
+    @ViewBuilder
+    private var signedInAccountRows: some View {
+        if let email = sessionStore.session?.user.email {
+            LabeledContent(L10n.text("settings.email", fallback: "Email"), value: email)
+        }
+        LabeledContent(L10n.text("settings.sync", fallback: "Cloud sync"), value: sessionStore.syncMessage)
+        Button {
+            Task { await sessionStore.signOut(gardenStore: gardenStore) }
+        } label: {
+            Label(L10n.text("settings.signout", fallback: "Sign out"), systemImage: "rectangle.portrait.and.arrow.right")
+        }
+        Button(role: .destructive) {
+            showingAccountDeletion = true
+        } label: {
+            Label(L10n.text("settings.account.delete", fallback: "Delete account"), systemImage: "person.crop.circle.badge.minus")
+        }
     }
 }
 

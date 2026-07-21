@@ -8,7 +8,7 @@ struct FlowerImage: View {
 
     var body: some View {
         ZStack {
-            if let image = UIImage(named: flower.imageName) {
+            if let image = bundledFlowerImage(named: flower.imageName) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -32,7 +32,7 @@ struct FlowerArtwork: View {
 
     var body: some View {
         Group {
-            if let image = UIImage(named: flower.imageName) {
+            if let image = bundledFlowerImage(named: flower.imageName) {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -48,4 +48,8 @@ struct FlowerArtwork: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .accessibilityLabel(flower.name)
     }
+}
+
+private func bundledFlowerImage(named name: String) -> UIImage? {
+    UIImage(named: name) ?? UIImage(named: "\(name).jpg")
 }

@@ -28,6 +28,18 @@ Run tests:
 xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS Simulator,name=iPhone 16' test
 ```
 
+## Debug Demo Without Supabase
+
+When a Debug build has no Supabase public configuration, launch the app and tap **Explore local demo**. The demo:
+
+- seeds three in-memory plants so Garden and Calendar are immediately testable;
+- keeps garden edits out of persistent account data;
+- uses only the on-device scanner and never uploads a photo;
+- skips cloud analytics and synchronization;
+- restores the garden that existed before the demo when you exit from Settings.
+
+The demo entry point and session state are wrapped in `#if DEBUG` and are absent from Release builds.
+
 ## Before TestFlight
 
 - Set `DEVELOPMENT_TEAM` in the Rocio target.
@@ -36,4 +48,3 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 - Capture iPhone screenshots from a real simulator/device.
 - Publish privacy policy and support URL.
 - Archive from Xcode Organizer and upload to App Store Connect.
-

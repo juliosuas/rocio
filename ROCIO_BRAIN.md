@@ -1,6 +1,6 @@
 # Rocio Project Brain
 
-Last updated: 2026-07-09
+Last updated: 2026-07-20
 
 This is the project brain for turning Rocio from a lovable MVP into an App Store-ready product. It is not Garry Tan's GBrain project. When this repo refers to GBrain or gstack, it means the external repositories `garrytan/gbrain` and `garrytan/gstack` may be used as supporting agent tooling.
 
@@ -27,8 +27,11 @@ Rocio is a global flower-care companion for people who want a gentle, practical 
 - Notifications are local/browser notifications and only work when browser conditions allow them. They are not reliable scheduled iOS reminders yet.
 - A native SwiftUI iOS track now exists under `ios/` with catalog, garden, calendar, scanner, settings, local notifications, App Intents, a privacy manifest, and iOS CI workflow.
 - Native Settings delete now clears saved garden data and cancels pending local watering reminders, keeping the local-delete privacy promise aligned with notification behavior.
-- EN/ES localization and the opaque flower-plus-dew app icon are present and enforced by `node qa/release-gate.mjs`.
-- Remaining App Store gaps: full local Xcode validation and simulator smoke, Apple Developer Team/signing, App Store Connect app record, screenshots, native demo video, TestFlight upload, and final release review.
+- EN/ES localization and the opaque flower-plus-dew app icon are present and enforced by `node qa/release-gate.mjs`; the App Store marketing icon is exact 1024x1024.
+- Full Xcode 26.3 is selected locally; the unsigned iOS simulator build passed on 2026-07-20 with `xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build`, and the iPhone 17 simulator tests passed with `xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO test`.
+- Debug builds now expose an isolated local demo when Supabase is unavailable. It uses three in-memory garden plants, on-device scanner matching, no cloud analytics or photo upload, and restores the pre-demo garden on exit. The feature is compiled out of Release.
+- An iPhone 16e simulator smoke on 2026-07-20 verified the demo entry, catalog, seeded garden, bundled flower photos, and local scanner disclosure. Real-device camera, photo picker, and notification permission/delivery still need testing.
+- Remaining App Store gaps: real-device permission smoke, Apple Developer Team/signing, App Store Connect app record, screenshots, native demo video, TestFlight upload, and final release review.
 
 ## How To Use Garry Tan's Tooling Here
 

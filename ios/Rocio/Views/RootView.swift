@@ -16,6 +16,10 @@ struct RootView: View {
             AuthView()
         case .signedIn:
             authenticatedContent
+#if DEBUG
+        case .demo:
+            authenticatedContent
+#endif
         }
     }
 

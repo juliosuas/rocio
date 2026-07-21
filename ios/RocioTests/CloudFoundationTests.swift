@@ -54,6 +54,25 @@ final class CloudFoundationTests: XCTestCase {
             L10n.text("error.auth.invalid", fallback: "The email or password is incorrect.")
         )
     }
+
+#if DEBUG
+    @MainActor
+    func testDebugDemoDoesNotCreateAnAuthenticatedSession() {
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(configuration: nil)
+
+        sessionStore.enterDemo(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .demo)
+        XCTAssertTrue(sessionStore.isDemoMode)
+        XCTAssertNil(sessionStore.session)
+
+        sessionStore.exitDemo(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .unconfigured)
+        XCTAssertFalse(gardenStore.isDemoMode)
+    }
+#endif
 }
 private struct LegacyGardenPlant: Codable {
     let id: UUID
