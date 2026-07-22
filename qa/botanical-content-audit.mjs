@@ -91,16 +91,16 @@ const symptomRows = symptoms.map((symptom) => {
 const pendingLabelChecks = [
   {
     id: 'flower-disease-render-pending',
-    pass: indexHtml.includes('PENDING verificación botánica: ${d.treatment}'),
+    pass: indexHtml.includes('PENDING botanical review: ${d.treatment}'),
   },
   {
     id: 'doctor-symptom-render-pending',
-    pass: indexHtml.includes('PENDING verificación botánica: ${c.solution}'),
+    pass: indexHtml.includes('PENDING botanical review: ${c.solution}'),
   },
   {
     id: 'professional-caveat-rendered',
-    pass: indexHtml.includes('No sustituye diagnóstico profesional; confirma antes de aplicar químicos o retirar plantas.') &&
-      indexHtml.includes('Guía orientativa; confirma el diagnóstico antes de aplicar tratamientos.'),
+    pass: indexHtml.includes('This does not replace a professional diagnosis. Confirm before applying chemicals or removing plants.') &&
+      indexHtml.includes('Assistive guidance only. Confirm the diagnosis before applying a treatment.'),
   },
 ];
 

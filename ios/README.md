@@ -1,64 +1,64 @@
 # Rocío iOS 1.0
 
-Cliente nativo SwiftUI de Rocío. No es un WebView ni una envoltura del demo web.
+Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web demo.
 
-## Estado de esta versión
+## Release status
 
 - `MARKETING_VERSION = 1.0`
 - `CURRENT_PROJECT_VERSION = 1`
-- Deployment target iOS 17.0 y Swift 5.
-- 115/115 pruebas pasan en iPhone 17 con iOS 26.3.1.
-- Debug y Release unsigned compilan con Xcode 26.3.
-- Una build de desarrollo Personal Team abre en iPhone físico.
-- TestFlight sigue bloqueado por la membresía pagada, `DEVELOPMENT_TEAM` y los smokes externos pendientes.
+- Deployment target: iOS 17.0 with Swift 5.
+- 115/115 tests pass on iPhone 17 with iOS 26.3.1.
+- Debug and unsigned Release compile with Xcode 26.3.
+- A Personal Team development build launches on a physical iPhone.
+- TestFlight remains blocked by paid membership, `DEVELOPMENT_TEAM`, distribution signing, and outstanding external smoke tests.
 
-## Superficie nativa
+## Native surface
 
-- Catalog, Garden, Calendar, Scanner y Settings en SwiftUI.
-- Catálogo bilingüe de 15 flores con fotografía local atribuida.
-- Cuenta Supabase, sesión en Keychain y jardín sincronizado por usuario con caché local.
-- Primer flujo completo: agregar planta, volver al jardín, activar recordatorio y confirmar riego.
-- Notificaciones locales solicitadas únicamente después del toque de la persona.
-- Scanner experimental con reducción de imagen fuera del hilo principal, consentimiento por foto, opción local y fallback honesto.
-- Recuperación de contraseña PKCE con verifier en Keychain, URLs sin bearer tokens y manejo de carreras entre escenas.
-- App Intents para abrir el jardín, abrir scanner y registrar riego.
-- Exportación, limpieza local, borrado cloud, opt-out de analítica, sign out y eliminación permanente de cuenta.
-- Modo demo aislado bajo `#if DEBUG`; no existe en Release.
+- Catalog, Garden, Calendar, Scanner, and Settings in SwiftUI.
+- Bilingual catalog of exactly 15 flowers with attributed local photography.
+- Supabase account, Keychain session, and per-user garden sync with a local cache.
+- Complete first-care flow: add a plant, return to the garden, enable a reminder, and confirm watering.
+- Local-notification permission requested only after an explicit tap.
+- Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, and an honest fallback.
+- PKCE password recovery with the verifier in Keychain, bearer-free URLs, and cross-scene race handling.
+- App Intents to open the garden, open the scanner, and record watering.
+- Export, local reset, cloud deletion, analytics opt-out, sign-out, and permanent account deletion.
+- Demo mode isolated under `#if DEBUG`; it does not exist in Release.
 
-## Requisitos
+## Requirements
 
-- Xcode 26.3 completo.
-- Un runtime de iOS Simulator compatible.
-- macOS compatible con Xcode 26.3.
-- Para nube: URL pública y publishable key del proyecto Supabase.
+- Full Xcode 26.3 installation.
+- A compatible iOS Simulator runtime.
+- A macOS version supported by Xcode 26.3.
+- For cloud behavior: the project's public Supabase URL and publishable key.
 
-Selecciona Xcode:
+Select Xcode:
 
 ```sh
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 xcodebuild -version
 ```
 
-## Configuración pública de Supabase por Mac
+## Public Supabase configuration on each Mac
 
 ```sh
 cp ios/Config/Local.xcconfig.example ios/Config/Local.xcconfig
 ```
 
-Agrega a `Local.xcconfig` únicamente la `sb_publishable_...` de Supabase. El archivo está ignorado por Git y alimenta Debug y Release.
+Add only the Supabase `sb_publishable_...` key to `Local.xcconfig`. The file is ignored by Git and supplies both Debug and Release.
 
-Nunca agregues al cliente:
+Never add these values to the client:
 
 - `sb_secret_...`
-- JWT con rol `service_role`
+- A JWT with the `service_role` role
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `PLANT_ID_API_KEY`
 
-Un Debug sin key muestra **Explorar demo local**. Una build Release firmada falla temprano si falta la configuración pública, para impedir subir un binario cloud incompleto.
+A Debug build without the key shows **Explore local demo**. A signed Release build fails early when public configuration is missing, preventing an incomplete cloud build from being uploaded.
 
 ## Build
 
-Desde la raíz del repositorio:
+From the repository root:
 
 ```sh
 xcodebuild \
@@ -68,7 +68,7 @@ xcodebuild \
   build
 ```
 
-Release unsigned:
+Unsigned Release:
 
 ```sh
 xcodebuild \
@@ -80,7 +80,7 @@ xcodebuild \
   build
 ```
 
-## Pruebas
+## Tests
 
 ```sh
 xcodebuild \
@@ -90,9 +90,9 @@ xcodebuild \
   test
 ```
 
-La suite cubre autenticación, PKCE, rotación de refresh tokens, aislamiento de cuentas, sync/epoch/tombstones, primer cuidado, notificaciones, scanner, reducción de imágenes, rutas y persistencia.
+The suite covers authentication, PKCE, refresh-token rotation, account isolation, sync/epoch/tombstones, first care, notifications, scanner behavior, image reduction, routing, and persistence.
 
-Los gates adicionales se ejecutan desde la raíz:
+Run the additional gates from the repository root:
 
 ```sh
 node qa/release-gate.mjs
@@ -100,33 +100,33 @@ node qa/cloud-ai-security-audit.mjs
 node qa/ios-app-store-readiness-audit.mjs
 ```
 
-## Comportamiento offline y de errores
+## Offline and failure behavior
 
-- Una sesión válida y el jardín local aparecen sin esperar el handshake cloud.
-- Cambios pendientes se conservan y reintentan; la UI no afirma sincronización hasta confirmación remota.
-- Un logout, cambio de cuenta o recuperación invalida tareas anteriores antes de que puedan publicar estado viejo.
-- Plantas eliminadas se representan con tombstones para no reaparecer desde otro dispositivo.
-- Si Plant.id o Supabase fallan, el scanner vuelve al matcher local y mantiene visible la incertidumbre.
+- A valid session and the local garden appear without waiting for the cloud handshake.
+- Pending changes are retained and retried; the UI does not claim successful sync before remote confirmation.
+- Sign-out, account changes, and recovery invalidate earlier tasks before they can publish stale state.
+- Deleted plants use tombstones so they do not reappear from another device.
+- If Plant.id or Supabase fails, the scanner returns to the local matcher and keeps uncertainty visible.
 
-## Demo Debug sin Supabase
+## Debug demo without Supabase
 
-Pulsa **Explorar demo local**. El modo demo:
+Tap **Explore local demo**. Demo mode:
 
-- crea tres plantas efímeras;
-- permite recorrer Garden, Calendar y Scanner;
-- nunca sube fotos ni ejecuta analítica cloud;
-- no escribe sobre el jardín de una cuenta;
-- restaura los datos previos al salir desde Settings.
+- creates three temporary plants;
+- lets you explore Garden, Calendar, and Scanner;
+- never uploads photos or runs cloud analytics;
+- never writes over an account's garden; and
+- restores the previous data when you exit through Settings.
 
-## Antes de TestFlight
+## Before TestFlight
 
-1. Activar Apple Developer Program y configurar `DEVELOPMENT_TEAM`.
-2. Confirmar bundle id `com.juliosuas.rocio` en Apple Developer y App Store Connect.
-3. Verificar que la build Release firmada contiene la publishable key correcta.
-4. Integrar el cliente antes de desplegar la migración de tombstones.
-5. Allowlistar `com.juliosuas.rocio://auth/recovery`, configurar Site URL HTTPS y SMTP.
-6. Probar recuperación real por correo y sincronización con dos sesiones.
-7. Ejecutar cámara, selector de fotos y notificaciones en iPhone físico.
-8. Archivar desde Xcode Organizer, subir a TestFlight y capturar screenshots finales.
+1. Activate the Apple Developer Program and configure `DEVELOPMENT_TEAM`.
+2. Confirm bundle ID `com.juliosuas.rocio` in Apple Developer and App Store Connect.
+3. Verify that the signed Release build contains the correct publishable key.
+4. Integrate the client before deploying the tombstone migration.
+5. Allowlist `com.juliosuas.rocio://auth/recovery`, then configure the HTTPS Site URL and SMTP.
+6. Test real email recovery and synchronization with two sessions.
+7. Test camera, photo picker, and notification delivery on a physical iPhone.
+8. Archive through Xcode Organizer, upload to TestFlight, and capture final screenshots.
 
-Consulta [`../APP_STORE_RELEASE_CHECKLIST.md`](../APP_STORE_RELEASE_CHECKLIST.md) para el gate completo y [`../DESIGN.md`](../DESIGN.md) para las reglas visuales.
+See [`../APP_STORE_RELEASE_CHECKLIST.md`](../APP_STORE_RELEASE_CHECKLIST.md) for the complete gate and [`../DESIGN.md`](../DESIGN.md) for visual rules.

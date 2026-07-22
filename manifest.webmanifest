@@ -1,7 +1,7 @@
 {
-  "name": "Rocío 1.0 — Demo web",
+  "name": "Rocío 1.0 — Web demo",
   "short_name": "Rocío Demo",
-  "description": "Vista previa web local del catálogo, jardín, calendario e identificador experimental de Rocío.",
+  "description": "Local-data preview of Rocío's catalog, garden, calendar, and experimental identifier.",
   "start_url": "./index.html?demo=1&v=2026-07-22-1",
   "scope": "./",
   "display": "standalone",

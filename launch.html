@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Rocío 1.0 es una app nativa para cuidar flores en iPhone: jardín sincronizado, recordatorios voluntarios y scanner experimental con privacidad por foto.">
+  <meta name="description" content="Rocío 1.0 is a native plant-care app for iPhone with a synchronized garden, opt-in reminders, and an experimental scanner with per-photo privacy.">
   <link rel="canonical" href="https://juliosuas.github.io/rocio/launch.html">
-  <meta property="og:title" content="Rocío 1.0 — Cuidado de flores en iPhone">
-  <meta property="og:description" content="Conoce el estado real de Rocío 1.0 y explora su demo web local mientras la app nativa se prepara para TestFlight.">
+  <meta property="og:title" content="Rocío 1.0 — Plant care for iPhone">
+  <meta property="og:description" content="See the current status of Rocío 1.0 and explore its local-data web demo while the native app prepares for TestFlight.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://juliosuas.github.io/rocio/launch.html">
   <meta property="og:image" content="https://juliosuas.github.io/rocio/assets/flowers/rosa.jpg">
   <meta name="twitter:card" content="summary_large_image">
-  <title>Rocío 1.0 — Cuidado de flores en iPhone</title>
+  <title>Rocío 1.0 — Plant care for iPhone</title>
   <style>
     :root {
       color-scheme: light;
@@ -299,6 +299,37 @@
       border: 1px solid var(--line);
     }
 
+    .screenshot-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .screenshot-card {
+      margin: 0;
+      min-width: 0;
+    }
+
+    .screenshot-card img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1206 / 2622;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: white;
+      box-shadow: 0 20px 44px rgba(31, 40, 34, 0.12);
+    }
+
+    .screenshot-card figcaption {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-align: center;
+    }
+
     .list {
       display: grid;
       gap: 14px;
@@ -397,6 +428,16 @@
       .button { width: 100%; min-width: 0; min-height: 52px; padding: 12px 16px; text-align: center; white-space: normal; }
       .hero-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .hero-stat { min-width: 0; }
+      .screenshot-grid {
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(220px, 68vw);
+        grid-template-columns: none;
+        overflow-x: auto;
+        overscroll-behavior-inline: contain;
+        padding: 4px 4px 20px;
+        scroll-snap-type: inline mandatory;
+      }
+      .screenshot-card { scroll-snap-align: center; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -410,28 +451,29 @@
       <source src="assets/video/rocio-demo.mp4" type="video/mp4">
     </video>
 
-    <nav class="nav" aria-label="Principal">
+    <nav class="nav" aria-label="Main">
       <div class="brand">Rocío 1.0</div>
       <div class="nav-links">
         <a href="index.html?demo=1">Demo</a>
-        <a href="#status">Estado</a>
-        <a href="privacy.html">Privacidad</a>
-        <a href="support.html">Soporte</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#status">Status</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="support.html">Support</a>
       </div>
     </nav>
 
     <div class="hero-content">
-      <div class="eyebrow">Rocío 1.0 · build 1 · candidata beta</div>
+      <div class="eyebrow">Rocío 1.0 · build 1 · beta candidate</div>
       <h1>Rocío</h1>
-      <p class="lead">Cuidado diario de flores en inglés y español: jardín sincronizado, recordatorios voluntarios y un scanner experimental que pide permiso antes de enviar cada foto.</p>
+      <p class="lead">Daily plant care in English and Spanish: a synchronized garden, opt-in reminders, and an experimental scanner that asks before sending each photo.</p>
       <div class="actions">
-        <a class="button" href="index.html?demo=1">Abrir demo web</a>
-        <a class="button secondary" href="#status">Ver estado de iOS</a>
+        <a class="button" href="index.html?demo=1">Open web demo</a>
+        <a class="button secondary" href="#status">View iOS status</a>
       </div>
-      <div class="hero-stats" aria-label="Estado de lanzamiento">
-        <div class="hero-stat"><strong>115</strong><span>pruebas iOS</span></div>
-        <div class="hero-stat"><strong>15</strong><span>flores locales</span></div>
-        <div class="hero-stat"><strong>2</strong><span>idiomas</span></div>
+      <div class="hero-stats" aria-label="Release status">
+        <div class="hero-stat"><strong>115</strong><span>iOS tests</span></div>
+        <div class="hero-stat"><strong>15</strong><span>editorial guides</span></div>
+        <div class="hero-stat"><strong>2</strong><span>languages</span></div>
       </div>
     </div>
   </header>
@@ -443,40 +485,70 @@
           <video class="demo-video" autoplay muted loop playsinline controls poster="assets/flowers/girasol.jpg">
             <source src="assets/video/rocio-demo.mp4" type="video/mp4">
           </video>
-          <div class="demo-strip" aria-label="Contenido del clip">
-            <span>Catálogo web</span>
-            <span>Fotos reales</span>
-            <span>Datos solo en este navegador</span>
+          <div class="demo-strip" aria-label="Clip contents">
+            <span>Web catalog</span>
+            <span>Real photography</span>
+            <span>Data stays in this browser</span>
           </div>
         </div>
         <div>
-          <h2>Prueba la vista previa web</h2>
-          <p class="section-copy">El clip y la experiencia interactiva pertenecen a la demo web local. La app iOS actual ya fue verificada en Simulator y abre con firma de desarrollo en un iPhone físico, pero todavía no existe un binario público en TestFlight o App Store.</p>
+          <h2>Try the web preview</h2>
+          <p class="section-copy">The clip and interactive experience belong to the local-data web demo. The current iOS app has been verified in Simulator and launches with development signing on a physical iPhone, but no public TestFlight or App Store binary exists yet.</p>
           <ul class="list">
-            <li><strong>Demo local</strong> Abre <a href="index.html?demo=1">Rocío con datos de ejemplo</a>. El jardín y el historial permanecen en este navegador; no crea una cuenta ni sincroniza con Supabase.</li>
-            <li><strong>App nativa</strong> La versión iOS mantiene una caché resiliente, sincroniza por cuenta y permite exportar o eliminar tus datos.</li>
-            <li><strong>Scanner experimental</strong> La demo compara localmente. En iOS puedes mantener la foto en el teléfono o autorizar su envío una sola vez; ambos resultados muestran incertidumbre.</li>
+            <li><strong>Local-data demo</strong> Open <a href="index.html?demo=1">Rocío with sample data</a>. The garden and history remain in this browser; the demo does not create an account or sync with Supabase.</li>
+            <li><strong>Native app</strong> The iOS version keeps a resilient cache, synchronizes per account, and lets you export or delete your data.</li>
+            <li><strong>Experimental scanner</strong> The demo compares locally. On iOS, you can keep the photo on the phone or authorize a one-time upload; both paths expose uncertainty.</li>
           </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="screenshots">
+      <div class="section-inner">
+        <div class="eyebrow">Running native build · no mockups</div>
+        <h2>Rocío on iPhone</h2>
+        <p class="section-copy">Five privacy-safe screens captured directly from the current Rocío Debug build on an iPhone 17 simulator with iOS 26.3 on July 22, 2026. The final App Store set will be captured again from the exact Release archive.</p>
+        <div class="screenshot-grid">
+          <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/catalog.png" alt="Rocío native catalog with real flower photography" loading="lazy">
+            <figcaption>Catalog</figcaption>
+          </figure>
+          <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/garden.png" alt="Rocío native garden with watering status" loading="lazy">
+            <figcaption>Garden</figcaption>
+          </figure>
+          <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/calendar.png" alt="Rocío native watering calendar" loading="lazy">
+            <figcaption>Calendar</figcaption>
+          </figure>
+          <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/scanner.png" alt="Rocío native experimental plant scanner" loading="lazy">
+            <figcaption>Scanner</figcaption>
+          </figure>
+          <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/settings.png" alt="Rocío native settings and privacy controls" loading="lazy">
+            <figcaption>Settings</figcaption>
+          </figure>
         </div>
       </div>
     </section>
 
     <section>
       <div class="section-inner">
-        <h2>Hecha para jardín de casa</h2>
-        <p class="section-copy">Rocío no intenta parecer una enciclopedia universal ni prometer inteligencia artificial perfecta. La versión 1.0 se enfoca en el primer ciclo de cuidado, sincronización resiliente y lenguaje claro.</p>
+        <h2>Made for the home garden</h2>
+        <p class="section-copy">The current beta contains 15 reviewed flower guides and does not promise perfect artificial intelligence. The production completion plan removes the catalog ceiling so any scanned or manually entered plant can use the same care, offline, and synchronization loop.</p>
         <div class="features">
           <article class="feature">
-            <strong>Primer cuidado completo</strong>
-            <p>Elige una flor, agrégala, activa un recordatorio cuando tú lo decidas y confirma el primer riego.</p>
+            <strong>Complete first care</strong>
+            <p>Choose a plant, add it, enable a reminder when you decide, and confirm the first watering.</p>
           </article>
           <article class="feature">
-            <strong>Jardín resiliente</strong>
-            <p>La caché local conserva los cambios, muestra el estado real de sincronización y reintenta cuando vuelve la conexión.</p>
+            <strong>Resilient garden</strong>
+            <p>The local cache retains changes, shows the true synchronization state, and retries when the connection returns.</p>
           </article>
           <article class="feature">
-            <strong>Privacidad por foto</strong>
-            <p>El scanner ofrece análisis local y pide un consentimiento nuevo antes de transferir una imagen reducida.</p>
+            <strong>Per-photo privacy</strong>
+            <p>The scanner offers local analysis and requests fresh consent before transferring a reduced image.</p>
           </article>
         </div>
       </div>
@@ -484,14 +556,14 @@
 
     <section>
       <div class="section-inner showcase">
-        <img src="assets/flowers/girasol.jpg" alt="Girasol fotografiado para el catálogo de Rocío">
+        <img src="assets/flowers/girasol.jpg" alt="Sunflower photographed for the Rocío catalog">
         <div>
-          <h2>Cuidado práctico, sin presión</h2>
-          <p class="section-copy">Rocío compite por confianza: flores de casa, soporte nativo en inglés y español, recuperación segura y guías fáciles de consultar.</p>
+          <h2>Practical care, without pressure</h2>
+          <p class="section-copy">Rocío competes on trust: familiar flowers, native English and Spanish support, secure recovery, and guidance that is easy to consult.</p>
           <ul class="list">
-            <li><strong>English + Español</strong> La interfaz sigue el idioma del iPhone y conserva el contexto de flores relevante para México y Latinoamérica.</li>
-            <li><strong>Recuperación segura</strong> El flujo PKCE guarda el verifier en Keychain y evita tokens bearer en la URL.</li>
-            <li><strong>Nativa donde importa</strong> App Intents, notificaciones locales, cámara, selector de fotos y experiencia SwiftUI real.</li>
+            <li><strong>English + Spanish</strong> The interface follows the iPhone language while preserving flower context relevant to Mexico and Latin America.</li>
+            <li><strong>Secure recovery</strong> The PKCE flow stores the verifier in Keychain and keeps bearer tokens out of the URL.</li>
+            <li><strong>Native where it matters</strong> App Intents, local notifications, camera, photo picker, and a real SwiftUI experience.</li>
           </ul>
         </div>
       </div>
@@ -499,26 +571,26 @@
 
     <section id="status">
       <div class="section-inner">
-        <h2>Estado de la versión 1.0</h2>
-        <p class="section-copy">El código está preparado como candidata beta. Publicar una app requiere completar configuración y pruebas externas que no pueden sustituirse con una demo web.</p>
+        <h2>Version 1.0 status</h2>
+        <p class="section-copy">The code is prepared as a beta candidate. Publishing an app still requires external configuration and testing that a web demo cannot replace.</p>
         <div class="pricing">
           <article class="price">
-            <h3>Verificado en el repositorio</h3>
-            <p>115/115 pruebas iOS, build Release unsigned, 11/11 gates de lanzamiento, 41/41 controles cloud y auditoría App Store 20/20.</p>
+            <h3>Verified in the repository</h3>
+            <p>115/115 iOS tests, an unsigned Release build, 11/11 release gates, 41/41 cloud controls, and a 20/20 App Store audit.</p>
           </article>
           <article class="price">
-            <h3>Antes de TestFlight</h3>
-            <p>Faltan Apple Developer pagado y firma de distribución, configuración remota de recuperación, migración Supabase pendiente y smoke físico de cámara, fotos y notificaciones.</p>
+            <h3>Before TestFlight</h3>
+            <p>Paid Apple Developer membership and distribution signing, remote recovery configuration, the pending Supabase migration, and physical smoke tests for camera, photos, and notifications remain outstanding.</p>
           </article>
         </div>
-        <p class="status-note"><strong>Disponibilidad:</strong> Rocío 1.0 aún no se ofrece en TestFlight ni App Store. Esta página no instala la app nativa; la demo web es una superficie separada.</p>
+        <p class="status-note"><strong>Availability:</strong> Rocío 1.0 is not yet offered through TestFlight or the App Store. This page does not install the native app; the web demo is a separate surface.</p>
       </div>
     </section>
   </main>
 
   <footer>
-    <span>Rocío 1.0 · build 1 · candidata beta.</span>
-    <span><a href="privacy.html">Privacidad</a> · <a href="support.html">Soporte</a> · <a href="index.html?demo=1">Demo</a></span>
+    <span>Rocío 1.0 · build 1 · beta candidate.</span>
+    <span><a href="privacy.html">Privacy</a> · <a href="support.html">Support</a> · <a href="index.html?demo=1">Demo</a></span>
   </footer>
 </body>
 </html>

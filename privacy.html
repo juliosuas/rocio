@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Política de privacidad de Rocío 1.0 para la app iOS nativa y su demo web local.">
+  <meta name="description" content="Privacy policy for the native Rocío 1.0 iOS app and its separate local-data web demo.">
   <link rel="canonical" href="https://juliosuas.github.io/rocio/privacy.html">
-  <title>Privacidad — Rocío 1.0</title>
+  <title>Privacy — Rocío 1.0</title>
   <style>
     body { max-width: 820px; margin: 0 auto; padding: 42px 22px 72px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2822; background: #fffaf2; line-height: 1.6; }
     a { color: #2f6b4f; } a:focus-visible { outline: 3px solid #b94f65; outline-offset: 3px; } h1 { font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 18px; } h2 { margin-top: 34px; }
@@ -13,33 +13,33 @@
   </style>
 </head>
 <body>
-  <nav class="nav" aria-label="Principal"><a href="launch.html">Rocío 1.0</a><a href="index.html?demo=1">Demo web</a><a href="support.html">Soporte</a></nav>
-  <h1>Política de privacidad</h1>
-  <p class="muted">Última actualización: 22 de julio de 2026.</p>
-  <div class="box"><strong>Resumen:</strong> La app iOS de Rocío usa una cuenta para sincronizar tu jardín y limitar de forma justa el scanner. No contiene publicidad ni tracking entre apps. La demo web es separada y guarda sus datos solo en el navegador.</div>
+  <nav class="nav" aria-label="Main"><a href="launch.html">Rocío 1.0</a><a href="index.html?demo=1">Web demo</a><a href="support.html">Support</a></nav>
+  <h1>Privacy policy</h1>
+  <p class="muted">Last updated: July 22, 2026.</p>
+  <div class="box"><strong>Summary:</strong> The Rocío iOS app uses an account to synchronize your garden and enforce fair scanner limits. It contains no advertising or cross-app tracking. The web demo is separate and stores its data only in your browser.</div>
 
-  <h2>Datos de la app iOS</h2>
-  <p>Rocío guarda una copia local y sincroniza con Supabase las flores, apodos, notas, estado de cuidado y fechas de riego de tu jardín. Estos datos se asocian con el identificador de tu cuenta para ofrecer sincronización. Puedes exportarlos o borrarlos desde Ajustes.</p>
+  <h2>iOS app data</h2>
+  <p>Rocío keeps a local copy and synchronizes your garden's plants, nicknames, notes, care status, and watering dates with Supabase. This data is associated with your account identifier to provide synchronization. You can export or delete it from Settings.</p>
 
-  <h2>Cuenta y analítica</h2>
-  <p>Para crear una cuenta se guarda tu correo y un identificador de usuario. Rocío puede guardar eventos limitados de uso para mejorar el producto; puedes desactivarlos en Ajustes. No usamos identificadores publicitarios, ubicación precisa ni datos de otras apps.</p>
+  <h2>Account and analytics</h2>
+  <p>Creating an account stores your email address and a user identifier. Rocío may record limited product-usage events to improve the app; you can opt out in Settings. We do not use advertising identifiers, precise location, or data from other apps.</p>
 
-  <h2>Inicio de sesión y recuperación</h2>
-  <p>La app conserva la sesión en Keychain. La recuperación de contraseña usa PKCE y un enlace profundo para volver a Rocío; la URL no debe contener tokens bearer. La configuración final del correo y de las URLs permitidas sigue siendo un requisito previo a la distribución pública.</p>
+  <h2>Sign-in and recovery</h2>
+  <p>The app stores its session in Keychain. Password recovery uses PKCE and a deep link to return to Rocío; the URL must not contain bearer tokens. Final email and allowed-URL configuration remain prerequisites for public distribution.</p>
 
-  <h2>Cámara y fotos</h2>
-  <p>La cámara y las fotos que eliges se usan únicamente cuando abres el scanner. Para cada foto, Rocío te permite analizarla solo en el iPhone o explica la transferencia y pide tu consentimiento antes de enviar una copia reducida a Plant.id/Kindwise mediante una función autenticada de Supabase. Rocío no guarda la imagen original en su base de datos, pero Plant.id la procesa de acuerdo con sus condiciones aplicables. Si el servicio falla, Rocío puede mostrar una coincidencia local de menor precisión.</p>
+  <h2>Camera and photos</h2>
+  <p>The camera and selected photos are used only when you open the scanner. For every selected photo, Rocío lets you analyze it only on the iPhone, or explains the transfer and asks for consent for that photo before sending a reduced copy to Plant.id/Kindwise through an authenticated Supabase function. Rocío does not store the original image in its database, but Plant.id processes the submitted copy under its applicable terms. If the service fails, Rocío may show a less precise local match.</p>
 
-  <h2>Notificaciones</h2>
-  <p>Rocío solicita permiso solo cuando activas recordatorios de riego. Son notificaciones locales basadas en las plantas guardadas. Al borrar los datos locales también se cancelan los recordatorios pendientes.</p>
+  <h2>Notifications</h2>
+  <p>Rocío requests permission only when you enable watering reminders. These are local notifications based on saved plants. Clearing local data also cancels pending reminders.</p>
 
-  <h2>Sitio web público</h2>
-  <p>Estas páginas no ofrecen un formulario de lista de espera y Rocío no recopila correos desde ellas. La demo web usa almacenamiento local para el jardín, preferencias e historial del scanner y solicita cámara o archivos solo cuando tú eliges esa función. Su configuración cloud está vacía: no crea cuentas, no sincroniza con Supabase y no envía fotos a Plant.id. Puedes borrar sus datos desde Mi Jardín o desde la configuración del navegador.</p>
+  <h2>Public website</h2>
+  <p>These pages do not offer a wait-list form, and Rocío does not collect email addresses through them. The web demo uses local storage for the garden, preferences, and scanner history, and requests camera or file access only when you choose that feature. Its cloud configuration is blank: it does not create accounts, sync with Supabase, or send photos to Plant.id. You can erase its data from My Garden or through your browser settings.</p>
 
-  <h2>Scanner y contenido de cuidado</h2>
-  <p>El scanner muestra candidatos posibles y puede equivocarse. La información de cuidado es orientativa y no sustituye asesoría botánica, agrícola, médica o veterinaria profesional.</p>
+  <h2>Scanner and care content</h2>
+  <p>The scanner presents possible candidates and can be wrong. Care information is general guidance and does not replace professional botanical, agricultural, medical, or veterinary advice.</p>
 
-  <h2>Tus opciones</h2>
-  <p>Puedes exportar el jardín, borrar sus datos o eliminar permanentemente tu cuenta y sus datos asociados desde Ajustes. Para hacer una pregunta de privacidad, abre una solicitud en el <a href="https://github.com/juliosuas/rocio/issues">repositorio de soporte de Rocío</a>. No incluyas datos personales en un issue público.</p>
+  <h2>Your choices</h2>
+  <p>You can export the garden, erase its data, or permanently delete your account and associated data from Settings. For a privacy question, open a request in the <a href="https://github.com/juliosuas/rocio/issues">Rocío support repository</a>. Do not include personal information in a public issue.</p>
 </body>
 </html>

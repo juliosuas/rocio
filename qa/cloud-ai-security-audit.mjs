@@ -326,9 +326,10 @@ const checks = [
       releaseChecklist.includes('consent for each transferred photo') &&
       appStoreMetadata.includes('For every selected scanner photo') &&
       appStoreMetadata.includes('Only the second choice transfers') &&
-      publicPrivacy.includes('Para cada foto') &&
+      publicPrivacy.includes('For every selected photo') &&
+      publicPrivacy.includes('consent for that photo') &&
       !privacy.includes('one-time explicit disclosure') &&
-      !publicPrivacy.includes('Antes del primer análisis en la nube')],
+      !publicPrivacy.includes('Before the first cloud analysis')],
   ['notification-entrypoint-docs',
     privacy.includes('first-care Garden card or in Settings') &&
       releaseChecklist.includes('explicit tap in Garden or Settings') &&

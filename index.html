@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -9,11 +9,11 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="description" content="Demo web local de Rocío 1.0: explora 15 flores, un jardín de ejemplo, calendario de riego e identificación experimental sin cuenta ni sincronización cloud.">
+<meta name="description" content="Rocío 1.0 local-data web demo: explore 15 flowers, a sample garden, a watering calendar, and experimental identification without an account or cloud sync.">
 <meta name="author" content="Rocío">
 <link rel="canonical" href="https://juliosuas.github.io/rocio/index.html">
-<meta property="og:title" content="Rocío 1.0 — Demo web local">
-<meta property="og:description" content="Vista previa web separada de la app nativa: catálogo, jardín y scanner experimental con datos en este navegador.">
+<meta property="og:title" content="Rocío 1.0 — Local-data web demo">
+<meta property="og:description" content="A separate preview of the native app with a catalog, garden, and experimental scanner whose data stays in this browser.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://juliosuas.github.io/rocio/index.html">
 <meta property="og:image" content="https://juliosuas.github.io/rocio/assets/flowers/rosa.jpg">
@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
-<title>Rocío 1.0 — Demo web local</title>
+<title>Rocío 1.0 — Local-data web demo</title>
 <script>
 (function() {
   function releaseSplash() {
@@ -2039,7 +2039,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <span>🌻</span>
   </div>
   <div class="splash-logo">Rocío 🌸</div>
-  <div class="splash-subtitle">Cuida tus flores con amor</div>
+  <div class="splash-subtitle">Care for your flowers with love</div>
   <div class="splash-dots">
     <span aria-hidden="true">&nbsp;</span><span aria-hidden="true">&nbsp;</span><span aria-hidden="true">&nbsp;</span>
   </div>
@@ -2050,10 +2050,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 <!-- HEADER -->
 <header class="header">
-  <span class="header-title">Rocío · Demo web</span>
+  <span class="header-title">Rocío · Web demo</span>
   <div class="header-actions">
-    <button class="icon-btn" id="identifierBtn" title="Identificar planta" aria-label="Abrir identificador local">📸</button>
-    <button class="icon-btn" id="themeToggle" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    <button class="icon-btn" id="identifierBtn" title="Identify a plant" aria-label="Open local identifier">📸</button>
+    <button class="icon-btn" id="themeToggle" title="Change theme" aria-label="Change theme">🌙</button>
   </div>
 </header>
 
@@ -2066,9 +2066,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <!-- MAIN CONTENT -->
 <main class="page-container">
 
-  <aside class="release-notice" aria-label="Estado de esta demo">
-    <strong>Vista previa web · Rocío 1.0</strong>
-    Esta demo guarda sus datos solo en este navegador y usa identificación local. La app iOS nativa continúa en preparación para TestFlight. <a href="launch.html#status">Ver estado real</a> · <a href="privacy.html">Privacidad</a>
+  <aside class="release-notice" aria-label="Demo status">
+    <strong>Web preview · Rocío 1.0</strong>
+    This demo stores its data only in this browser and uses local identification. The native iOS app is still preparing for TestFlight. <a href="launch.html#status">View current status</a> · <a href="privacy.html">Privacy</a>
   </aside>
 
   <!-- ════════ CATÁLOGO ════════ -->
@@ -2076,36 +2076,36 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <div class="hero-section" id="heroSection">
       <div class="hero-petals" id="heroPetals"></div>
       <div class="hero-photo-mosaic">
-        <img src="./assets/flowers/lavanda.jpg" alt="Lavanda" loading="lazy">
-        <img src="./assets/flowers/tulipan.jpg" alt="Tulipán" loading="lazy">
-        <img src="./assets/flowers/rosa.svg" alt="Rosa" loading="lazy">
-        <img src="./assets/flowers/girasol.jpg" alt="Girasol" loading="lazy">
-        <img src="./assets/flowers/hortensia.jpg" alt="Hortensia" loading="lazy">
+        <img src="./assets/flowers/lavanda.jpg" alt="Lavender" loading="lazy">
+        <img src="./assets/flowers/tulipan.jpg" alt="Tulip" loading="lazy">
+        <img src="./assets/flowers/rosa.svg" alt="Rose" loading="lazy">
+        <img src="./assets/flowers/girasol.jpg" alt="Sunflower" loading="lazy">
+        <img src="./assets/flowers/hortensia.jpg" alt="Hydrangea" loading="lazy">
       </div>
-      <div class="hero-title">Explora & Cultiva</div>
-      <div class="hero-subtitle">Catálogo y jardín local de la demo web 💚</div>
+      <div class="hero-title">Explore & Grow</div>
+      <div class="hero-subtitle">The web demo's local catalog and garden 💚</div>
     </div>
 
     <div class="search-bar">
       <span class="search-icon">🔍</span>
-      <input type="text" id="searchInput" placeholder="Buscar flores...">
+      <input type="text" id="searchInput" placeholder="Search flowers...">
     </div>
 
     <div class="seasonal-banner" id="seasonalBanner"></div>
     <div class="plant-of-day" id="plantOfDay"></div>
 
     <div class="filter-row" id="filterRow">
-      <button class="filter-chip active" data-filter="all">Todas</button>
-      <button class="filter-chip" data-filter="easy">🟢 Fácil</button>
-      <button class="filter-chip" data-filter="medium">🟡 Media</button>
-      <button class="filter-chip" data-filter="hard">🔴 Difícil</button>
-      <button class="filter-chip" data-filter="spring">🌷 Primavera</button>
-      <button class="filter-chip" data-filter="summer">☀️ Verano</button>
-      <button class="filter-chip" data-filter="fall">🍂 Otoño</button>
-      <button class="filter-chip" data-filter="winter">❄️ Invierno</button>
-      <button class="filter-chip" data-filter="full-sun">☀️ Sol pleno</button>
-      <button class="filter-chip" data-filter="partial">⛅ Parcial</button>
-      <button class="filter-chip" data-filter="shade">🌥️ Sombra</button>
+      <button class="filter-chip active" data-filter="all">All</button>
+      <button class="filter-chip" data-filter="easy">🟢 Easy</button>
+      <button class="filter-chip" data-filter="medium">🟡 Medium</button>
+      <button class="filter-chip" data-filter="hard">🔴 Hard</button>
+      <button class="filter-chip" data-filter="spring">🌷 Spring</button>
+      <button class="filter-chip" data-filter="summer">☀️ Summer</button>
+      <button class="filter-chip" data-filter="fall">🍂 Fall</button>
+      <button class="filter-chip" data-filter="winter">❄️ Winter</button>
+      <button class="filter-chip" data-filter="full-sun">☀️ Full sun</button>
+      <button class="filter-chip" data-filter="partial">⛅ Partial light</button>
+      <button class="filter-chip" data-filter="shade">🌥️ Shade</button>
     </div>
 
     <div class="card-grid" id="catalogGrid"></div>
@@ -2113,14 +2113,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
   <!-- ════════ MI JARDÍN ════════ -->
   <section class="page" id="pageGarden">
-    <h1 class="page-title">Mi Jardín 🌱</h1>
-    <p class="page-subtitle">Tu colección local de flores en esta demo</p>
-    <div class="data-controls" id="dataControls" aria-label="Controles de datos locales">
-      <div class="data-controls-title">Los datos de esta demo viven en este navegador</div>
-      <div class="data-controls-copy">No se sincronizan con la app iOS. Exporta una copia JSON o borra tu jardín cuando quieras.</div>
+    <h1 class="page-title">My Garden 🌱</h1>
+    <p class="page-subtitle">Your local flower collection in this demo</p>
+    <div class="data-controls" id="dataControls" aria-label="Local data controls">
+      <div class="data-controls-title">This demo's data lives in this browser</div>
+      <div class="data-controls-copy">It does not synchronize with the iOS app. Export a JSON copy or erase your garden whenever you like.</div>
       <div class="data-control-actions">
-        <button class="data-control-btn" id="exportDataBtn" type="button">⬇️ Exportar datos</button>
-        <button class="data-control-btn danger" id="clearLocalDataBtn" type="button">🗑 Borrar datos</button>
+        <button class="data-control-btn" id="exportDataBtn" type="button">⬇️ Export data</button>
+        <button class="data-control-btn danger" id="clearLocalDataBtn" type="button">🗑 Erase data</button>
       </div>
     </div>
     <div id="gardenList"></div>
@@ -2128,18 +2128,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
       <div class="empty-art">
         <div class="empty-illustration">🌿</div>
       </div>
-      <h3>Tu jardín espera florecer</h3>
-      <p>Explora el catálogo y agrega tus flores favoritas para comenzar a cuidarlas con todo el amor del mundo 💚</p>
+      <h3>Your garden is waiting to bloom</h3>
+      <p>Explore the catalog and add your favorite flowers to start caring for them with plenty of love 💚</p>
     </div>
   </section>
 
   <!-- ════════ CALENDARIO ════════ -->
   <section class="page" id="pageCalendar">
-    <h1 class="page-title">Calendario 📅</h1>
-    <p class="page-subtitle">Tu agenda de cuidado semanal</p>
+    <h1 class="page-title">Calendar 📅</h1>
+    <p class="page-subtitle">Your weekly care schedule</p>
 
     <div class="cal-header">
-      <h3 id="calWeekLabel">Esta semana</h3>
+      <h3 id="calWeekLabel">This week</h3>
       <div class="cal-nav">
         <button id="calPrev">‹</button>
         <button id="calNext">›</button>
@@ -2150,42 +2150,42 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <div class="moon-section" id="moonSection"></div>
 
     <div class="today-tasks">
-      <h3>📋 Tareas de hoy</h3>
+      <h3>📋 Today's tasks</h3>
       <div id="todayTasks"></div>
       <div class="empty-state" id="tasksEmpty" style="display:none;">
         <div class="empty-art">
           <div class="empty-illustration">✨</div>
         </div>
-        <h3>¡Todo al día!</h3>
-        <p>Tus plantas están felices y saludables. Buen trabajo, jardinero 🌱</p>
+        <h3>Everything is up to date!</h3>
+        <p>Your plants are happy and healthy. Nice work, gardener 🌱</p>
       </div>
     </div>
   </section>
 
   <!-- ════════ DOCTOR ════════ -->
   <section class="page" id="pageDoctor">
-    <h1 class="page-title">Doctor de Plantas 🏥</h1>
-    <p class="page-subtitle">Diagnóstico, remedios caseros y primeros auxilios</p>
+    <h1 class="page-title">Plant Doctor 🏥</h1>
+    <p class="page-subtitle">Assistive symptoms, home remedies, and first-aid guidance</p>
 
     <div class="doctor-tabs" id="doctorTabs">
-      <button class="doctor-tab active" data-dtab="symptoms">🔍 Síntomas</button>
-      <button class="doctor-tab" data-dtab="pests">🐛 Plagas</button>
-      <button class="doctor-tab" data-dtab="remedies">🧪 Remedios</button>
-      <button class="doctor-tab" data-dtab="compost">♻️ Composta</button>
-      <button class="doctor-tab" data-dtab="calculator">💧 Calculadora</button>
+      <button class="doctor-tab active" data-dtab="symptoms">🔍 Symptoms</button>
+      <button class="doctor-tab" data-dtab="pests">🐛 Pests</button>
+      <button class="doctor-tab" data-dtab="remedies">🧪 Remedies</button>
+      <button class="doctor-tab" data-dtab="compost">♻️ Compost</button>
+      <button class="doctor-tab" data-dtab="calculator">💧 Calculator</button>
     </div>
 
     <!-- EMERGENCY -->
     <div class="emergency-card">
-      <div class="ec-title">🚨 ¿Tu planta se está muriendo?</div>
+      <div class="ec-title">🚨 Is your plant dying?</div>
       <div class="ec-body">
-        <strong>Primeros auxilios:</strong><br>
-        1. Retírala del sol directo inmediatamente<br>
-        2. Revisa raíces — si son marrones/blandas = exceso de agua → deja secar 3 días<br>
-        3. Si la tierra está seca y dura → sumerge la maceta en agua 15 min<br>
-        4. Corta hojas totalmente secas o podridas<br>
-        5. Mueve a lugar con luz indirecta y buena ventilación<br>
-        6. NO fertilices una planta estresada — espera 2 semanas
+        <strong>First aid:</strong><br>
+        1. Remove it from direct sun immediately<br>
+        2. Check the roots — brown or soft roots can indicate overwatering → let them dry for 3 days<br>
+        3. If the soil is dry and hard → soak the pot in water for 15 minutes<br>
+        4. Remove fully dried or rotten leaves<br>
+        5. Move it to indirect light with good ventilation<br>
+        6. Do NOT fertilize a stressed plant — wait 2 weeks
       </div>
     </div>
 
@@ -2218,23 +2218,23 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   <!-- ════════ TIPS ════════ -->
   <section class="page" id="pageTips">
     <h1 class="page-title">Tips 💡</h1>
-    <p class="page-subtitle">Consejos de temporada para tu jardín</p>
+    <p class="page-subtitle">Seasonal guidance for your garden</p>
 
     <!-- Plant Identifier -->
     <div class="identifier-section" id="identifierSection">
-      <h3>📸 Identificador local experimental</h3>
-      <p>Sube una foto clara y Rocío la comparará con las 15 flores de esta demo; el resultado es orientativo.</p>
+      <h3>📸 Experimental local identifier</h3>
+      <p>Upload a clear photo and Rocío will compare it with the 15 flowers in this demo; the result is assistive.</p>
       <div class="identifier-tools">
-        <span class="identifier-chip active" id="plantNetStatus">Modo local activo</span>
+        <span class="identifier-chip active" id="plantNetStatus">Local mode active</span>
       </div>
       <div class="upload-zone" id="uploadZone">
         <div class="upload-icon">🌺</div>
-        <p>Toca para subir una foto</p>
+        <p>Tap to upload a photo</p>
         <input type="file" id="fileInput" accept="image/*" style="display:none">
       </div>
       <div class="scan-animation" id="scanAnim">
         <div class="scan-circle">🔬</div>
-        <div class="scan-text">Analizando tu flor...</div>
+        <div class="scan-text">Analyzing your flower...</div>
       </div>
       <div class="scan-result" id="scanResult">
         <div class="sr-emoji" id="srEmoji"></div>
@@ -2250,14 +2250,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 </main>
 
 <!-- SCANNER FAB -->
-<button class="scanner-fab" id="scannerFab" title="Escanear planta">📸</button>
+<button class="scanner-fab" id="scannerFab" title="Scan a plant">📸</button>
 
 <!-- SCANNER OVERLAY -->
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-top-bar">
     <button class="scanner-close" id="scannerClose">✕</button>
-    <span class="scanner-title">🌿 Identificador local experimental</span>
-    <button class="scanner-history-btn" id="scannerHistoryBtn">📷 Historial</button>
+    <span class="scanner-title">🌿 Experimental local identifier</span>
+    <button class="scanner-history-btn" id="scannerHistoryBtn">📷 History</button>
   </div>
   <div class="scanner-viewfinder" id="scannerViewfinder">
     <video id="scannerVideo" autoplay playsinline muted></video>
@@ -2270,34 +2270,34 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
       <div class="scanner-reticle-br"></div>
     </div>
     <div class="scanner-scanline" id="scannerScanline"></div>
-    <div class="scanner-status" id="scannerStatus">Apunta a una planta...</div>
+    <div class="scanner-status" id="scannerStatus">Point at a plant...</div>
     <div class="scanner-photo-guide" id="scannerPhotoGuide">
-      <span>Flor completa</span>
-      <span>Fondo limpio</span>
-      <span>Luz natural</span>
+      <span>Whole flower</span>
+      <span>Clean background</span>
+      <span>Natural light</span>
     </div>
     <div class="scanner-progress" id="scannerProgress">
       <div class="scanner-progress-fill" id="scannerProgressFill"></div>
     </div>
     <div class="scanner-particles" id="scannerParticles"></div>
     <div class="scanner-capture-area" id="scannerCaptureArea">
-      <button class="scanner-capture-btn" id="scannerCaptureBtn" aria-label="Tomar foto para identificar planta"></button>
+      <button class="scanner-capture-btn" id="scannerCaptureBtn" aria-label="Take a photo to identify a plant"></button>
     </div>
     <!-- Upload fallback (no camera) -->
     <div class="scanner-upload-fallback" id="scannerUploadFallback">
       <div class="scanner-upload-icon">📷</div>
-      <div class="scanner-upload-text">Tu dispositivo no tiene cámara disponible.<br>Sube una foto para identificar la planta.</div>
-      <div class="scanner-upload-hint">Mejor resultado: flor abierta, completa y enfocada; evita varias flores mezcladas, hojas dominantes o fondos muy cargados.</div>
-      <button class="scanner-upload-btn" id="scannerUploadBtn">📁 Subir foto</button>
+      <div class="scanner-upload-text">Your device does not have an available camera.<br>Upload a photo to identify the plant.</div>
+      <div class="scanner-upload-hint">For a better result, use one complete, open flower in focus. Avoid mixed flowers, dominant foliage, or busy backgrounds.</div>
+      <button class="scanner-upload-btn" id="scannerUploadBtn">📁 Upload photo</button>
       <input type="file" id="scannerFileInput" accept="image/*" style="display:none">
     </div>
     <!-- Permission denied -->
     <div class="scanner-permission-msg" id="scannerPermMsg">
       <div style="font-size:64px;margin-bottom:8px">🔒</div>
-      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Permiso de cámara necesario</div>
-      <div class="scanner-upload-text">Para escanear plantas, necesitamos acceso a tu cámara. Ve a la configuración de tu navegador y permite el acceso a la cámara.</div>
-      <div class="scanner-upload-hint">Si subes foto, usa una sola flor centrada con luz natural y fondo limpio.</div>
-      <button class="scanner-upload-btn" id="scannerPermUploadBtn" style="margin-top:8px">📁 O sube una foto</button>
+      <div style="font-size:18px;font-weight:700;margin-bottom:8px">Camera permission required</div>
+      <div class="scanner-upload-text">The scanner needs camera access. Open your browser settings and allow camera access.</div>
+      <div class="scanner-upload-hint">If you upload a photo, use one centered flower with natural light and a clean background.</div>
+      <button class="scanner-upload-btn" id="scannerPermUploadBtn" style="margin-top:8px">📁 Or upload a photo</button>
     </div>
   </div>
   <!-- Result card -->
@@ -2316,10 +2316,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     </div>
     <div class="scanner-result-care" id="scannerResultCare"></div>
     <div class="scanner-result-actions">
-      <button class="scanner-btn-detail" id="scannerBtnDetail">🌿 Ver ficha completa</button>
-      <button class="scanner-btn-retry" id="scannerBtnRetry">📸 Escanear otra</button>
+      <button class="scanner-btn-detail" id="scannerBtnDetail">🌿 View full profile</button>
+      <button class="scanner-btn-retry" id="scannerBtnRetry">📸 Scan another</button>
     </div>
-    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Identificación asistida: confirma la planta antes de guardarla.</p>
+    <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:8px">Assistive identification: confirm the plant before saving it.</p>
   </div>
 </div>
 
@@ -2327,10 +2327,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <div class="scan-history-overlay" id="scanHistoryOverlay">
   <div class="scan-history-sheet">
     <div class="modal-handle" id="scanHistoryHandle"></div>
-    <h3 style="font-size:18px;font-weight:800;text-align:center;margin-bottom:4px">📷 Historial de escaneos</h3>
-    <p style="font-size:12px;color:var(--text-muted);text-align:center">Tus últimos 10 escaneos</p>
+    <h3 style="font-size:18px;font-weight:800;text-align:center;margin-bottom:4px">📷 Scan history</h3>
+    <p style="font-size:12px;color:var(--text-muted);text-align:center">Your 10 most recent scans</p>
     <div class="scan-history-grid" id="scanHistoryGrid"></div>
-    <button class="scan-history-clear" id="scanHistoryClear">🗑 Limpiar historial</button>
+    <button class="scan-history-clear" id="scanHistoryClear">🗑 Clear history</button>
   </div>
 </div>
 
@@ -2338,15 +2338,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <nav class="bottom-nav">
   <button class="nav-item active" data-page="pageCatalog">
     <span class="nav-icon">🌸</span>
-    <span class="nav-label">Catálogo</span>
+    <span class="nav-label">Catalog</span>
   </button>
   <button class="nav-item" data-page="pageGarden">
     <span class="nav-icon">🌱</span>
-    <span class="nav-label">Jardín</span>
+    <span class="nav-label">Garden</span>
   </button>
   <button class="nav-item" data-page="pageCalendar">
     <span class="nav-icon">📅</span>
-    <span class="nav-label">Calendario</span>
+    <span class="nav-label">Calendar</span>
   </button>
   <button class="nav-item" data-page="pageDoctor">
     <span class="nav-icon">🏥</span>
@@ -2367,7 +2367,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <div class="modal-scientific" id="modalScientific"></div>
     <div class="info-grid" id="modalInfoGrid"></div>
     <div class="fun-fact" id="modalFunFact"></div>
-    <button class="btn-primary" id="modalAddBtn">🌱 Agregar a Mi Jardín</button>
+  <button class="btn-primary" id="modalAddBtn">🌱 Add to My Garden</button>
   </div>
 </div>
 
@@ -2378,15 +2378,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
     <div class="modal-emoji" id="gmEmoji"></div>
     <div class="modal-name" id="gmName"></div>
     <div style="margin-top:16px">
-      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Estado</label>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Status</label>
       <div class="status-selector" id="gmStatus"></div>
     </div>
     <div style="margin-top:8px">
-      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Notas</label>
-      <textarea class="notes-textarea" id="gmNotes" placeholder="Escribe notas sobre tu planta..."></textarea>
+      <label style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;">Notes</label>
+      <textarea class="notes-textarea" id="gmNotes" placeholder="Write notes about your plant..."></textarea>
     </div>
-    <button class="btn-primary" id="gmSaveBtn">💾 Guardar cambios</button>
-    <button class="btn-danger" id="gmDeleteBtn">🗑 Quitar del jardín</button>
+    <button class="btn-primary" id="gmSaveBtn">💾 Save changes</button>
+    <button class="btn-danger" id="gmDeleteBtn">🗑 Remove from garden</button>
   </div>
 </div>
 
@@ -2394,14 +2394,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 <div class="onboarding-overlay" id="onboarding">
   <div class="onboarding-card">
     <div class="ob-emoji" id="obEmoji">🌸</div>
-    <div class="ob-title" id="obTitle">Bienvenido a Rocío</div>
-    <div class="ob-desc" id="obDesc">Cuida tus flores con amor. Descubre, aprende y cultiva las flores más hermosas.</div>
+    <div class="ob-title" id="obTitle">Welcome to Rocío</div>
+    <div class="ob-desc" id="obDesc">Care for your flowers with love. Discover, learn, and grow beautiful flowers.</div>
     <div class="ob-dots">
       <div class="ob-dot active" data-step="0"></div>
       <div class="ob-dot" data-step="1"></div>
       <div class="ob-dot" data-step="2"></div>
     </div>
-    <button class="ob-btn" id="obBtn">Siguiente</button>
+    <button class="ob-btn" id="obBtn">Next</button>
   </div>
 </div>
 
@@ -2420,280 +2420,280 @@ function rocioFlowerImage(id) {
 }
 const FLOWERS = [
   {
-    id:'rosa', emoji:'🌹', img:rocioFlowerImage('rosa'), name:'Rosa', scientific:'Rosa spp.',
-    difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:3, waterMl:300, tempMin:15, tempMax:28, soil:'Franco, bien drenado',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Las rosas existen desde hace más de 35 millones de años. Son las flores más vendidas del mundo.',
-    toxic:'Espinas pueden lastimar, pétalos no tóxicos. Segura para mascotas.',
+    id:'rosa', emoji:'🌹', img:rocioFlowerImage('rosa'), name:'Rose', scientific:'Rosa spp.',
+    difficulty:2, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:3, waterMl:300, tempMin:15, tempMax:28, soil:'Well-drained loam',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Roses have existed for more than 35 million years. They are the best-selling flowers in the world.',
+    toxic:'Thorns can cause injury; petals are nontoxic. Pet-safe.',
     toxicLevel:'safe',
-    fertilizer:'NPK 10-10-10 cada 3 semanas en temporada de crecimiento. Fertilizante para rosas ideal.',
-    pruning:'Poda fuerte en febrero: corta a 1/3 de altura. Corta en diagonal 5mm arriba de yema externa. Elimina flores marchitas todo el verano.',
-    propagation:'Esquejes semi-leñosos en verano (15cm), acodo aéreo, o injerto en patrón resistente.',
-    companions:'Lavanda (repele pulgones), ajo, salvia, geranios, claveles.',
+    fertilizer:'Apply NPK 10-10-10 every 3 weeks during the growing season. A rose-specific fertilizer is ideal.',
+    pruning:'Prune hard in February: cut back to one-third of the plant\'s height. Cut diagonally 5mm above an outward-facing bud. Deadhead throughout summer.',
+    propagation:'Propagate from 15cm semi-hardwood cuttings in summer, air layering, or grafting onto resistant rootstock.',
+    companions:'Lavender (repels aphids), garlic, sage, geraniums, and carnations.',
     diseases:[
-      {name:'Oídio (polvo blanco)', symptom:'Polvo blanco en hojas', treatment:'Fungicida a base de azufre. Remedio casero: 1 cda bicarbonato + 1L agua + gota de jabón.'},
-      {name:'Mancha negra', symptom:'Manchas negras circulares en hojas', treatment:'Elimina hojas afectadas. Fungicida cúprico cada 10 días. Evita mojar follaje al regar.'},
-      {name:'Roya', symptom:'Pústulas anaranjadas bajo las hojas', treatment:'Retira hojas enfermas. Aplica fungicida sistémico. Mejora ventilación.'}
+      {name:'Powdery mildew', symptom:'White powder on leaves', treatment:'Use a sulfur-based fungicide. Home remedy: 1 tbsp baking soda + 1L water + one drop of soap.'},
+      {name:'Black spot', symptom:'Circular black spots on leaves', treatment:'Remove affected leaves. Apply a copper fungicide every 10 days. Avoid wetting foliage when watering.'},
+      {name:'Rust', symptom:'Orange pustules beneath the leaves', treatment:'Remove diseased leaves. Apply a systemic fungicide. Improve ventilation.'}
     ],
-    plantingSteps:['Elige ubicación con 6+ horas de sol directo','Cava hoyo 40×40cm, mezcla tierra con composta','Remoja raíces 1 hora antes de plantar','Planta con injerto 5cm sobre nivel del suelo','Riega abundantemente y aplica acolchado','Primeras 2 semanas: riego diario ligero']
+    plantingSteps:['Choose a location with 6+ hours of direct sun','Dig a 40×40cm hole and mix the soil with compost','Soak the roots for 1 hour before planting','Set the graft union 5cm above soil level','Water thoroughly and add mulch','For the first 2 weeks, water lightly every day']
   },
   {
-    id:'tulipan', emoji:'🌷', img:rocioFlowerImage('tulipan'), name:'Tulipán', scientific:'Tulipa spp.',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:5, waterMl:150, tempMin:10, tempMax:20, soil:'Arenoso, bien drenado',
-    seasons:['spring'], seasonLabel:'Primavera',
-    fact:'En el siglo XVII, los tulipanes llegaron a valer más que las casas en Holanda durante la "Tulipomanía".',
-    toxic:'Bulbos tóxicos para perros y gatos. Pueden causar vómito e irritación.',
+    id:'tulipan', emoji:'🌷', img:rocioFlowerImage('tulipan'), name:'Tulip', scientific:'Tulipa spp.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:5, waterMl:150, tempMin:10, tempMax:20, soil:'Well-drained sandy soil',
+    seasons:['spring'], seasonLabel:'Spring',
+    fact:'During seventeenth-century Tulip Mania, tulips in the Netherlands could be valued above houses.',
+    toxic:'Bulbs are toxic to dogs and cats and can cause vomiting and irritation.',
     toxicLevel:'toxic',
-    fertilizer:'NPK 9-9-6 al plantar y cuando emerge el brote. No fertilizar en floración.',
-    pruning:'No cortar hojas hasta que amarilleen por completo (alimentan el bulbo). Cortar solo tallo floral marchito.',
-    propagation:'Bulbillos laterales que se separan en otoño. Plantar a 15cm de profundidad.',
-    companions:'Narcisos, muscari, pensamientos, no plantar junto a coníferas.',
+    fertilizer:'Apply NPK 9-9-6 when planting and when the shoot emerges. Do not fertilize during bloom.',
+    pruning:'Do not cut leaves until they have yellowed completely because they feed the bulb. Remove only the faded flower stalk.',
+    propagation:'Separate offset bulbs in fall and plant them 15cm deep.',
+    companions:'Daffodils, grape hyacinths, and pansies; avoid planting next to conifers.',
     diseases:[
-      {name:'Fuego del tulipán (Botrytis)', symptom:'Manchas marrones en hojas y flores', treatment:'Eliminar partes afectadas. Fungicida sistémico. Espaciar bulbos.'},
-      {name:'Podredumbre del bulbo', symptom:'Bulbo blando y con mal olor', treatment:'Descartar bulbos afectados. No plantar en mismo sitio por 3 años. Mejorar drenaje.'}
+      {name:'Tulip fire (Botrytis)', symptom:'Brown spots on leaves and flowers', treatment:'Remove affected parts. Apply a systemic fungicide. Increase bulb spacing.'},
+      {name:'Bulb rot', symptom:'Soft, foul-smelling bulb', treatment:'Discard affected bulbs. Do not plant in the same place for 3 years. Improve drainage.'}
     ],
-    plantingSteps:['Plantar bulbos en octubre-noviembre (necesitan frío)','Cavar hoyos de 15cm profundidad','Colocar bulbo con punta hacia arriba','Espaciar 10cm entre bulbos','Cubrir con tierra y regar bien','Florecerán en primavera (marzo-abril)']
+    plantingSteps:['Plant bulbs in October or November because they need cold','Dig holes 15cm deep','Place each bulb with the pointed end up','Space bulbs 10cm apart','Cover with soil and water well','They will bloom in spring, usually March or April']
   },
   {
-    id:'orquidea', emoji:'🪻', img:rocioFlowerImage('orquidea'), name:'Orquídea', scientific:'Orchidaceae',
-    difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:7, waterMl:100, tempMin:18, tempMax:25, soil:'Corteza de pino, musgo sphagnum',
-    seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
-    fact:'Existen más de 25,000 especies de orquídeas. Algunas pueden vivir hasta 100 años.',
-    toxic:'No tóxica para mascotas. Segura en hogares con gatos y perros.',
+    id:'orquidea', emoji:'🪻', img:rocioFlowerImage('orquidea'), name:'Orchid', scientific:'Orchidaceae',
+    difficulty:3, sunlight:'partial', sunlightLabel:'Partial light',
+    waterDays:7, waterMl:100, tempMin:18, tempMax:25, soil:'Pine bark and sphagnum moss',
+    seasons:['spring','winter'], seasonLabel:'Spring - Winter',
+    fact:'There are more than 25,000 orchid species. Some can live for up to 100 years.',
+    toxic:'Nontoxic to pets. Safe in homes with cats and dogs.',
     toxicLevel:'safe',
-    fertilizer:'NPK 20-20-20 diluido al 50%, cada 2 semanas en crecimiento. Suspender en reposo.',
-    pruning:'Cortar vara floral por encima del 2° nudo cuando todas las flores caigan. Nunca cortar hojas verdes.',
-    propagation:'División de pseudobulbos, keikis (hijuelos en la vara), o siembra in vitro.',
-    companions:'Bromelias, helechos, musgos (en arreglos epífitos).',
+    fertilizer:'Apply NPK 20-20-20 at half strength every 2 weeks during growth. Stop during dormancy.',
+    pruning:'After every flower falls, cut the flower spike above the second node. Never cut green leaves.',
+    propagation:'Divide pseudobulbs, separate keikis from the spike, or propagate through in-vitro culture.',
+    companions:'Bromeliads, ferns, and mosses in epiphytic arrangements.',
     diseases:[
-      {name:'Pudrición de raíces', symptom:'Raíces marrones y blandas, hojas flácidas', treatment:'Sacar de maceta, cortar raíces podridas con tijera esterilizada, aplicar canela en polvo, trasplantar en sustrato nuevo.'},
-      {name:'Manchas bacterianas', symptom:'Manchas acuosas oscuras en hojas', treatment:'Cortar parte afectada con margen sano. Aplicar canela. Aislar planta.'},
-      {name:'Cochinilla', symptom:'Bolitas blancas algodonosas en axilas de hojas', treatment:'Limpiar con algodón y alcohol isopropílico. Aceite de neem semanal.'}
+      {name:'Root rot', symptom:'Brown, soft roots and limp leaves', treatment:'Remove from the pot, trim rotten roots with sterilized scissors, apply cinnamon powder, and repot in fresh medium.'},
+      {name:'Bacterial spots', symptom:'Dark, water-soaked spots on leaves', treatment:'Cut away the affected area with a margin of healthy tissue. Apply cinnamon and isolate the plant.'},
+      {name:'Mealybugs', symptom:'White cotton-like clusters in leaf axils', treatment:'Clean with cotton and isopropyl alcohol. Apply neem oil weekly.'}
     ],
-    plantingSteps:['Usar maceta transparente con agujeros de drenaje','Sustrato: corteza de pino gruesa + carbón + perlita','NO usar tierra normal (mata las raíces)','Colocar en luz brillante indirecta (nunca sol directo)','Regar sumergiendo maceta 10 min en agua, escurrir bien','Temperatura nocturna 5°C menor que diurna estimula floración']
+    plantingSteps:['Use a transparent pot with drainage holes','Use coarse pine bark, charcoal, and perlite as the medium','Do NOT use regular soil because it damages the roots','Place in bright indirect light, never direct sun','Water by soaking the pot for 10 minutes, then drain well','A nighttime temperature 5°C below daytime temperature encourages flowering']
   },
   {
-    id:'girasol', emoji:'🌻', img:rocioFlowerImage('girasol'), name:'Girasol', scientific:'Helianthus annuus',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, waterMl:400, tempMin:20, tempMax:35, soil:'Franco, fértil',
-    seasons:['summer'], seasonLabel:'Verano',
-    fact:'Los girasoles jóvenes siguen al sol durante el día, un fenómeno llamado heliotropismo.',
-    toxic:'No tóxico. Semillas comestibles y nutritivas para humanos y aves.',
+    id:'girasol', emoji:'🌻', img:rocioFlowerImage('girasol'), name:'Sunflower', scientific:'Helianthus annuus',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:4, waterMl:400, tempMin:20, tempMax:35, soil:'Fertile loam',
+    seasons:['summer'], seasonLabel:'Summer',
+    fact:'Young sunflowers follow the sun during the day, a phenomenon called heliotropism.',
+    toxic:'Nontoxic. The seeds are edible and nutritious for people and birds.',
     toxicLevel:'safe',
-    fertilizer:'NPK 5-10-10 al trasplantar. Evitar exceso de nitrógeno (mucho follaje, poca flor).',
-    pruning:'No requiere poda. Cortar cabeza cuando pétalos caigan para cosechar semillas.',
-    propagation:'Solo por semillas. Siembra directa en abril-mayo. Germina en 7-10 días.',
-    companions:'Calabazas, pepinos, maíz, frijol. Atrae polinizadores beneficiosos.',
+    fertilizer:'Apply NPK 5-10-10 when transplanting. Avoid excess nitrogen, which produces more foliage and fewer flowers.',
+    pruning:'No pruning is required. Cut the head after the petals fall to harvest seeds.',
+    propagation:'Propagate only from seed. Sow directly in April or May; germination takes 7-10 days.',
+    companions:'Squash, cucumbers, corn, and beans. Attracts beneficial pollinators.',
     diseases:[
-      {name:'Mildiu velloso', symptom:'Manchas amarillas en hojas, pelusa gris debajo', treatment:'Fungicida cúprico. Eliminar hojas afectadas. No mojar follaje.'},
-      {name:'Roya del girasol', symptom:'Pústulas marrones-rojizas en hojas', treatment:'Arrancar hojas infectadas. Rotación de cultivos.'}
+      {name:'Downy mildew', symptom:'Yellow spots on leaves with gray growth beneath', treatment:'Apply a copper fungicide. Remove affected leaves. Avoid wetting foliage.'},
+      {name:'Sunflower rust', symptom:'Reddish-brown pustules on leaves', treatment:'Remove infected leaves and rotate crops.'}
     ],
-    plantingSteps:['Sembrar después de última helada (abril-mayo)','Plantar semillas a 2.5cm de profundidad','Espaciar 30-45cm entre plantas','Lugar con 6-8 horas de sol directo','Regar bien al plantar, luego cada 3-4 días','Puede necesitar tutor si supera 1.5m de altura']
+    plantingSteps:['Sow after the last frost, usually April or May','Plant seeds 2.5cm deep','Space plants 30-45cm apart','Choose a location with 6-8 hours of direct sun','Water well when planting, then every 3-4 days','A plant taller than 1.5m may need support']
   },
   {
-    id:'lavanda', emoji:'💜', img:rocioFlowerImage('lavanda'), name:'Lavanda', scientific:'Lavandula angustifolia',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:7, waterMl:150, tempMin:12, tempMax:30, soil:'Arenoso, alcalino, pH 6.5-7.5',
-    seasons:['summer'], seasonLabel:'Verano',
-    fact:'La lavanda se ha usado por más de 2,500 años. Los romanos la usaban para perfumar sus baños.',
-    toxic:'No tóxica para humanos. Puede causar náuseas en gatos si ingieren mucha cantidad.',
+    id:'lavanda', emoji:'💜', img:rocioFlowerImage('lavanda'), name:'Lavender', scientific:'Lavandula angustifolia',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:7, waterMl:150, tempMin:12, tempMax:30, soil:'Sandy, alkaline soil; pH 6.5-7.5',
+    seasons:['summer'], seasonLabel:'Summer',
+    fact:'Lavender has been used for more than 2,500 years. Romans used it to scent their baths.',
+    toxic:'Nontoxic to people. It can cause nausea in cats if they ingest a large amount.',
     toxicLevel:'caution',
-    fertilizer:'Mínimo fertilizante. Una aplicación ligera de composta en primavera es suficiente.',
-    pruning:'Podar 1/3 después de floración. Nunca cortar hasta madera vieja (no rebrota). Forma redondeada.',
-    propagation:'Esquejes de 10cm en verano, semillas (germinación lenta 2-4 semanas), división en primavera.',
-    companions:'Rosas, tomillo, romero, salvia. Repele pulgones y mosquitos.',
+    fertilizer:'Use very little fertilizer. One light compost application in spring is enough.',
+    pruning:'Prune one-third after flowering. Never cut into old wood because it will not regrow. Keep a rounded shape.',
+    propagation:'Use 10cm summer cuttings, seeds with slow 2-4 week germination, or divide in spring.',
+    companions:'Roses, thyme, rosemary, and sage. Repels aphids and mosquitoes.',
     diseases:[
-      {name:'Pudrición de raíz', symptom:'Planta marchita pese a riego, base oscura', treatment:'Mejorar drenaje urgente. Añadir grava al sustrato. Reducir riego drásticamente.'},
-      {name:'Cenicilla', symptom:'Polvo blanquecino en hojas', treatment:'Mejorar ventilación. Bicarbonato de sodio 1cda/L agua.'}
+      {name:'Root rot', symptom:'Wilting despite watering, with a dark base', treatment:'Improve drainage immediately. Add gravel to the medium and reduce watering sharply.'},
+      {name:'Powdery mildew', symptom:'Whitish powder on leaves', treatment:'Improve ventilation. Mix 1 tbsp baking soda per liter of water.'}
     ],
-    plantingSteps:['Elegir sitio soleado con excelente drenaje','Mezclar tierra con arena y grava (30%)','Plantar con 40-60cm de separación','NO abonar en exceso (prefiere suelo pobre)','Regar solo cuando tierra esté muy seca','Cosechar flores cuando se abran los primeros botones']
+    plantingSteps:['Choose a sunny site with excellent drainage','Mix the soil with 30% sand and gravel','Space plants 40-60cm apart','Do NOT overfertilize; lavender prefers lean soil','Water only when the soil is very dry','Harvest flowers as the first buds open']
   },
   {
     id:'gardenia', emoji:'🤍', img:rocioFlowerImage('gardenia'), name:'Gardenia', scientific:'Gardenia jasminoides',
-    difficulty:3, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:3, waterMl:250, tempMin:16, tempMax:24, soil:'Ácido pH 5-6, rico en humus',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Las gardenias son símbolo de pureza y dulzura. Su perfume es uno de los más usados en perfumería.',
-    toxic:'No tóxica para humanos ni mascotas. Segura.',
+    difficulty:3, sunlight:'partial', sunlightLabel:'Partial light',
+    waterDays:3, waterMl:250, tempMin:16, tempMax:24, soil:'Humus-rich acidic soil; pH 5-6',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Gardenias symbolize purity and sweetness. Their fragrance is widely used in perfumery.',
+    toxic:'Nontoxic to people and pets.',
     toxicLevel:'safe',
-    fertilizer:'Fertilizante para plantas ácidas NPK 30-10-10 cada 2 semanas primavera-verano. Quelato de hierro si amarillean.',
-    pruning:'Podar justo después de floración. Eliminar ramas cruzadas y flores marchitas.',
-    propagation:'Esquejes de punta en verano (usar hormona enraizante). Enraíza en 4-8 semanas.',
-    companions:'Azaleas, camelias, helechos, hortensias (todas prefieren suelo ácido).',
+    fertilizer:'Apply NPK 30-10-10 for acid-loving plants every 2 weeks in spring and summer. Use iron chelate if leaves yellow.',
+    pruning:'Prune immediately after flowering. Remove crossing branches and faded flowers.',
+    propagation:'Take tip cuttings in summer and use rooting hormone. They root in 4-8 weeks.',
+    companions:'Azaleas, camellias, ferns, and hydrangeas; all prefer acidic soil.',
     diseases:[
-      {name:'Clorosis férrica', symptom:'Hojas amarillas con venas verdes', treatment:'Quelato de hierro en riego. Acidificar suelo con azufre o vinagre diluido.'},
-      {name:'Cochinilla algodonosa', symptom:'Masas blancas en tallos y hojas', treatment:'Alcohol isopropílico con algodón. Aceite de neem cada 7 días.'},
-      {name:'Caída de botones', symptom:'Botones florales caen antes de abrir', treatment:'Mantener humedad estable. No mover la planta. Temperatura constante 18-24°C.'}
+      {name:'Iron chlorosis', symptom:'Yellow leaves with green veins', treatment:'Add iron chelate when watering. Acidify soil with sulfur or diluted vinegar.'},
+      {name:'Mealybugs', symptom:'White masses on stems and leaves', treatment:'Use cotton with isopropyl alcohol. Apply neem oil every 7 days.'},
+      {name:'Bud drop', symptom:'Flower buds fall before opening', treatment:'Keep moisture stable. Do not move the plant. Maintain a constant 18-24°C.'}
     ],
-    plantingSteps:['Usar sustrato ácido (turba + perlita + corteza)','Maceta con excelente drenaje','Ubicar en luz brillante sin sol directo del mediodía','Mantener humedad ambiental alta (bandeja con piedras y agua)','Regar con agua de lluvia o filtrada (sin cal)','No mover durante la floración']
+    plantingSteps:['Use an acidic mix of peat, perlite, and bark','Choose a pot with excellent drainage','Provide bright light without direct midday sun','Keep humidity high with a pebble-and-water tray','Water with rainwater or filtered low-mineral water','Do not move the plant while it is blooming']
   },
   {
-    id:'jazmin', emoji:'🌼', img:rocioFlowerImage('jazmin'), name:'Jazmín', scientific:'Jasminum officinale',
-    difficulty:2, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, waterMl:300, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'El jazmín libera su fragancia más intensa por la noche para atraer polinizadores nocturnos.',
-    toxic:'Jasminum officinale no es tóxico. ⚠️ El "jazmín estrella" (Trachelospermum) sí puede irritar.',
+    id:'jazmin', emoji:'🌼', img:rocioFlowerImage('jazmin'), name:'Jasmine', scientific:'Jasminum officinale',
+    difficulty:2, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:4, waterMl:300, tempMin:15, tempMax:30, soil:'Well-drained loam',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Jasmine releases its strongest fragrance at night to attract nocturnal pollinators.',
+    toxic:'Jasminum officinale is nontoxic. ⚠️ Star jasmine (Trachelospermum) can cause irritation.',
     toxicLevel:'safe',
-    fertilizer:'NPK 7-9-5 cada 2 semanas en crecimiento. Potasio extra para más flores.',
-    pruning:'Podar después de floración para dar forma. Puede podarse fuerte y rebrota bien.',
-    propagation:'Esquejes semi-leñosos en verano, acodo en primavera.',
-    companions:'Rosas, madreselva, clemátide. Ideal para pérgolas y enrejados.',
+    fertilizer:'Apply NPK 7-9-5 every 2 weeks during growth. Additional potassium can support more flowers.',
+    pruning:'Prune after flowering to shape the plant. It tolerates hard pruning and regrows well.',
+    propagation:'Use semi-hardwood cuttings in summer or layering in spring.',
+    companions:'Roses, honeysuckle, and clematis. Well suited to pergolas and trellises.',
     diseases:[
-      {name:'Mosca blanca', symptom:'Pequeñas moscas blancas bajo las hojas, melaza pegajosa', treatment:'Trampas amarillas pegajosas. Jabón potásico semanal. Aceite de neem.'},
-      {name:'Araña roja', symptom:'Hojas punteadas, telarañas finas', treatment:'Aumentar humedad ambiental. Acaricida o aceite de neem cada 5 días.'}
+      {name:'Whiteflies', symptom:'Small white flies beneath leaves and sticky honeydew', treatment:'Use yellow sticky traps, weekly potassium soap, and neem oil.'},
+      {name:'Spider mites', symptom:'Speckled leaves and fine webbing', treatment:'Increase humidity. Apply a miticide or neem oil every 5 days.'}
     ],
-    plantingSteps:['Plantar en primavera junto a soporte/enrejado','Hoyo 2x el tamaño del cepellón','Mezclar tierra con composta madura','Regar abundantemente tras plantar','Guiar tallos hacia el soporte','Acolchar base con corteza para retener humedad']
+    plantingSteps:['Plant in spring beside a support or trellis','Dig a hole twice the size of the root ball','Mix the soil with mature compost','Water thoroughly after planting','Guide stems toward the support','Mulch the base with bark to retain moisture']
   },
   {
-    id:'hortensia', emoji:'💠', img:rocioFlowerImage('hortensia'), name:'Hortensia', scientific:'Hydrangea macrophylla',
-    difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:3, waterMl:400, tempMin:12, tempMax:25, soil:'Ácido pH 5.5, húmedo',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'El color de las hortensias cambia según la acidez del suelo: ácido = azul, alcalino = rosa.',
-    toxic:'Todas las partes son tóxicas si se ingieren. Mantener lejos de mascotas y niños.',
+    id:'hortensia', emoji:'💠', img:rocioFlowerImage('hortensia'), name:'Hydrangea', scientific:'Hydrangea macrophylla',
+    difficulty:2, sunlight:'partial', sunlightLabel:'Partial light',
+    waterDays:3, waterMl:400, tempMin:12, tempMax:25, soil:'Moist acidic soil; pH 5.5',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Hydrangea color changes with soil acidity: acidic soil produces blue flowers, while alkaline soil produces pink.',
+    toxic:'All parts are toxic if ingested. Keep away from pets and children.',
     toxicLevel:'toxic',
-    fertilizer:'NPK 10-10-10 en primavera. Para azul: sulfato de aluminio. Para rosa: cal dolomítica.',
-    pruning:'Podar en febrero solo tallos que florecieron (florece en madera vieja). Eliminar flores secas.',
-    propagation:'Esquejes de punta en junio-julio. Enraízan fácil en sustrato húmedo con calor de fondo.',
-    companions:'Hostas, helechos, astilbes, azaleas. Todas aman sombra parcial.',
+    fertilizer:'Apply NPK 10-10-10 in spring. Use aluminum sulfate for blue flowers or dolomitic lime for pink flowers.',
+    pruning:'In February, prune only stems that have flowered because blooms form on old wood. Remove dried flower heads.',
+    propagation:'Take tip cuttings in June or July. They root readily in moist medium with bottom heat.',
+    companions:'Hostas, ferns, astilbes, and azaleas. All prefer partial shade.',
     diseases:[
-      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Fungicida azufrado. Mejorar ventilación entre plantas.'},
-      {name:'Mancha foliar (Cercospora)', symptom:'Manchas púrpura-marrones en hojas', treatment:'Eliminar hojas caídas. Fungicida cúprico preventivo.'},
-      {name:'Clorosis', symptom:'Hojas amarillentas', treatment:'Acidificar suelo. Aplicar quelato de hierro.'}
+      {name:'Powdery mildew', symptom:'White powder on leaves', treatment:'Apply a sulfur fungicide. Improve airflow between plants.'},
+      {name:'Cercospora leaf spot', symptom:'Purple-brown spots on leaves', treatment:'Remove fallen leaves. Apply a preventive copper fungicide.'},
+      {name:'Chlorosis', symptom:'Yellowing leaves', treatment:'Acidify the soil and apply iron chelate.'}
     ],
-    plantingSteps:['Ubicar en semi-sombra (sol de mañana ideal)','Suelo ácido rico en materia orgánica','Plantar al nivel del cepellón, no más profundo','Regar abundantemente — necesitan mucha agua','Acolchar con corteza de pino (acidifica)','Para flores azules: añadir sulfato de aluminio al riego']
+    plantingSteps:['Choose partial shade; morning sun is ideal','Use acidic soil rich in organic matter','Plant level with the root ball, no deeper','Water thoroughly because hydrangeas need plenty of water','Mulch with pine bark to help acidify the soil','For blue flowers, add aluminum sulfate when watering']
   },
   {
-    id:'lirio', emoji:'🪷', img:rocioFlowerImage('lirio'), name:'Lirio', scientific:'Lilium spp.',
-    difficulty:2, sunlight:'partial', sunlightLabel:'Luz parcial',
-    waterDays:5, waterMl:250, tempMin:15, tempMax:25, soil:'Franco, bien drenado',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Los lirios han sido símbolo de pureza desde la antigua Grecia. Representan renacimiento.',
-    toxic:'MUY tóxico para gatos (puede causar fallo renal). Seguro para perros y humanos.',
+    id:'lirio', emoji:'🪷', img:rocioFlowerImage('lirio'), name:'Lily', scientific:'Lilium spp.',
+    difficulty:2, sunlight:'partial', sunlightLabel:'Partial light',
+    waterDays:5, waterMl:250, tempMin:15, tempMax:25, soil:'Well-drained loam',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Lilies have symbolized purity since ancient Greece and often represent rebirth.',
+    toxic:'HIGHLY toxic to cats and can cause kidney failure. Considered safe for dogs and people.',
     toxicLevel:'toxic',
-    fertilizer:'NPK 5-10-10 al emerger y al formar botones. Potasio fortalece tallos.',
-    pruning:'Cortar flores marchitas pero dejar tallo y hojas hasta que amarilleen.',
-    propagation:'Separar escamas del bulbo en otoño, bulbillos, o semillas (tarda 2-3 años en florecer).',
-    companions:'Peonías, hostas, lavanda, artemisa.',
+    fertilizer:'Apply NPK 5-10-10 as shoots emerge and buds form. Potassium strengthens stems.',
+    pruning:'Remove faded flowers, but leave the stem and leaves until they yellow.',
+    propagation:'Separate bulb scales or offsets in fall, or grow from seed; seedlings take 2-3 years to bloom.',
+    companions:'Peonies, hostas, lavender, and artemisia.',
     diseases:[
-      {name:'Botrytis (moho gris)', symptom:'Manchas ovaladas marrones en hojas y botones', treatment:'Retirar partes afectadas. Fungicida cada 10 días. No mojar follaje.'},
-      {name:'Virus del mosaico', symptom:'Hojas con patrones irregulares claros/oscuros', treatment:'No tiene cura. Eliminar planta para proteger las demás.'}
+      {name:'Botrytis (gray mold)', symptom:'Oval brown spots on leaves and buds', treatment:'Remove affected parts. Apply fungicide every 10 days. Avoid wetting foliage.'},
+      {name:'Mosaic virus', symptom:'Irregular light and dark patterns on leaves', treatment:'There is no cure. Remove the plant to protect the others.'}
     ],
-    plantingSteps:['Plantar bulbos en otoño a 15-20cm de profundidad','Ubicar con sol en copa y sombra en raíces','Tierra con buen drenaje — poner grava debajo del bulbo','Espaciar 20-30cm entre bulbos','Regar al plantar, luego moderadamente','Tallos altos pueden necesitar tutor']
+    plantingSteps:['Plant bulbs 15-20cm deep in fall','Place tops in sun while keeping roots shaded','Use well-drained soil and place gravel beneath the bulb','Space bulbs 20-30cm apart','Water when planting, then water moderately','Tall stems may need support']
   },
   {
-    id:'margarita', emoji:'🌼', img:rocioFlowerImage('margarita'), name:'Margarita', scientific:'Bellis perennis',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, waterMl:200, tempMin:10, tempMax:25, soil:'Franco, cualquier pH',
-    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Una margarita no es una sola flor, sino cientos de pequeñas flores agrupadas.',
-    toxic:'No tóxica. Pétalos comestibles para ensaladas.',
+    id:'margarita', emoji:'🌼', img:rocioFlowerImage('margarita'), name:'Daisy', scientific:'Bellis perennis',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:4, waterMl:200, tempMin:10, tempMax:25, soil:'Loam; any pH',
+    seasons:['spring','summer','fall'], seasonLabel:'Spring - Fall',
+    fact:'A daisy is not one flower, but hundreds of tiny flowers grouped together.',
+    toxic:'Nontoxic. The petals are edible and can be used in salads.',
     toxicLevel:'safe',
-    fertilizer:'NPK 10-10-10 mensual en crecimiento. Muy poco exigente.',
-    pruning:'Deadheading continuo para estimular floración. Cortar a ras del suelo en otoño.',
-    propagation:'Semillas en primavera (superficie, necesitan luz), división de mata en otoño.',
-    companions:'Lavanda, caléndula, cosmos, zinnias.',
+    fertilizer:'Apply NPK 10-10-10 monthly during growth. Daisies are not demanding.',
+    pruning:'Deadhead continuously to encourage flowering. Cut to ground level in fall.',
+    propagation:'Surface-sow seeds in spring because they need light, or divide clumps in fall.',
+    companions:'Lavender, calendula, cosmos, and zinnias.',
     diseases:[
-      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Bicarbonato 1cda/L agua. Buena ventilación.'},
-      {name:'Pulgones', symptom:'Insectos verdes/negros en brotes tiernos', treatment:'Chorro de agua a presión. Jabón potásico. Mariquitas (depredador natural).'}
+      {name:'Powdery mildew', symptom:'White powder on leaves', treatment:'Mix 1 tbsp baking soda per liter of water. Improve ventilation.'},
+      {name:'Aphids', symptom:'Green or black insects on tender shoots', treatment:'Use a strong water spray, potassium soap, or ladybugs as natural predators.'}
     ],
-    plantingSteps:['Sembrar semillas en superficie (necesitan luz)','Mantener húmedo hasta germinar (7-14 días)','Trasplantar cuando tengan 4 hojas verdaderas','Sol pleno o semi-sombra','Espaciar 15-20cm','Florece el primer año si se siembra temprano']
+    plantingSteps:['Surface-sow seeds because they need light','Keep moist until germination in 7-14 days','Transplant after four true leaves develop','Provide full sun or partial shade','Space plants 15-20cm apart','Early sowing can produce flowers in the first year']
   },
   {
-    id:'clavel', emoji:'🌺', img:rocioFlowerImage('clavel'), name:'Clavel', scientific:'Dianthus caryophyllus',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:4, waterMl:200, tempMin:12, tempMax:24, soil:'Franco, ligeramente alcalino',
-    seasons:['spring','summer'], seasonLabel:'Primavera - Verano',
-    fact:'Los claveles pueden durar hasta 3 semanas en un florero. Son las flores de corte más duraderas.',
-    toxic:'No tóxico para humanos. Puede causar dermatitis leve en mascotas si lo mastican mucho.',
+    id:'clavel', emoji:'🌺', img:rocioFlowerImage('clavel'), name:'Carnation', scientific:'Dianthus caryophyllus',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:4, waterMl:200, tempMin:12, tempMax:24, soil:'Slightly alkaline loam',
+    seasons:['spring','summer'], seasonLabel:'Spring - Summer',
+    fact:'Carnations can last up to 3 weeks in a vase, making them among the longest-lasting cut flowers.',
+    toxic:'Nontoxic to people. Heavy chewing can cause mild dermatitis in pets.',
     toxicLevel:'caution',
-    fertilizer:'NPK 20-10-20 cada 2 semanas. Alto en potasio para flores fuertes.',
-    pruning:'Pinzar puntas para plantas más compactas. Cortar flores marchitas. Podar 1/3 en otoño.',
-    propagation:'Esquejes de tallo en primavera (cortar entre nudos), semillas, división.',
-    companions:'Rosas, lavanda, salvia, tomillo.',
+    fertilizer:'Apply NPK 20-10-20 every 2 weeks. Higher potassium supports strong flowers.',
+    pruning:'Pinch tips for compact growth, deadhead faded flowers, and prune one-third in fall.',
+    propagation:'Use spring stem cuttings taken between nodes, seeds, or division.',
+    companions:'Roses, lavender, sage, and thyme.',
     diseases:[
-      {name:'Roya del clavel', symptom:'Pústulas marrones en hojas', treatment:'Fungicida. Eliminar hojas afectadas. Evitar mojar follaje.'},
-      {name:'Fusarium', symptom:'Marchitamiento unilateral, tallo oscuro por dentro', treatment:'No tiene cura. Eliminar planta. Desinfectar sustrato.'}
+      {name:'Carnation rust', symptom:'Brown pustules on leaves', treatment:'Apply fungicide, remove affected leaves, and avoid wetting foliage.'},
+      {name:'Fusarium', symptom:'One-sided wilting and a dark stem interior', treatment:'There is no cure. Remove the plant and disinfect the growing medium.'}
     ],
-    plantingSteps:['Sembrar semillas en febrero-marzo en interior','Trasplantar cuando pasen heladas','Sol pleno mínimo 5 horas','Suelo bien drenado (añadir arena si es arcilloso)','Espaciar 20-25cm','Pinzar primera yema para planta más ramificada']
+    plantingSteps:['Sow seeds indoors in February or March','Transplant after frost has passed','Provide at least 5 hours of full sun','Use well-drained soil; add sand if it is clay-heavy','Space plants 20-25cm apart','Pinch the first bud to encourage branching']
   },
   {
-    id:'violeta', emoji:'💜', img:rocioFlowerImage('violeta'), name:'Violeta', scientific:'Viola odorata',
-    difficulty:1, sunlight:'shade', sunlightLabel:'Sombra',
-    waterDays:3, waterMl:150, tempMin:8, tempMax:20, soil:'Rico en materia orgánica, pH 6-7',
-    seasons:['spring','winter'], seasonLabel:'Primavera - Invierno',
-    fact:'Las violetas eran las flores favoritas de Napoleón. Las usaba como símbolo secreto de lealtad.',
-    toxic:'No tóxica. Flores y hojas comestibles. Usada en repostería y ensaladas.',
+    id:'violeta', emoji:'💜', img:rocioFlowerImage('violeta'), name:'Violet', scientific:'Viola odorata',
+    difficulty:1, sunlight:'shade', sunlightLabel:'Shade',
+    waterDays:3, waterMl:150, tempMin:8, tempMax:20, soil:'Organic-rich soil; pH 6-7',
+    seasons:['spring','winter'], seasonLabel:'Spring - Winter',
+    fact:'Violets were Napoleon\'s favorite flowers, and he used them as a secret symbol of loyalty.',
+    toxic:'Nontoxic. Flowers and leaves are edible and used in baking and salads.',
     toxicLevel:'safe',
-    fertilizer:'Composta o humus de lombriz en primavera. NPK 10-10-10 diluido mensual.',
-    pruning:'Quitar hojas marchitas. Cortar estolones para controlar expansión.',
-    propagation:'Estolones (como fresas), división de mata en otoño, semillas (necesitan estratificación fría).',
-    companions:'Hostas, helechos, prímulas, impatiens. Perfectas bajo árboles.',
+    fertilizer:'Add compost or worm castings in spring. Apply diluted NPK 10-10-10 monthly.',
+    pruning:'Remove wilted leaves and cut runners to control spreading.',
+    propagation:'Use runners, as with strawberries, divide clumps in fall, or cold-stratify seeds.',
+    companions:'Hostas, ferns, primroses, and impatiens. Well suited beneath trees.',
     diseases:[
-      {name:'Araña roja', symptom:'Hojas punteadas, telarañas finas', treatment:'Aumentar humedad. Pulverizar con agua. Aceite de neem.'},
-      {name:'Pudrición de corona', symptom:'Centro de la planta se pudre', treatment:'Mejorar drenaje. No regar sobre la corona. Retirar partes podridas.'}
+      {name:'Spider mites', symptom:'Speckled leaves and fine webbing', treatment:'Increase humidity, mist with water, and apply neem oil.'},
+      {name:'Crown rot', symptom:'The center of the plant rots', treatment:'Improve drainage. Do not water over the crown. Remove rotten parts.'}
     ],
-    plantingSteps:['Elegir lugar sombreado o semi-sombreado','Enriquecer suelo con composta','Plantar a 15cm de separación','Regar regularmente — le gusta humedad constante','Cubrir con mantillo orgánico','Se expande sola por estolones — controlar si necesario']
+    plantingSteps:['Choose a shaded or partially shaded location','Enrich the soil with compost','Space plants 15cm apart','Water regularly because violets prefer consistent moisture','Cover with organic mulch','The plant spreads by runners, so control it if needed']
   },
   {
-    id:'geranio', emoji:'🌺', img:rocioFlowerImage('geranio'), name:'Geranio', scientific:'Pelargonium spp.',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:5, waterMl:250, tempMin:15, tempMax:30, soil:'Franco, bien drenado',
-    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Los geranios repelen mosquitos naturalmente. Son perfectos para balcones y ventanas.',
-    toxic:'Tóxico para perros y gatos (vómito, dermatitis). Seguro para humanos.',
+    id:'geranio', emoji:'🌺', img:rocioFlowerImage('geranio'), name:'Geranium', scientific:'Pelargonium spp.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:5, waterMl:250, tempMin:15, tempMax:30, soil:'Well-drained loam',
+    seasons:['spring','summer','fall'], seasonLabel:'Spring - Fall',
+    fact:'Geraniums naturally repel mosquitoes and work well on balconies and windowsills.',
+    toxic:'Toxic to dogs and cats and can cause vomiting or dermatitis. Considered safe for people.',
     toxicLevel:'toxic',
-    fertilizer:'NPK 15-15-15 cada 2 semanas. Potasio extra para más flores.',
-    pruning:'Pinzar puntas regularmente para planta compacta. Poda fuerte en febrero a 10cm.',
-    propagation:'Esquejes de tallo fácilísimos (cortar 10cm, dejar secar 24h, plantar). Semillas en enero.',
-    companions:'Petunias, verbenas, lobelia, lavanda.',
+    fertilizer:'Apply NPK 15-15-15 every 2 weeks. Additional potassium can support more flowers.',
+    pruning:'Pinch tips regularly for compact growth. Prune hard to 10cm in February.',
+    propagation:'Stem cuttings are easy: cut 10cm, let dry for 24 hours, then plant. Sow seeds in January.',
+    companions:'Petunias, verbenas, lobelia, and lavender.',
     diseases:[
-      {name:'Podredumbre del tallo', symptom:'Base del tallo oscura y blanda', treatment:'Cortar parte sana y hacer esqueje nuevo. Reducir riego.'},
-      {name:'Roya', symptom:'Círculos amarillos con pústulas café debajo', treatment:'Eliminar hojas afectadas. Fungicida cúprico. Buena ventilación.'},
-      {name:'Mosca blanca', symptom:'Pequeños insectos blancos voladores', treatment:'Trampas amarillas. Jabón potásico semanal.'}
+      {name:'Stem rot', symptom:'Dark, soft stem base', treatment:'Cut a healthy section for a new cutting and reduce watering.'},
+      {name:'Rust', symptom:'Yellow circles with brown pustules beneath', treatment:'Remove affected leaves, apply a copper fungicide, and improve ventilation.'},
+      {name:'Whiteflies', symptom:'Small flying white insects', treatment:'Use yellow traps and weekly potassium soap.'}
     ],
-    plantingSteps:['Plantar después de heladas en maceta o jardín','Sol directo mínimo 5 horas','Sustrato: tierra + perlita + composta','Maceta con buen drenaje (odia encharcamiento)','Regar cuando tierra esté seca al tacto','Proteger de heladas en invierno (meter al interior)']
+    plantingSteps:['Plant in a pot or garden after frost has passed','Provide at least 5 hours of direct sun','Use a mix of soil, perlite, and compost','Choose a well-drained pot because geraniums dislike waterlogging','Water when the soil feels dry','Protect from winter frost by moving indoors']
   },
   {
     id:'petunia', emoji:'🌸', img:rocioFlowerImage('petunia'), name:'Petunia', scientific:'Petunia × hybrida',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:2, waterMl:200, tempMin:15, tempMax:30, soil:'Franco, bien drenado, fértil',
-    seasons:['spring','summer','fall'], seasonLabel:'Primavera - Otoño',
-    fact:'Las petunias están emparentadas con los tomates y el tabaco. Todas son de la familia Solanaceae.',
-    toxic:'No tóxica para mascotas ni humanos.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:2, waterMl:200, tempMin:15, tempMax:30, soil:'Fertile, well-drained loam',
+    seasons:['spring','summer','fall'], seasonLabel:'Spring - Fall',
+    fact:'Petunias are related to tomatoes and tobacco; all belong to the Solanaceae family.',
+    toxic:'Nontoxic to pets and people.',
     toxicLevel:'safe',
-    fertilizer:'NPK 10-30-20 cada semana (alta demanda de fósforo). Fertilizante líquido ideal.',
-    pruning:'Cortar a la mitad cuando se vea "largucha" — rebrota vigorosamente en 1-2 semanas.',
-    propagation:'Semillas muy finas (no cubrir, necesitan luz), esquejes de punta en verano.',
-    companions:'Verbenas, lobelias, alyssum, geranios.',
+    fertilizer:'Apply NPK 10-30-20 weekly because petunias have high phosphorus demand. Liquid fertilizer is ideal.',
+    pruning:'Cut back by half when growth becomes leggy; vigorous regrowth appears in 1-2 weeks.',
+    propagation:'Surface-sow very fine seeds because they need light, or take tip cuttings in summer.',
+    companions:'Verbenas, lobelia, alyssum, and geraniums.',
     diseases:[
-      {name:'Botrytis', symptom:'Flores y hojas con moho gris', treatment:'Eliminar flores marchitas. Mejorar ventilación. Fungicida si persiste.'},
-      {name:'Virus del mosaico del tabaco', symptom:'Hojas deformadas con mosaico', treatment:'No tiene cura. Eliminar planta. No fumar cerca (se transmite por tabaco).'}
+      {name:'Botrytis', symptom:'Gray mold on flowers and leaves', treatment:'Remove faded flowers, improve ventilation, and use fungicide if the problem persists.'},
+      {name:'Tobacco mosaic virus', symptom:'Deformed leaves with a mosaic pattern', treatment:'There is no cure. Remove the plant. Do not smoke nearby because tobacco can transmit it.'}
     ],
-    plantingSteps:['Sembrar semillas en superficie en febrero-marzo (interior)','Necesitan luz para germinar — no cubrir','Trasplantar a maceta o jardín tras heladas','Sol pleno todo el día','Regar frecuentemente — macetas se secan rápido','Fertilizar semanalmente para floración continua']
+    plantingSteps:['Surface-sow seeds indoors in February or March','Do not cover; the seeds need light to germinate','Transplant to a pot or garden after frost','Provide full sun throughout the day','Water frequently because pots dry quickly','Fertilize weekly for continuous flowering']
   },
   {
     id:'cempasuchil', emoji:'🏵️', img:rocioFlowerImage('cempasuchil'), name:'Cempasúchil', scientific:'Tagetes erecta',
-    difficulty:1, sunlight:'full-sun', sunlightLabel:'Sol pleno',
-    waterDays:3, waterMl:300, tempMin:18, tempMax:35, soil:'Franco, bien drenado',
-    seasons:['summer','fall'], seasonLabel:'Verano - Otoño',
-    fact:'El cempasúchil es esencial en el Día de Muertos. Se cree que su aroma guía a los difuntos de vuelta.',
-    toxic:'No tóxico. Usado en medicina tradicional y como colorante alimentario.',
+    difficulty:1, sunlight:'full-sun', sunlightLabel:'Full sun',
+    waterDays:3, waterMl:300, tempMin:18, tempMax:35, soil:'Well-drained loam',
+    seasons:['summer','fall'], seasonLabel:'Summer - Fall',
+    fact:'Cempasúchil is central to Día de Muertos. Tradition holds that its fragrance guides loved ones back.',
+    toxic:'Nontoxic. Used in traditional medicine and as a food colorant.',
     toxicLevel:'safe',
-    fertilizer:'NPK 10-10-10 al trasplantar. Composta mensual. No necesita mucho.',
-    pruning:'Pinzar primeras flores para planta más ramificada. Eliminar flores marchitas para que siga produciendo.',
-    propagation:'Semillas muy fáciles. Germina en 5-7 días. Siembra directa en mayo-junio.',
-    companions:'Tomates (repele nematodos y mosca blanca), chiles, calabazas, frijol.',
+    fertilizer:'Apply NPK 10-10-10 when transplanting and compost monthly. Cempasúchil does not need much.',
+    pruning:'Pinch the first flowers to encourage branching. Deadhead to keep new flowers coming.',
+    propagation:'Seeds are easy and germinate in 5-7 days. Direct-sow in May or June.',
+    companions:'Tomatoes because they repel nematodes and whiteflies, plus peppers, squash, and beans.',
     diseases:[
-      {name:'Oídio', symptom:'Polvo blanco en hojas', treatment:'Buena ventilación. Bicarbonato de sodio. Evitar riego nocturno.'},
-      {name:'Pudrición de raíz', symptom:'Planta marchita, base oscura', treatment:'Reducir riego. Mejorar drenaje. Trasplantar a sustrato seco.'},
-      {name:'Araña roja', symptom:'Punteado amarillento en hojas', treatment:'Pulverizar follaje con agua. Aceite de neem.'}
+      {name:'Powdery mildew', symptom:'White powder on leaves', treatment:'Improve ventilation, use baking soda, and avoid watering at night.'},
+      {name:'Root rot', symptom:'Wilting plant with a dark base', treatment:'Reduce watering, improve drainage, and repot in dry medium.'},
+      {name:'Spider mites', symptom:'Yellow speckling on leaves', treatment:'Mist foliage with water and apply neem oil.'}
     ],
-    plantingSteps:['Sembrar semillas en mayo-junio directo en tierra','Cubrir con 1cm de tierra','Germina en 5-7 días','Sol pleno todo el día','Espaciar 30-40cm','Para Día de Muertos: sembrar julio-agosto']
+    plantingSteps:['Direct-sow seeds in May or June','Cover with 1cm of soil','Expect germination in 5-7 days','Provide full sun all day','Space plants 30-40cm apart','For Día de Muertos flowers, sow in July or August']
   }
 ];
 
@@ -2702,158 +2702,158 @@ const FLOWERS = [
    ═══════════════════════════════════════════ */
 const SYMPTOMS = [
   {
-    id:'yellow-leaves', emoji:'💛', title:'Hojas amarillas',
-    desc:'Las hojas se vuelven amarillas gradual o repentinamente',
+    id:'yellow-leaves', emoji:'💛', title:'Yellow leaves',
+    desc:'Leaves turn yellow gradually or suddenly',
     causes:[
-      {cause:'Exceso de riego', detail:'La causa #1. Las raíces se ahogan y no absorben nutrientes.', solution:'Deja secar la tierra completamente antes de volver a regar. Revisa drenaje. Si las raíces están marrones, trasplanta con sustrato nuevo.'},
-      {cause:'Falta de luz', detail:'La planta no puede hacer fotosíntesis suficiente.', solution:'Acerca a una ventana luminosa. Rota la maceta 1/4 cada semana.'},
-      {cause:'Deficiencia de nitrógeno', detail:'Hojas viejas (abajo) amarillean primero.', solution:'Fertiliza con NPK alto en N (ej: 20-10-10). Humus de lombriz es excelente.'},
-      {cause:'Deficiencia de hierro (clorosis)', detail:'Hojas nuevas amarillas con VENAS VERDES.', solution:'Quelato de hierro en riego. Acidificar suelo si es alcalino.'},
-      {cause:'Edad natural', detail:'Las hojas viejas de abajo se caen — es normal.', solution:'Si solo son 1-2 hojas de abajo, no te preocupes. Retíralas.'}
+      {cause:'Overwatering', detail:'The most common cause. Waterlogged roots cannot absorb nutrients.', solution:'Let the soil dry completely before watering again. Check drainage. If roots are brown, repot in fresh medium.'},
+      {cause:'Insufficient light', detail:'The plant cannot photosynthesize enough.', solution:'Move closer to a bright window. Rotate the pot one-quarter turn each week.'},
+      {cause:'Nitrogen deficiency', detail:'Older lower leaves turn yellow first.', solution:'Use a fertilizer higher in nitrogen, such as NPK 20-10-10. Worm castings can also help.'},
+      {cause:'Iron deficiency (chlorosis)', detail:'New leaves are yellow with GREEN VEINS.', solution:'Add iron chelate when watering. Acidify the soil if it is alkaline.'},
+      {cause:'Natural aging', detail:'Older lower leaves fall as part of normal growth.', solution:'If only one or two lower leaves are affected, remove them and keep observing.'}
     ]
   },
   {
-    id:'spots', emoji:'🟤', title:'Manchas en hojas',
-    desc:'Manchas marrones, negras o de otro color en el follaje',
+    id:'spots', emoji:'🟤', title:'Leaf spots',
+    desc:'Brown, black, or differently colored spots on foliage',
     causes:[
-      {cause:'Hongos (Cercospora, Septoria)', detail:'Manchas circulares con borde definido, a veces con halo amarillo.', solution:'Elimina hojas afectadas. Fungicida cúprico cada 7-10 días. No mojes el follaje al regar.'},
-      {cause:'Bacterias', detail:'Manchas acuosas, oscuras, de borde irregular. Mal olor.', solution:'Corta parte enferma con 2cm de margen sano. Esteriliza tijeras. Reduce humedad.'},
-      {cause:'Quemadura solar', detail:'Manchas secas, blancas o marrones. Solo en lado expuesto al sol.', solution:'Mueve a lugar con luz indirecta o sol de mañana. Las hojas quemadas no se recuperan.'},
-      {cause:'Exceso de fertilizante', detail:'Puntas y bordes marrones. "Quemadura química".', solution:'Lava el sustrato con agua abundante. No fertilices por 1 mes.'}
+      {cause:'Fungi (Cercospora, Septoria)', detail:'Circular spots with defined edges, sometimes with a yellow halo.', solution:'Remove affected leaves. Apply a copper fungicide every 7-10 days. Avoid wetting foliage when watering.'},
+      {cause:'Bacteria', detail:'Dark water-soaked spots with irregular edges and a bad odor.', solution:'Cut away the diseased section with a 2cm healthy margin. Sterilize scissors and reduce humidity.'},
+      {cause:'Sunburn', detail:'Dry white or brown spots only on the sun-exposed side.', solution:'Move to indirect light or morning sun. Burned leaves will not recover.'},
+      {cause:'Excess fertilizer', detail:'Brown tips and edges that resemble a chemical burn.', solution:'Flush the growing medium with plenty of water. Do not fertilize for 1 month.'}
     ]
   },
   {
-    id:'wilting', emoji:'😵', title:'Planta caída / marchita',
-    desc:'Tallos y hojas caídos, planta sin turgencia',
+    id:'wilting', emoji:'😵', title:'Drooping or wilted plant',
+    desc:'Drooping stems and leaves with poor turgor',
     causes:[
-      {cause:'Falta de agua', detail:'Tierra seca, maceta ligera. Hojas se sienten secas y crujientes.', solution:'Sumerge la maceta completa en agua 20 minutos. Deja escurrir. Retoma riego regular.'},
-      {cause:'EXCESO de agua', detail:'Tierra húmeda, maceta pesada. Hojas se sienten blandas y húmedas.', solution:'Saca de maceta. Revisa raíces (sanas=blancas, podridas=marrones/blandas). Corta lo podrido, deja secar 2-3 días. Trasplanta en sustrato fresco.'},
-      {cause:'Raíces comprimidas', detail:'Raíces salen por el drenaje. Planta dejó de crecer.', solution:'Trasplanta a maceta 3-4cm más grande. Afloja raíces con cuidado.'},
-      {cause:'Golpe de calor', detail:'Planta en sol intenso por muchas horas. Hojas quemadas.', solution:'Mueve a sombra inmediatamente. Riega. Corta hojas quemadas. Recupera en 1-2 semanas.'}
+      {cause:'Too little water', detail:'Dry soil, a light pot, and leaves that feel dry and crisp.', solution:'Soak the entire pot in water for 20 minutes, let it drain, and resume regular watering.'},
+      {cause:'TOO MUCH water', detail:'Wet soil, a heavy pot, and leaves that feel soft and damp.', solution:'Remove the plant from its pot. Healthy roots are white; rotten roots are brown and soft. Cut away rot, let dry for 2-3 days, and repot in fresh medium.'},
+      {cause:'Root-bound plant', detail:'Roots emerge through drainage holes and growth has stopped.', solution:'Repot into a container 3-4cm wider. Loosen the roots gently.'},
+      {cause:'Heat stress', detail:'The plant spent many hours in intense sun and has burned leaves.', solution:'Move to shade immediately, water, and remove burned leaves. Recovery can take 1-2 weeks.'}
     ]
   },
   {
-    id:'no-bloom', emoji:'😢', title:'No florece',
-    desc:'La planta crece pero no produce flores',
+    id:'no-bloom', emoji:'😢', title:'No blooms',
+    desc:'The plant grows but does not produce flowers',
     causes:[
-      {cause:'Poca luz', detail:'La mayoría de plantas necesitan 6+ horas de luz para florecer.', solution:'Mueve a ubicación más luminosa. Sol directo de mañana es ideal.'},
-      {cause:'Exceso de nitrógeno', detail:'Mucho fertilizante con N produce follaje verde pero pocas flores.', solution:'Cambia a fertilizante alto en fósforo (P) y potasio (K), ej: NPK 5-10-10.'},
-      {cause:'Maceta muy grande', detail:'La planta invierte energía en raíces en vez de flores.', solution:'Usa maceta solo 2-3cm más grande que el cepellón.'},
-      {cause:'Necesita reposo invernal', detail:'Algunas plantas requieren un periodo frío para inducir floración.', solution:'En invierno, reduce riego y temperatura. Simula estaciones naturales.'},
-      {cause:'Poda en mal momento', detail:'Cortaste los tallos donde se formarían las flores.', solution:'Investiga cuándo florece tu planta (madera vieja vs. nueva) y poda después de la floración.'}
+      {cause:'Insufficient light', detail:'Most flowering plants need 6+ hours of light to bloom.', solution:'Move to a brighter location. Direct morning sun is often ideal.'},
+      {cause:'Excess nitrogen', detail:'Too much nitrogen produces green foliage but few flowers.', solution:'Switch to a fertilizer higher in phosphorus and potassium, such as NPK 5-10-10.'},
+      {cause:'Pot is too large', detail:'The plant invests energy in roots instead of flowers.', solution:'Use a pot only 2-3cm wider than the root ball.'},
+      {cause:'Winter dormancy required', detail:'Some plants require a cold period to trigger flowering.', solution:'Reduce watering and temperature in winter to approximate natural seasons.'},
+      {cause:'Pruned at the wrong time', detail:'Stems that would have produced flowers were removed.', solution:'Check whether the plant blooms on old or new wood and prune after flowering when appropriate.'}
     ]
   },
   {
-    id:'pests', emoji:'🐛', title:'Plagas comunes',
-    desc:'Insectos que atacan tus plantas',
+    id:'pests', emoji:'🐛', title:'Common pests',
+    desc:'Insects and mites that attack plants',
     causes:[
-      {cause:'Pulgones (áfidos)', detail:'Insectos pequeños verdes/negros en brotes y hojas nuevas. Dejan melaza pegajosa.', solution:'Chorro de agua fuerte. Jabón potásico 2% semanal. Soltar mariquitas. Spray de ajo.'},
-      {cause:'Mosca blanca', detail:'Moscas diminutas blancas que vuelan al agitar la planta. Debajo de hojas.', solution:'Trampas amarillas pegajosas. Jabón potásico. Aceite de neem cada 5 días.'},
-      {cause:'Cochinilla algodonosa', detail:'Bolitas blancas como algodón en axilas de hojas y tallos.', solution:'Limpiar con algodón + alcohol isopropílico. Aceite de neem. Insecticida sistémico si es grave.'},
-      {cause:'Araña roja', detail:'Punteado amarillo fino en hojas. Telarañas muy finas. Ambiente seco.', solution:'Aumentar humedad (pulverizar follaje). Acaricida o aceite de neem. Ducha a la planta.'},
-      {cause:'Trips', detail:'Insectos diminutos alargados. Hojas con aspecto plateado/bronceado.', solution:'Trampas azules pegajosas. Jabón potásico + aceite de neem. Aceite de nim sistémico.'}
+      {cause:'Aphids', detail:'Small green or black insects on shoots and new leaves that leave sticky honeydew.', solution:'Use a strong water spray, 2% potassium soap weekly, ladybugs, or garlic spray.'},
+      {cause:'Whiteflies', detail:'Tiny white flies beneath leaves that take flight when the plant is disturbed.', solution:'Use yellow sticky traps, potassium soap, and neem oil every 5 days.'},
+      {cause:'Mealybugs', detail:'White cotton-like clusters in leaf axils and on stems.', solution:'Clean with cotton and isopropyl alcohol. Use neem oil, or a systemic insecticide for a severe infestation.'},
+      {cause:'Spider mites', detail:'Fine yellow stippling, very fine webbing, and dry conditions.', solution:'Increase humidity, rinse the plant, and use a miticide or neem oil.'},
+      {cause:'Thrips', detail:'Tiny elongated insects that leave leaves silvered or bronze.', solution:'Use blue sticky traps, potassium soap with neem oil, or an appropriate systemic treatment.'}
     ]
   }
 ];
 
 const REMEDIES = [
   {
-    id:'garlic-spray', emoji:'🧄', title:'Spray de Ajo Anti-Plagas',
-    subtitle:'Repelente natural para pulgones, mosca blanca y más',
-    ingredients:['5 dientes de ajo grandes','1 litro de agua','1 cucharadita de jabón líquido biodegradable','Botella spray'],
-    preparation:'Licúa los ajos con 250ml de agua. Deja reposar 24 horas tapado. Cuela y mezcla con el resto del agua y el jabón.',
-    application:'Pulveriza sobre hojas (ambos lados) al atardecer. Repite cada 3-5 días. Efectivo contra pulgones, mosca blanca y orugas.'
+    id:'garlic-spray', emoji:'🧄', title:'Garlic Pest Spray',
+    subtitle:'Natural repellent for aphids, whiteflies, and more',
+    ingredients:['5 large garlic cloves','1 liter of water','1 teaspoon biodegradable liquid soap','Spray bottle'],
+    preparation:'Blend the garlic with 250ml of water. Cover and rest for 24 hours. Strain, then mix with the remaining water and soap.',
+    application:'Spray both sides of leaves at dusk. Repeat every 3-5 days. Intended for aphids, whiteflies, and caterpillars.'
   },
   {
-    id:'cinnamon', emoji:'🫙', title:'Canela Anti-Hongos',
-    subtitle:'Fungicida y cicatrizante natural',
-    ingredients:['Canela en polvo (de la cocina)'],
-    preparation:'No requiere preparación. Usar directamente en polvo.',
-    application:'Espolvorea canela sobre cortes de poda (cicatriza). Pon sobre sustrato para prevenir hongos y mosquitos del sustrato. Espolvorea en raíces al trasplantar.'
+    id:'cinnamon', emoji:'🫙', title:'Antifungal Cinnamon',
+    subtitle:'Natural antifungal and wound dressing',
+    ingredients:['Ground kitchen cinnamon'],
+    preparation:'No preparation is required. Use the powder directly.',
+    application:'Dust pruning cuts, the surface of growing medium, or roots during repotting. This is intended to discourage fungal growth and fungus gnats.'
   },
   {
-    id:'eggshell', emoji:'🥚', title:'Cáscara de Huevo (Calcio)',
-    subtitle:'Fertilizante rico en calcio para suelos ácidos',
-    ingredients:['Cáscaras de 6-10 huevos','Licuadora o mortero'],
-    preparation:'Lava las cáscaras. Sécalas al sol 1-2 días. Tritúralas hasta polvo fino (entre más fino, más rápido actúa).',
-    application:'Mezcla 2 cucharadas por maceta mediana en la superficie. Riega normal. Se descompone en 2-3 meses. Ideal para tomates, pimientos y rosas.'
+    id:'eggshell', emoji:'🥚', title:'Eggshells (Calcium)',
+    subtitle:'Calcium-rich amendment for acidic soils',
+    ingredients:['Shells from 6-10 eggs','Blender or mortar'],
+    preparation:'Wash the shells, dry them in the sun for 1-2 days, and grind them into a fine powder. Finer particles break down faster.',
+    application:'Mix 2 tablespoons into the surface of a medium pot and water normally. It breaks down over 2-3 months and is commonly used for tomatoes, peppers, and roses.'
   },
   {
-    id:'banana-peel', emoji:'🍌', title:'Cáscara de Plátano (Potasio)',
-    subtitle:'Fertilizante rico en potasio para floración abundante',
-    ingredients:['3-4 cáscaras de plátano','1 litro de agua','Frasco de vidrio'],
-    preparation:'Corta las cáscaras en trozos. Coloca en el frasco con agua. Tapa y deja fermentar 48-72 horas (fuera del sol).',
-    application:'Diluye: 1 parte de "agua de plátano" por 5 de agua limpia. Riega cada 15 días. Ideal para rosas, hortensias y plantas con flor. También puedes enterrar cáscaras directamente.'
+    id:'banana-peel', emoji:'🍌', title:'Banana Peel (Potassium)',
+    subtitle:'Potassium-rich amendment for flowering plants',
+    ingredients:['3-4 banana peels','1 liter of water','Glass jar'],
+    preparation:'Cut the peels into pieces, place them in the jar with water, cover, and ferment out of direct sun for 48-72 hours.',
+    application:'Dilute one part banana-peel water with five parts clean water. Apply every 15 days to roses, hydrangeas, or other flowering plants. Peels can also be buried directly.'
   },
   {
-    id:'neem-oil', emoji:'🌿', title:'Aceite de Neem',
-    subtitle:'Insecticida, fungicida y acaricida orgánico',
-    ingredients:['5ml aceite de neem puro (prensado en frío)','1 litro de agua tibia','3 gotas de jabón líquido biodegradable (emulsificante)'],
-    preparation:'Mezcla el jabón con el aceite de neem. Agrega el agua tibia y agita vigorosamente. Usar inmediatamente (se degrada con la luz).',
-    application:'Pulveriza al atardecer (se degrada con UV). Cubre ambos lados de las hojas. Repite cada 7 días por 3-4 semanas. Efectivo contra: pulgones, mosca blanca, cochinilla, araña roja, trips, minador de hojas.'
+    id:'neem-oil', emoji:'🌿', title:'Neem Oil',
+    subtitle:'Organic insecticide, fungicide, and miticide',
+    ingredients:['5ml pure cold-pressed neem oil','1 liter of warm water','3 drops biodegradable liquid soap as an emulsifier'],
+    preparation:'Mix the soap with the neem oil, add warm water, and shake vigorously. Use immediately because light degrades the mixture.',
+    application:'Spray at dusk and cover both sides of the leaves. Repeat every 7 days for 3-4 weeks. Common targets include aphids, whiteflies, mealybugs, spider mites, thrips, and leaf miners.'
   },
   {
-    id:'beer-trap', emoji:'🍺', title:'Trampa de Cerveza para Caracoles',
-    subtitle:'Atrapa babosas y caracoles sin químicos',
-    ingredients:['Cerveza (cualquier tipo, incluso rancia)','Recipiente bajo (tapa de frasco, plato hondo)'],
-    preparation:'Llena el recipiente con cerveza hasta 2-3cm de profundidad.',
-    application:'Entiérralo a nivel del suelo cerca de plantas afectadas. Los caracoles se sienten atraídos, caen y se ahogan. Renueva cada 2-3 días. Coloca varias trampas en el jardín.'
+    id:'beer-trap', emoji:'🍺', title:'Beer Trap for Snails',
+    subtitle:'Trap slugs and snails without pesticides',
+    ingredients:['Beer of any kind, including stale beer','Shallow container, such as a jar lid or low dish'],
+    preparation:'Fill the container with 2-3cm of beer.',
+    application:'Bury the rim at soil level near affected plants. Snails and slugs are attracted, fall in, and drown. Replace every 2-3 days and use several traps across the garden.'
   },
   {
-    id:'coffee-grounds', emoji:'☕', title:'Borra de Café',
-    subtitle:'Acidificante, fertilizante y repelente',
-    ingredients:['Borra de café usada (seca)'],
-    preparation:'Seca la borra al sol o en horno a baja temperatura. Guardar en frasco seco.',
-    application:'Mezcla 1-2 cucharadas en la superficie del sustrato. Acidifica ligeramente (ideal para hortensias azules, gardenias, azaleas). Repele caracoles y gatos. Aporta nitrógeno lentamente. NO usar en exceso (puede compactar).'
+    id:'coffee-grounds', emoji:'☕', title:'Coffee Grounds',
+    subtitle:'Soil amendment and repellent',
+    ingredients:['Used, dried coffee grounds'],
+    preparation:'Dry the grounds in the sun or a low-temperature oven, then store in a dry jar.',
+    application:'Mix 1-2 tablespoons into the surface. Grounds can slightly acidify soil for blue hydrangeas, gardenias, and azaleas, may discourage snails and cats, and release nitrogen slowly. Do NOT overuse because they can compact.'
   },
   {
-    id:'epsom-salt', emoji:'🧂', title:'Sal de Epsom (Magnesio)',
-    subtitle:'Para hojas más verdes y frutos más grandes',
-    ingredients:['1 cucharada de sal de Epsom (sulfato de magnesio)','1 litro de agua'],
-    preparation:'Disuelve la sal de Epsom en agua tibia.',
-    application:'Riega cada 4-6 semanas durante temporada de crecimiento. Ideal para tomates, pimientos y rosas. Pulverizar sobre hojas para absorción rápida. Si las hojas amarillean entre las venas = deficiencia de magnesio.'
+    id:'epsom-salt', emoji:'🧂', title:'Epsom Salt (Magnesium)',
+    subtitle:'For plants with a confirmed magnesium need',
+    ingredients:['1 tablespoon Epsom salt (magnesium sulfate)','1 liter of water'],
+    preparation:'Dissolve the Epsom salt in warm water.',
+    application:'Apply every 4-6 weeks during the growing season to plants with an identified magnesium need, such as some tomatoes, peppers, and roses. A foliar spray absorbs faster. Yellowing between veins can indicate magnesium deficiency, but confirm before treating.'
   }
 ];
 
 const PESTS_DATA = [
   {
-    id:'aphids', emoji:'🟢', title:'Pulgones (Áfidos)',
-    desc:'Los más comunes. Colonizan brotes y hojas nuevas.',
-    visual:'Insectos blandos de 1-3mm, verdes, negros, o amarillos. Forman colonias densas.',
-    damage:'Chupan savia, deforman hojas, segregan melaza que atrae hongos (negrilla).',
-    organic:'Chorro de agua fuerte. Jabón potásico 2%. Spray de ajo. Liberar mariquitas o crisopas.',
-    chemical:'Imidacloprid sistémico. Pirimicarb específico para pulgones.'
+    id:'aphids', emoji:'🟢', title:'Aphids',
+    desc:'A common pest that colonizes shoots and new leaves.',
+    visual:'Soft-bodied 1-3mm insects that may be green, black, or yellow and form dense colonies.',
+    damage:'They suck sap, deform leaves, and secrete honeydew that attracts sooty mold.',
+    organic:'Use a strong water spray, 2% potassium soap, garlic spray, or release ladybugs or lacewings.',
+    chemical:'Systemic imidacloprid or aphid-specific pirimicarb.'
   },
   {
-    id:'whitefly', emoji:'🦟', title:'Mosca Blanca',
-    desc:'Mosquitas blancas que vuelan al agitar las hojas.',
-    visual:'Moscas diminutas (1-2mm) blancas. Se posan debajo de las hojas.',
-    damage:'Chupan savia, debilitan la planta, transmiten virus, segregan melaza.',
-    organic:'Trampas amarillas pegajosas. Jabón potásico + aceite de neem. Albahaca repele naturalmente.',
+    id:'whitefly', emoji:'🦟', title:'Whiteflies',
+    desc:'Tiny white flies that take flight when leaves are disturbed.',
+    visual:'White flies 1-2mm long that rest beneath leaves.',
+    damage:'They suck sap, weaken the plant, transmit viruses, and secrete honeydew.',
+    organic:'Use yellow sticky traps, potassium soap with neem oil, or basil as a companion plant.',
     chemical:'Acetamiprid. Spiromesifen.'
   },
   {
-    id:'mealybug', emoji:'🐛', title:'Cochinilla Algodonosa',
-    desc:'Bolitas blancas como algodón en tallos y axilas.',
-    visual:'Insectos ovalados cubiertos de cera blanca algodonosa. 3-5mm.',
-    damage:'Chupan savia, debilitan severamente. Producen melaza y negrilla.',
-    organic:'Algodón con alcohol isopropílico 70%. Aceite de neem. Jabón potásico.',
-    chemical:'Imidacloprid. Clorpirifos (muy tóxico, último recurso).'
+    id:'mealybug', emoji:'🐛', title:'Mealybugs',
+    desc:'White cotton-like clusters on stems and in leaf axils.',
+    visual:'Oval 3-5mm insects covered in white cottony wax.',
+    damage:'They suck sap, severely weaken plants, and produce honeydew and sooty mold.',
+    organic:'Use cotton with 70% isopropyl alcohol, neem oil, or potassium soap.',
+    chemical:'Imidacloprid. Chlorpyrifos is highly toxic and should be treated as a last resort where legally permitted.'
   },
   {
-    id:'spider-mite', emoji:'🕷️', title:'Araña Roja',
-    desc:'Ácaro casi invisible. Adora ambientes secos y calurosos.',
-    visual:'Puntitos rojos/marrones < 0.5mm. Telarañas finísimas entre hojas. Ver con lupa.',
-    damage:'Punteado amarillo en hojas (miles de picaduras). Hojas secas y caen. Puede matar la planta.',
-    organic:'Pulverizar follaje con agua (odia humedad). Aceite de neem. Jabón potásico + azufre.',
-    chemical:'Abamectina. Espirodiclofeno. Alternar productos (genera resistencia fácilmente).'
+    id:'spider-mite', emoji:'🕷️', title:'Spider Mites',
+    desc:'Nearly invisible mites that thrive in hot, dry conditions.',
+    visual:'Red or brown dots under 0.5mm with very fine webbing between leaves; use a magnifier.',
+    damage:'Thousands of bites create yellow stippling. Leaves dry and fall, and severe infestations can kill the plant.',
+    organic:'Mist foliage with water, apply neem oil, or use potassium soap with sulfur.',
+    chemical:'Abamectin or spirodiclofen. Rotate products because resistance develops easily.'
   },
   {
-    id:'thrips', emoji:'🪲', title:'Trips',
-    desc:'Insectos diminutos alargados que raspan hojas.',
-    visual:'1-2mm, alargados como bastoncitos. Color amarillo a marrón. Difíciles de ver.',
-    damage:'Raspaduras plateadas en hojas. Deforman flores y brotes. Transmiten virus.',
-    organic:'Trampas azules pegajosas. Aceite de neem. Spinosad (orgánico).',
+    id:'thrips', emoji:'🪲', title:'Thrips',
+    desc:'Tiny elongated insects that scrape leaves.',
+    visual:'Yellow-to-brown, stick-shaped insects 1-2mm long that are difficult to see.',
+    damage:'They leave silver scarring, deform flowers and shoots, and transmit viruses.',
+    organic:'Use blue sticky traps, neem oil, or organic spinosad.',
     chemical:'Spinosad. Acrinatrin.'
   }
 ];
@@ -2862,23 +2862,23 @@ const PESTS_DATA = [
    COMPOSTING DATA
    ═══════════════════════════════════════════ */
 const COMPOST_DATA = {
-  greens:['Restos de frutas y verduras','Cáscara de huevo (triturada)','Borra de café y filtros','Bolsas de té','Pasto recién cortado','Restos de poda verde','Flores marchitas','Cáscara de plátano'],
-  browns:['Hojas secas','Cartón sin tinta (pedazos)','Servilletas de papel usadas','Ramas secas trituradas','Aserrín (no tratado)','Paja o heno','Papel periódico (tiras)','Cascarilla de arroz'],
-  noCompost:['❌ Carne, pollo o pescado','❌ Lácteos o huesos','❌ Aceite o grasa','❌ Plantas enfermas','❌ Heces de mascotas','❌ Carbón o ceniza de carbón','❌ Madera tratada o pintada','❌ Plásticos o metales'],
+  greens:['Fruit and vegetable scraps','Crushed eggshells','Coffee grounds and filters','Tea bags','Fresh grass clippings','Fresh green prunings','Faded flowers','Banana peels'],
+  browns:['Dry leaves','Pieces of unprinted cardboard','Used paper napkins','Shredded dry branches','Untreated sawdust','Straw or hay','Strips of newspaper','Rice hulls'],
+  noCompost:['❌ Meat, poultry, or fish','❌ Dairy or bones','❌ Oil or grease','❌ Diseased plants','❌ Pet waste','❌ Coal or coal ash','❌ Treated or painted wood','❌ Plastics or metals'],
   steps:[
-    {step:'Elige contenedor', detail:'Maceta grande, compostera, o simplemente un rincón del jardín. Mínimo 50×50cm.'},
-    {step:'Capa base', detail:'Ramitas secas o cartón para drenaje y aireación (10cm).'},
-    {step:'Alterna capas', detail:'1 capa marrón (seco) + 1 capa verde (húmedo). Proporción ideal: 3 partes marrón por 1 verde.'},
-    {step:'Humedece', detail:'Debe sentirse como esponja exprimida. Ni seco ni encharcado.'},
-    {step:'Voltea semanalmente', detail:'Mover con pala o tenedor para oxigenar. Esto acelera la descomposición.'},
-    {step:'Paciencia', detail:'Composta lista en 2-4 meses en clima cálido, 4-6 meses en frío. Debe oler a tierra húmeda.'}
+    {step:'Choose a container', detail:'Use a large pot, compost bin, or a garden corner at least 50×50cm.'},
+    {step:'Build a base layer', detail:'Add 10cm of dry twigs or cardboard for drainage and airflow.'},
+    {step:'Alternate layers', detail:'Add one brown dry layer and one green moist layer. Aim for three parts brown to one part green.'},
+    {step:'Moisten', detail:'It should feel like a wrung-out sponge, neither dry nor waterlogged.'},
+    {step:'Turn weekly', detail:'Move the pile with a shovel or fork to add oxygen and speed decomposition.'},
+    {step:'Be patient', detail:'Compost can finish in 2-4 months in warm weather or 4-6 months in cold weather. It should smell like damp earth.'}
   ],
   diyFertilizers:[
-    {name:'Té de plátano', recipe:'4 cáscaras en 1L agua, fermentar 48h. Diluir 1:5. Rico en potasio.'},
-    {name:'Agua de arroz', recipe:'El agua de lavar arroz sin cocer. Regar directo. Rica en almidón y nutrientes.'},
-    {name:'Té de composta', recipe:'1 puño de composta en 1L agua. Reposar 24h. Colar. Riego completo.'},
-    {name:'Licuado verde', recipe:'Cáscaras + restos de verdura licuados con agua. Enterrar en la maceta.'},
-    {name:'Vinagre diluido', recipe:'1 cucharada de vinagre en 1L agua. Acidifica para gardenias y hortensias.'}
+    {name:'Banana-peel tea', recipe:'Ferment 4 peels in 1L of water for 48 hours, then dilute 1:5. Provides potassium.'},
+    {name:'Rice water', recipe:'Use water from rinsing uncooked rice. Apply directly for starch and trace nutrients.'},
+    {name:'Compost tea', recipe:'Steep one handful of compost in 1L of water for 24 hours, strain, and water thoroughly.'},
+    {name:'Green blend', recipe:'Blend peels and vegetable scraps with water, then bury the mixture in the pot.'},
+    {name:'Diluted vinegar', recipe:'Mix 1 tablespoon vinegar into 1L of water to acidify soil for gardenias and hydrangeas.'}
   ]
 };
 
@@ -2902,14 +2902,14 @@ function getMoonPhase(date) {
 }
 
 function getMoonInfo(phase) {
-  if (phase <= 1 || phase >= 29) return {icon:'🌑',name:'Luna Nueva',desc:'Energía baja. Momento de descanso para el jardín.',recs:{plant:'Evitar siembras',prune:'No podar',harvest:'No cosechar',special:'Planificar, preparar sustrato, compostar'}};
-  if (phase <= 6) return {icon:'🌒',name:'Luna Creciente',desc:'La savia sube. Ideal para plantas de hoja y flor.',recs:{plant:'Sembrar plantas de hoja y flor',prune:'Podar para estimular crecimiento',harvest:'No es momento de cosechar',special:'Trasplantar, aplicar fertilizante foliar'}};
-  if (phase <= 9) return {icon:'🌓',name:'Cuarto Creciente',desc:'Máxima absorción. Gran momento para sembrar.',recs:{plant:'Excelente para sembrar todo',prune:'Poda de formación',harvest:'Cosechar hierbas aromáticas',special:'Abonar, injertar, hacer esquejes'}};
-  if (phase <= 12) return {icon:'🌔',name:'Gibosa Creciente',desc:'Energía en aumento. La planta concentra fuerzas.',recs:{plant:'Sembrar plantas de fruto',prune:'Poda ligera',harvest:'Cosechar flores',special:'Regar abundantemente, abonar raíces'}};
-  if (phase <= 16) return {icon:'🌕',name:'Luna Llena',desc:'Máxima energía. Las raíces absorben más nutrientes.',recs:{plant:'Sembrar tubérculos y bulbos',prune:'Evitar podas fuertes (mucha savia)',harvest:'Cosecha abundante',special:'Trasplantar, dividir matas, regar bien'}};
-  if (phase <= 20) return {icon:'🌖',name:'Gibosa Menguante',desc:'La energía baja hacia las raíces.',recs:{plant:'Sembrar raíces: zanahorias, rábanos',prune:'Buen momento para podar',harvest:'Cosechar frutos',special:'Aplicar abono orgánico, compostar'}};
-  if (phase <= 23) return {icon:'🌗',name:'Cuarto Menguante',desc:'Reposo. Bueno para labores de mantenimiento.',recs:{plant:'Sembrar tubérculos',prune:'Poda fuerte, eliminar ramas enfermas',harvest:'Cosechar raíces',special:'Deshierbar, controlar plagas, arar'}};
-  return {icon:'🌘',name:'Luna Menguante',desc:'Energía mínima. El jardín descansa.',recs:{plant:'Evitar siembras',prune:'Podar lo seco y enfermo',harvest:'No cosechar',special:'Limpiar, preparar camas, compostar'}};
+  if (phase <= 1 || phase >= 29) return {icon:'🌑',name:'New Moon',desc:'Low energy. A quiet time for the garden.',recs:{plant:'Avoid sowing',prune:'Do not prune',harvest:'Do not harvest',special:'Plan, prepare growing medium, and compost'}};
+  if (phase <= 6) return {icon:'🌒',name:'Waxing Crescent',desc:'Sap is rising. Traditionally associated with leafy and flowering plants.',recs:{plant:'Sow leafy and flowering plants',prune:'Prune to encourage growth',harvest:'Wait before harvesting',special:'Transplant and apply foliar fertilizer'}};
+  if (phase <= 9) return {icon:'🌓',name:'First Quarter',desc:'A traditional high-absorption period for sowing.',recs:{plant:'A traditional time to sow broadly',prune:'Shape plants',harvest:'Harvest aromatic herbs',special:'Fertilize, graft, and take cuttings'}};
+  if (phase <= 12) return {icon:'🌔',name:'Waxing Gibbous',desc:'Energy is increasing and plants are thought to concentrate growth.',recs:{plant:'Sow fruiting plants',prune:'Prune lightly',harvest:'Harvest flowers',special:'Water deeply and feed roots'}};
+  if (phase <= 16) return {icon:'🌕',name:'Full Moon',desc:'Traditionally considered a peak-energy period for roots.',recs:{plant:'Sow tubers and bulbs',prune:'Avoid hard pruning',harvest:'Harvest mature crops',special:'Transplant, divide clumps, and water well'}};
+  if (phase <= 20) return {icon:'🌖',name:'Waning Gibbous',desc:'Energy is traditionally thought to move toward the roots.',recs:{plant:'Sow root crops such as carrots and radishes',prune:'A traditional time to prune',harvest:'Harvest fruit',special:'Apply organic amendments and compost'}};
+  if (phase <= 23) return {icon:'🌗',name:'Last Quarter',desc:'A resting period often used for maintenance.',recs:{plant:'Sow tubers',prune:'Prune hard and remove diseased branches',harvest:'Harvest roots',special:'Weed, manage pests, and cultivate soil'}};
+  return {icon:'🌘',name:'Waning Crescent',desc:'A low-energy period when the garden rests.',recs:{plant:'Avoid sowing',prune:'Remove dry and diseased growth',harvest:'Do not harvest',special:'Clean, prepare beds, and compost'}};
 }
 
 /* ═══════════════════════════════════════════
@@ -2917,10 +2917,10 @@ function getMoonInfo(phase) {
    ═══════════════════════════════════════════ */
 function getSeasonalBanner() {
   const m = new Date().getMonth();
-  if (m >= 2 && m <= 4) return {emoji:'🌸',title:'¡Primavera!',desc:'Temporada de siembra y trasplante. Tus plantas despiertan.'};
-  if (m >= 5 && m <= 7) return {emoji:'☀️',title:'Verano intenso',desc:'Riega temprano, protege del sol de mediodía.'};
-  if (m >= 8 && m <= 9) return {emoji:'🍂',title:'Llegó el otoño',desc:'Prepara tu jardín para el descanso invernal.'};
-  return {emoji:'❄️',title:'Invierno',desc:'Reduce riegos, protege del frío. Planifica la primavera.'};
+  if (m >= 2 && m <= 4) return {emoji:'🌸',title:'Spring!',desc:'Sowing and transplanting season. Your plants are waking up.'};
+  if (m >= 5 && m <= 7) return {emoji:'☀️',title:'Intense summer',desc:'Water early and protect plants from midday sun.'};
+  if (m >= 8 && m <= 9) return {emoji:'🍂',title:'Fall is here',desc:'Prepare your garden for its winter rest.'};
+  return {emoji:'❄️',title:'Winter',desc:'Reduce watering, protect from cold, and plan for spring.'};
 }
 
 /* ═══════════════════════════════════════════
@@ -2928,74 +2928,74 @@ function getSeasonalBanner() {
    ═══════════════════════════════════════════ */
 const SEASONAL_TIPS = {
   0: [ // Enero
-    { emoji:'❄️', title:'Protege del frío', body:'Cubre tus plantas sensibles con tela o plástico durante las heladas nocturnas. Las macetas de barro pueden romperse con el hielo.' },
-    { emoji:'✂️', title:'Poda de invierno', body:'Es buen momento para podar rosales y árboles frutales que han perdido sus hojas. Corta ramas secas o enfermas.' },
-    { emoji:'📋', title:'Planifica tu jardín', body:'Enero es perfecto para planear qué sembrar en primavera. Revisa semillas, macetas y herramientas.' }
+    { emoji:'❄️', title:'Protect from cold', body:'Cover sensitive plants with fabric or plastic during overnight frost. Clay pots can crack when water freezes.' },
+    { emoji:'✂️', title:'Winter pruning', body:'This can be a good time to prune dormant roses and deciduous fruit trees. Remove dry or diseased branches.' },
+    { emoji:'📋', title:'Plan your garden', body:'January is ideal for planning spring planting. Review seeds, pots, and tools.' }
   ],
   1: [ // Febrero
-    { emoji:'🌱', title:'Prepara semilleros', body:'Comienza a germinar semillas en interior para tener plantas listas cuando llegue la primavera.' },
-    { emoji:'💚', title:'Revisa tus plantas de interior', body:'Limpia hojas con un paño húmedo. La luz invernal es débil, acerca las plantas a las ventanas.' },
-    { emoji:'🌹', title:'Poda de rosales', body:'Febrero es ideal para podar rosales. Corta en diagonal, justo arriba de un brote que mire hacia afuera.' }
+    { emoji:'🌱', title:'Prepare seed trays', body:'Start seeds indoors so plants are ready when spring arrives.' },
+    { emoji:'💚', title:'Check houseplants', body:'Clean leaves with a damp cloth. Winter light is weaker, so move plants closer to windows when appropriate.' },
+    { emoji:'🌹', title:'Prune roses', body:'February can be suitable for pruning dormant roses. Cut diagonally just above an outward-facing bud.' }
   ],
   2: [ // Marzo
-    { emoji:'🌷', title:'¡Hora de plantar tulipanes!', body:'Si no los plantaste en otoño, aún puedes encontrar bulbos pre-enfriados. Plántalos a 15cm de profundidad.' },
-    { emoji:'🐛', title:'Vigila las plagas', body:'Con el calor llegan los pulgones. Revisa hojas y tallos. El jabón potásico es un remedio natural eficaz.' },
-    { emoji:'💧', title:'Aumenta el riego', body:'Los días más largos y cálidos hacen que tus plantas necesiten más agua. Riega temprano en la mañana.' }
+    { emoji:'🌷', title:'Time to plant tulips', body:'If you did not plant in fall, pre-chilled bulbs may still be available. Plant them 15cm deep.' },
+    { emoji:'🐛', title:'Watch for pests', body:'Warmer weather can bring aphids. Check leaves and stems; potassium soap is one lower-impact control option.' },
+    { emoji:'💧', title:'Adjust watering', body:'Longer, warmer days may increase water needs. Check the soil and water early in the morning.' }
   ],
   3: [ // Abril
-    { emoji:'🌸', title:'Primavera en pleno', body:'Es el mejor mes para trasplantar. Las plantas están activas y se adaptan rápido a nuevas macetas.' },
-    { emoji:'🌻', title:'Siembra girasoles', body:'Planta semillas de girasol directamente en tierra. En 2-3 meses tendrás flores enormes y alegres.' },
-    { emoji:'🧪', title:'Fertiliza', body:'Tus plantas despiertan hambrientas. Usa fertilizante orgánico cada 2 semanas para un crecimiento exuberante.' }
+    { emoji:'🌸', title:'Spring in full swing', body:'Active growth can make April a good transplanting month. Plants often adapt quickly to new pots.' },
+    { emoji:'🌻', title:'Sow sunflowers', body:'Plant sunflower seeds directly in soil. Large flowers can appear in 2-3 months.' },
+    { emoji:'🧪', title:'Feed active growth', body:'As plants wake up, follow each species\' fertilizer guidance instead of applying a universal schedule.' }
   ],
   4: [ // Mayo
-    { emoji:'🌺', title:'Explosión de color', body:'Planta petunias, geranios y begonias para balcones llenos de color todo el verano.' },
-    { emoji:'☀️', title:'Cuidado con el sol directo', body:'Las plantas recién trasplantadas necesitan aclimatarse. Dales sombra parcial la primera semana.' },
-    { emoji:'💐', title:'Corta flores para el hogar', body:'Cortar flores estimula que la planta produzca más. Corta en la mañana cuando están más hidratadas.' }
+    { emoji:'🌺', title:'A burst of color', body:'Plant petunias, geraniums, and begonias for colorful summer balconies.' },
+    { emoji:'☀️', title:'Ease into direct sun', body:'Newly transplanted plants need to acclimate. Give them partial shade during the first week.' },
+    { emoji:'💐', title:'Cut flowers for home', body:'For species that respond to deadheading, cutting flowers can encourage more blooms. Cut in the morning while stems are hydrated.' }
   ],
   5: [ // Junio
-    { emoji:'💧', title:'Riego profundo', body:'Con el calor, riega profundamente pero menos frecuente. Esto estimula raíces fuertes y profundas.' },
-    { emoji:'🌿', title:'Acolchado es clave', body:'Pon una capa de mulch o corteza alrededor de tus plantas. Retiene humedad y mantiene raíces frescas.' },
-    { emoji:'🪴', title:'Cuida tus orquídeas', body:'El verano es ideal para sacar orquídeas al exterior en un lugar con sombra parcial y buena ventilación.' }
+    { emoji:'💧', title:'Water deeply', body:'In warm weather, deep but less frequent watering can encourage stronger roots. Adjust for the plant and soil.' },
+    { emoji:'🌿', title:'Mulch helps', body:'Add mulch or bark around plants to retain moisture and keep roots cooler.' },
+    { emoji:'🪴', title:'Care for orchids', body:'Some orchids can spend summer outdoors in partial shade with good ventilation; avoid direct sun and sudden temperature changes.' }
   ],
   6: [ // Julio
-    { emoji:'🌡️', title:'Calor extremo', body:'Mueve macetas a zonas con sombra por la tarde. Las hojas quemadas por el sol no se recuperan.' },
-    { emoji:'🚿', title:'Riega al amanecer', body:'Evita regar al mediodía — el agua se evapora y puede quemar hojas. Temprano o al atardecer.' },
-    { emoji:'🦋', title:'Atrae polinizadores', body:'Planta lavanda, salvia y cempasúchil para llenar tu jardín de mariposas y abejas.' }
+    { emoji:'🌡️', title:'Extreme heat', body:'Move pots into afternoon shade when needed. Sun-scorched leaves do not recover.' },
+    { emoji:'🚿', title:'Water at dawn', body:'Avoid midday watering because more water evaporates. Early morning or evening is usually better.' },
+    { emoji:'🦋', title:'Welcome pollinators', body:'Lavender, sage, and cempasúchil can attract butterflies and bees to the garden.' }
   ],
   7: [ // Agosto
-    { emoji:'✂️', title:'Poda de verano', body:'Recorta las flores marchitas para estimular nueva floración. Quita hojas secas y ramas débiles.' },
-    { emoji:'🌱', title:'Prepara para otoño', body:'Comienza a planear siembras de otoño. Algunas flores de primavera necesitan plantarse ahora.' },
-    { emoji:'💦', title:'Revisa el drenaje', body:'Las lluvias de agosto pueden encharcar macetas. Asegúrate de que todas tengan buen drenaje.' }
+    { emoji:'✂️', title:'Summer pruning', body:'Deadhead species that rebloom, and remove dry leaves or weak branches.' },
+    { emoji:'🌱', title:'Prepare for fall', body:'Plan fall planting. Some spring flowers need to be planted now.' },
+    { emoji:'💦', title:'Check drainage', body:'August rain can waterlog pots. Make sure every container drains freely.' }
   ],
   8: [ // Septiembre
-    { emoji:'🍂', title:'Transición de temporada', body:'Reduce el fertilizante gradualmente. Las plantas empiezan a prepararse para descansar.' },
-    { emoji:'🏵️', title:'Temporada de cempasúchil', body:'Si quieres flores para Día de Muertos, septiembre es el último momento para sembrar cempasúchil.' },
-    { emoji:'🧹', title:'Limpieza de jardín', body:'Retira plantas anuales que terminaron su ciclo. Prepara la tierra con composta para la próxima temporada.' }
+    { emoji:'🍂', title:'Seasonal transition', body:'Gradually reduce fertilizer as plants prepare to rest, following each species\' needs.' },
+    { emoji:'🏵️', title:'Cempasúchil season', body:'For Día de Muertos flowers, September is generally the last practical time to sow cempasúchil.' },
+    { emoji:'🧹', title:'Garden cleanup', body:'Remove annuals that have finished their cycle and prepare soil with mature compost for the next season.' }
   ],
   9: [ // Octubre
-    { emoji:'🎃', title:'Bulbos de primavera', body:'Planta tulipanes, narcisos y crocus ahora. Necesitan el frío invernal para florecer en primavera.' },
-    { emoji:'🏵️', title:'Día de Muertos', body:'El cempasúchil está en su máximo esplendor. Riega bien para que dure más durante las festividades.' },
-    { emoji:'🏠', title:'Plantas al interior', body:'Mete al interior las plantas tropicales antes de las primeras heladas.' }
+    { emoji:'🎃', title:'Spring bulbs', body:'Plant tulips, daffodils, and crocuses now. They need winter cold to bloom in spring.' },
+    { emoji:'🏵️', title:'Día de Muertos', body:'Cempasúchil is at its peak. Water appropriately so flowers last through the observance.' },
+    { emoji:'🏠', title:'Bring plants indoors', body:'Move tropical plants inside before the first frost.' }
   ],
   10: [ // Noviembre
-    { emoji:'🧤', title:'Protege del frío', body:'Envuelve macetas de exterior con tela de yute. Las raíces son más sensibles al frío que la parte aérea.' },
-    { emoji:'💤', title:'Descanso invernal', body:'Muchas plantas entran en dormancia. Reduce riegos y deja de fertilizar hasta primavera.' },
-    { emoji:'📚', title:'Aprende y planifica', body:'Investiga nuevas variedades que quieras probar. Los catálogos de semillas empiezan a salir.' }
+    { emoji:'🧤', title:'Protect from cold', body:'Wrap outdoor pots with burlap. Container roots are often more exposed to cold than above-ground growth.' },
+    { emoji:'💤', title:'Winter rest', body:'Many plants enter dormancy. Reduce watering and pause fertilizer where the species requires it.' },
+    { emoji:'📚', title:'Learn and plan', body:'Research varieties you would like to try as new seed catalogs appear.' }
   ],
   11: [ // Diciembre
-    { emoji:'🎄', title:'Nochebuenas', body:'Riega tu nochebuena solo cuando la tierra esté seca al tacto. Evita corrientes de aire frío.' },
-    { emoji:'💧', title:'Riego mínimo', body:'Las plantas duermen en invierno. Riega poco — la tierra húmeda fría puede causar pudrición de raíces.' },
-    { emoji:'🎁', title:'Regala plantas', body:'Una planta es el regalo perfecto. Suculentas, cactus o kokedamas son elegantes y fáciles de cuidar.' }
+    { emoji:'🎄', title:'Poinsettias', body:'Water a poinsettia only when the soil feels dry, and protect it from cold drafts.' },
+    { emoji:'💧', title:'Minimal watering', body:'Many plants rest in winter. Water less because cold, wet soil can promote root rot.' },
+    { emoji:'🎁', title:'Give a plant', body:'Succulents, cacti, and kokedama can make thoughtful gifts when the recipient is ready to care for them.' }
   ]
 };
 
-const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const DAYS_SHORT = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_SHORT = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const STATUS_OPTIONS = [
-  { id:'healthy', label:'🌿 Saludable', class:'status-healthy' },
-  { id:'needs-water', label:'💧 Necesita agua', class:'status-needs-water' },
-  { id:'needs-sun', label:'☀️ Necesita sol', class:'status-needs-sun' },
-  { id:'sick', label:'🤒 Enferma', class:'status-sick' }
+  { id:'healthy', label:'🌿 Healthy', class:'status-healthy' },
+  { id:'needs-water', label:'💧 Needs water', class:'status-needs-water' },
+  { id:'needs-sun', label:'☀️ Needs sun', class:'status-needs-sun' },
+  { id:'sick', label:'🤒 Unwell', class:'status-sick' }
 ];
 
 /* ═══════════════════════════════════════════
@@ -3105,10 +3105,10 @@ function seedDemoGardenIfRequested() {
   }
 
   garden = [
-    { flowerId: 'rosa', addedAt: demoDate(42), lastWatered: demoDate(4), status: 'needs-water', notes: 'Riego profundo y poda ligera esta semana.' },
-    { flowerId: 'lavanda', addedAt: demoDate(36), lastWatered: demoDate(1), status: 'healthy', notes: 'Sol directo por la manana.' },
-    { flowerId: 'girasol', addedAt: demoDate(18), lastWatered: demoDate(3), status: 'needs-sun', notes: 'Mover a zona con mas luz.' },
-    { flowerId: 'cempasuchil', addedAt: demoDate(12), lastWatered: demoDate(2), status: 'healthy', notes: 'Perfecta para maceta exterior.' }
+    { flowerId: 'rosa', addedAt: demoDate(42), lastWatered: demoDate(4), status: 'needs-water', notes: 'Deep watering and light pruning this week.' },
+    { flowerId: 'lavanda', addedAt: demoDate(36), lastWatered: demoDate(1), status: 'healthy', notes: 'Direct morning sun.' },
+    { flowerId: 'girasol', addedAt: demoDate(18), lastWatered: demoDate(3), status: 'needs-sun', notes: 'Move to a brighter location.' },
+    { flowerId: 'cempasuchil', addedAt: demoDate(12), lastWatered: demoDate(2), status: 'healthy', notes: 'Well suited to an outdoor pot.' }
   ];
   safeStorageSet(rocioLocalStorage, ROCIO_GARDEN_KEY, JSON.stringify(garden));
   safeStorageSet(rocioLocalStorage, ROCIO_DEMO_SEEDED_KEY, '1');
@@ -3139,16 +3139,16 @@ function downloadLocalDataExport() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `rocio-datos-${localDateKey()}.json`;
+  link.download = `rocio-data-${localDateKey()}.json`;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  showToast('⬇️ Exportación lista');
+  showToast('⬇️ Export ready');
 }
 
 function clearLocalUserData() {
-  if (!confirm('¿Borrar tu jardín, historial y preferencias de esta demo? Esta acción no se puede deshacer.')) return;
+  if (!confirm('Erase your garden, history, and preferences from this demo? This action cannot be undone.')) return;
   garden = [];
   scanHistory = [];
   safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY);
@@ -3166,7 +3166,7 @@ function clearLocalUserData() {
   renderCalendar();
   renderScanHistory();
   updateBadge();
-  showToast('🗑 Datos locales eliminados');
+  showToast('🗑 Local data erased');
 }
 
 function showToast(msg) {
@@ -3204,7 +3204,7 @@ function getUrgency(gardenItem) {
   return 'good';
 }
 
-function difficultyLabel(d) { return d === 1 ? 'Fácil' : d === 2 ? 'Media' : 'Difícil'; }
+function difficultyLabel(d) { return d === 1 ? 'Easy' : d === 2 ? 'Medium' : 'Hard'; }
 
 function updateBadge() {
   const overdue = garden.filter(g => getUrgency(g) !== 'good').length;
@@ -3275,7 +3275,7 @@ function renderCatalog() {
   const dayIdx = Math.floor(Date.now() / 86400000) % FLOWERS.length;
   const pod = FLOWERS[dayIdx];
   const podEl = document.getElementById('plantOfDay');
-  if (podEl) { podEl.innerHTML = `${pod.img ? `<div class="plant-photo-wrapper"><img src="${pod.img}" alt="${pod.name}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="plant-emoji-badge">${pod.emoji}</span><div style="display:none;font-size:48px">${pod.emoji}</div></div>` : `<div class="pod-emoji">${pod.emoji}</div>`}<div class="pod-info"><div class="pod-badge">✨ Planta del día</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
+  if (podEl) { podEl.innerHTML = `${pod.img ? `<div class="plant-photo-wrapper"><img src="${pod.img}" alt="${pod.name}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="plant-emoji-badge">${pod.emoji}</span><div style="display:none;font-size:48px">${pod.emoji}</div></div>` : `<div class="pod-emoji">${pod.emoji}</div>`}<div class="pod-info"><div class="pod-badge">✨ Plant of the day</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
 
   grid.innerHTML = flowers.map(f => `
     <button type="button" class="flower-card" data-id="${f.id}">
@@ -3294,7 +3294,7 @@ function renderCatalog() {
       <div class="card-scientific">${f.scientific}</div>
       <div class="card-tags">
         <span class="card-tag">${f.sunlightLabel}</span>
-        <span class="card-tag">💧 ${f.waterMl}ml c/${f.waterDays}d</span>
+        <span class="card-tag">💧 ${f.waterMl}ml every ${f.waterDays}d</span>
       </div>
     </button>
   `).join('');
@@ -3340,12 +3340,12 @@ function openFlowerDetail(id) {
   document.getElementById('modalFunFact').textContent = f.fact;
 
   document.getElementById('modalInfoGrid').innerHTML = `
-    <div class="info-item"><div class="info-icon">☀️</div><div class="info-label">Luz</div><div class="info-value">${f.sunlightLabel}</div></div>
-    <div class="info-item"><div class="info-icon">💧</div><div class="info-label">Riego</div><div class="info-value">${f.waterMl}ml cada ${f.waterDays} días</div></div>
-    <div class="info-item"><div class="info-icon">🌡️</div><div class="info-label">Temperatura</div><div class="info-value">${f.tempMin}° - ${f.tempMax}°C</div></div>
-    <div class="info-item"><div class="info-icon">🪴</div><div class="info-label">Suelo</div><div class="info-value">${f.soil}</div></div>
-    <div class="info-item"><div class="info-icon">📊</div><div class="info-label">Dificultad</div><div class="info-value">${[1,2,3].map(d => d<=f.difficulty?'🌿':'·').join('')} ${difficultyLabel(f.difficulty)}</div></div>
-    <div class="info-item"><div class="info-icon">📅</div><div class="info-label">Floración</div><div class="info-value">${f.seasonLabel}</div></div>
+    <div class="info-item"><div class="info-icon">☀️</div><div class="info-label">Light</div><div class="info-value">${f.sunlightLabel}</div></div>
+    <div class="info-item"><div class="info-icon">💧</div><div class="info-label">Water</div><div class="info-value">${f.waterMl}ml every ${f.waterDays} days</div></div>
+    <div class="info-item"><div class="info-icon">🌡️</div><div class="info-label">Temperature</div><div class="info-value">${f.tempMin}° - ${f.tempMax}°C</div></div>
+    <div class="info-item"><div class="info-icon">🪴</div><div class="info-label">Soil</div><div class="info-value">${f.soil}</div></div>
+    <div class="info-item"><div class="info-icon">📊</div><div class="info-label">Difficulty</div><div class="info-value">${[1,2,3].map(d => d<=f.difficulty?'🌿':'·').join('')} ${difficultyLabel(f.difficulty)}</div></div>
+    <div class="info-item"><div class="info-icon">📅</div><div class="info-label">Bloom</div><div class="info-value">${f.seasonLabel}</div></div>
   `;
 
   // Build rich detail sections below the info grid
@@ -3353,41 +3353,41 @@ function openFlowerDetail(id) {
 
   // Toxicity
   if (f.toxic) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🐾</span> Mascotas y Toxicidad</div><div class="detail-tag-row"><span class="detail-tag ${f.toxicLevel}">${f.toxicLevel==='safe'?'✅ Segura':f.toxicLevel==='toxic'?'⚠️ Tóxica':'⚡ Precaución'}</span></div><p class="detail-text" style="margin-top:8px">${f.toxic}</p></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🐾</span> Pets and Toxicity</div><div class="detail-tag-row"><span class="detail-tag ${f.toxicLevel}">${f.toxicLevel==='safe'?'✅ Safe':f.toxicLevel==='toxic'?'⚠️ Toxic':'⚡ Use caution'}</span></div><p class="detail-text" style="margin-top:8px">${f.toxic}</p></div>`;
   }
 
   // Planting guide
   if (f.plantingSteps) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🌱</span> Guía de Siembra</div><ol class="detail-steps">${f.plantingSteps.map(s => `<li>${s}</li>`).join('')}</ol></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🌱</span> Planting Guide</div><ol class="detail-steps">${f.plantingSteps.map(s => `<li>${s}</li>`).join('')}</ol></div>`;
   }
 
   // Fertilizer
   if (f.fertilizer) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🧪</span> Fertilización</div><p class="detail-text">${f.fertilizer}</p></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🧪</span> Fertilizing</div><p class="detail-text">${f.fertilizer}</p></div>`;
   }
 
   // Pruning
   if (f.pruning) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">✂️</span> Poda</div><p class="detail-text">${f.pruning}</p></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">✂️</span> Pruning</div><p class="detail-text">${f.pruning}</p></div>`;
   }
 
   // Propagation
   if (f.propagation) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🔄</span> Propagación</div><p class="detail-text">${f.propagation}</p></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🔄</span> Propagation</div><p class="detail-text">${f.propagation}</p></div>`;
   }
 
   // Companions
   if (f.companions) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🤝</span> Plantas Compañeras</div><p class="detail-text">${f.companions}</p></div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🤝</span> Companion Plants</div><p class="detail-text">${f.companions}</p></div>`;
   }
 
   // Diseases
   if (f.diseases && f.diseases.length) {
-    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🦠</span> Enfermedades Comunes</div>${f.diseases.map(d => `<div style="margin-bottom:12px;padding:10px;background:rgba(232,112,112,0.05);border-radius:var(--radius-sm)"><strong style="font-size:13px">${d.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">Síntoma: ${d.symptom}</span><br><span style="font-size:12px;color:var(--primary-dark)">💊 PENDING verificación botánica: ${d.treatment}</span><br><span style="font-size:11px;color:var(--text-muted)">No sustituye diagnóstico profesional; confirma antes de aplicar químicos o retirar plantas.</span></div>`).join('')}</div>`;
+    detailHTML += `<div class="detail-section"><div class="detail-section-title"><span class="ds-icon">🦠</span> Common Diseases</div>${f.diseases.map(d => `<div style="margin-bottom:12px;padding:10px;background:rgba(232,112,112,0.05);border-radius:var(--radius-sm)"><strong style="font-size:13px">${d.name}</strong><br><span style="font-size:12px;color:var(--text-muted)">Symptom: ${d.symptom}</span><br><span style="font-size:12px;color:var(--primary-dark)">💊 PENDING botanical review: ${d.treatment}</span><br><span style="font-size:11px;color:var(--text-muted)">This does not replace a professional diagnosis. Confirm before applying chemicals or removing plants.</span></div>`).join('')}</div>`;
   }
 
   // Share button
-  detailHTML += `<button class="share-btn" onclick="sharePlant('${f.id}')">📤 Compartir ficha</button>`;
+  detailHTML += `<button class="share-btn" onclick="sharePlant('${f.id}')">📤 Share profile</button>`;
 
   // Insert detail sections after fun-fact
   const funFact = document.getElementById('modalFunFact');
@@ -3402,10 +3402,10 @@ function openFlowerDetail(id) {
   const inGarden = garden.some(g => g.flowerId === id);
   const btn = document.getElementById('modalAddBtn');
   if (inGarden) {
-    btn.innerHTML = '✅ Ya está en tu jardín';
+    btn.innerHTML = '✅ Already in your garden';
     btn.classList.add('added');
   } else {
-    btn.innerHTML = '🌱 Agregar a Mi Jardín';
+    btn.innerHTML = '🌱 Add to My Garden';
     btn.classList.remove('added');
   }
 
@@ -3427,13 +3427,13 @@ document.getElementById('modalAddBtn').addEventListener('click', () => {
   saveGarden();
   updateBadge();
   requestReminderPermission().then(granted => {
-    if (granted) showToast('🔔 Recordatorios de riego activados');
+    if (granted) showToast('🔔 Watering reminders enabled');
   });
 
   const btn = document.getElementById('modalAddBtn');
-  btn.innerHTML = '✅ Ya está en tu jardín';
+  btn.innerHTML = '✅ Already in your garden';
   btn.classList.add('added');
-  showToast('🌱 ' + selectedFlower.name + ' agregada a tu jardín');
+  showToast('🌱 ' + selectedFlower.name + ' added to your garden');
 });
 
 // Close modals
@@ -3489,17 +3489,17 @@ function renderGarden() {
       <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
         <div style="font-size:28px;margin-bottom:4px;">${streak > 0 ? '🔥' : '💤'}</div>
         <div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${streak}</div>
-        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Días seguidos</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Day streak</div>
       </div>
       <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
         <div style="font-size:28px;margin-bottom:4px;">🌸</div>
         <div style="font-size:22px;font-weight:800;color:var(--primary-dark);">${garden.length}</div>
-        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Plantas</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Plants</div>
       </div>
       <div style="flex:1;background:var(--bg-card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow-sm);text-align:center;">
         <div style="font-size:28px;margin-bottom:4px;">${overdueCount > 0 ? '⚠️' : '✅'}</div>
         <div style="font-size:22px;font-weight:800;color:${overdueCount > 0 ? 'var(--overdue)' : 'var(--good)'};">${overdueCount}</div>
-        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Necesitan agua</div>
+        <div style="font-size:10px;color:var(--text-muted);font-weight:600;text-transform:uppercase;">Need water</div>
       </div>
     </div>
   `;
@@ -3510,14 +3510,14 @@ function renderGarden() {
     const urgency = getUrgency(g);
     const days = daysSince(g.lastWatered);
     const waterText = g.lastWatered
-      ? (days === 0 ? 'Regada hoy' : `Hace ${days} día${days>1?'s':''}`)
-      : 'Sin registrar';
+      ? (days === 0 ? 'Watered today' : `${days} day${days>1?'s':''} ago`)
+      : 'Not recorded';
     const statusInfo = STATUS_OPTIONS.find(s => s.id === g.status) || STATUS_OPTIONS[0];
 
     // Growth stage: days since added, mapped to 0-100
     const daysSinceAdded = g.addedAt ? Math.floor((Date.now() - new Date(g.addedAt).getTime()) / 86400000) : 0;
     const growthPct = Math.min(100, Math.round((daysSinceAdded / 90) * 100));
-    const growthLabel = growthPct < 25 ? '🌱 Brote' : growthPct < 50 ? '🌿 Creciendo' : growthPct < 75 ? '🪴 Madurando' : '🌸 Florecida';
+    const growthLabel = growthPct < 25 ? '🌱 Sprout' : growthPct < 50 ? '🌿 Growing' : growthPct < 75 ? '🪴 Maturing' : '🌸 Blooming';
     const isWaterReminder = urgency !== 'good';
 
     return `
@@ -3540,8 +3540,8 @@ function renderGarden() {
           ${g.notes ? `<div style="font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📝 ${g.notes}</div>` : ''}
         </div>
         <div class="gc-actions">
-          <button class="gc-action-btn water-btn" data-index="${i}" title="Regar">💧</button>
-          <button class="gc-action-btn edit-btn" data-index="${i}" title="Editar">✏️</button>
+          <button class="gc-action-btn water-btn" data-index="${i}" title="Water">💧</button>
+          <button class="gc-action-btn edit-btn" data-index="${i}" title="Edit">✏️</button>
         </div>
       </div>
     `;
@@ -3568,7 +3568,7 @@ function renderGarden() {
       setTimeout(() => wave.remove(), 900);
 
       const f = FLOWERS.find(fl => fl.id === garden[idx].flowerId);
-      showToast('💧 ' + (f ? f.name : 'Planta') + ' regada con amor');
+      showToast('💧 ' + (f ? f.name : 'Plant') + ' watered with care');
       showConfetti();
       setTimeout(() => renderGarden(), 400);
     });
@@ -3622,20 +3622,20 @@ document.getElementById('gmSaveBtn').addEventListener('click', () => {
   updateBadge();
   document.getElementById('gardenModal').classList.remove('show');
   renderGarden();
-  showToast('💾 Cambios guardados');
+  showToast('💾 Changes saved');
 });
 
 document.getElementById('gmDeleteBtn').addEventListener('click', () => {
   if (editingGardenItem === null) return;
   const f = FLOWERS.find(fl => fl.id === garden[editingGardenItem].flowerId);
-  const plantName = f ? f.name : 'esta planta';
-  if (!confirm(`¿Segura que quieres quitar ${plantName} de tu jardín? 🥺`)) return;
+  const plantName = f ? f.name : 'this plant';
+  if (!confirm(`Remove ${plantName} from your garden?`)) return;
   garden.splice(editingGardenItem, 1);
   saveGarden();
   updateBadge();
   document.getElementById('gardenModal').classList.remove('show');
   renderGarden();
-  showToast('🗑 ' + plantName + ' removida del jardín');
+  showToast('🗑 ' + plantName + ' removed from the garden');
 });
 
 /* ═══════════════════════════════════════════
@@ -3661,10 +3661,10 @@ function renderCalendar() {
   today.setHours(0,0,0,0);
 
   const label = document.getElementById('calWeekLabel');
-  if (calWeekOffset === 0) label.textContent = 'Esta semana';
-  else if (calWeekOffset === 1) label.textContent = 'Próxima semana';
-  else if (calWeekOffset === -1) label.textContent = 'Semana pasada';
-  else label.textContent = `${dates[0].getDate()} ${MONTHS_ES[dates[0].getMonth()].substring(0,3)} - ${dates[6].getDate()} ${MONTHS_ES[dates[6].getMonth()].substring(0,3)}`;
+  if (calWeekOffset === 0) label.textContent = 'This week';
+  else if (calWeekOffset === 1) label.textContent = 'Next week';
+  else if (calWeekOffset === -1) label.textContent = 'Last week';
+  else label.textContent = `${dates[0].getDate()} ${MONTHS_EN[dates[0].getMonth()].substring(0,3)} - ${dates[6].getDate()} ${MONTHS_EN[dates[6].getMonth()].substring(0,3)}`;
 
   const calWeek = document.getElementById('calWeek');
   calWeek.innerHTML = dates.map((date, i) => {
@@ -3720,9 +3720,9 @@ function renderCalendar() {
         <div class="task-emoji">${item.flower.emoji}</div>
         <div class="task-info">
           <div class="task-name">${item.flower.name}</div>
-          <div class="task-desc">${item.urgency === 'overdue' ? '⚠️ Necesita agua — ' + item.days + ' días sin regar' : '💧 Regar hoy'}</div>
+          <div class="task-desc">${item.urgency === 'overdue' ? '⚠️ Needs water — ' + item.days + ' days since watering' : '💧 Water today'}</div>
         </div>
-        <button class="gc-action-btn task-water-btn" data-index="${gardenIdx}" title="Regar ahora" style="flex-shrink:0;width:40px;height:40px;font-size:18px;">💧</button>
+        <button class="gc-action-btn task-water-btn" data-index="${gardenIdx}" title="Water now" style="flex-shrink:0;width:40px;height:40px;font-size:18px;">💧</button>
       </div>
     `;
     }).join('');
@@ -3740,7 +3740,7 @@ function renderCalendar() {
         const rect = btn.getBoundingClientRect();
         showWaterDrops(rect.left + rect.width/2, rect.top);
         const f = FLOWERS.find(fl => fl.id === garden[idx].flowerId);
-        showToast('💧 ' + (f ? f.name : 'Planta') + ' regada con amor');
+        showToast('💧 ' + (f ? f.name : 'Plant') + ' watered with care');
         showConfetti();
         setTimeout(() => renderCalendar(), 400);
       });
@@ -3759,7 +3759,7 @@ document.getElementById('calNext').addEventListener('click', () => { calWeekOffs
 function renderTips() {
   const month = new Date().getMonth();
   const tips = SEASONAL_TIPS[month] || [];
-  const monthName = MONTHS_ES[month];
+  const monthName = MONTHS_EN[month];
 
   document.getElementById('tipsList').innerHTML = tips.map(tip => `
     <div class="tip-card">
@@ -3818,17 +3818,17 @@ fileInput.addEventListener('change', () => {
         .join(' · ');
 
       document.getElementById('srEmoji').textContent = result.isUncertain ? '🤔' : flower.emoji;
-      document.getElementById('srName').textContent = result.noClearFlower ? 'Flor no detectada claramente' : (result.isUncertain ? `Posible: ${flower.name}` : flower.name);
+      document.getElementById('srName').textContent = result.noClearFlower ? 'No clear flower detected' : (result.isUncertain ? `Possible: ${flower.name}` : flower.name);
       document.getElementById('srScientific').textContent = result.noClearFlower
-        ? `Centra una flor abierta antes de guardarla${result.provider ? ' · ' + result.provider : ''}`
-        : result.isUncertain ? `Confirma la flor antes de guardarla${result.provider ? ' · ' + result.provider : ''}` : (result.providerScientific || flower.scientific);
+        ? `Center an open flower before saving${result.provider ? ' · ' + result.provider : ''}`
+        : result.isUncertain ? `Confirm the flower before saving${result.provider ? ' · ' + result.provider : ''}` : (result.providerScientific || flower.scientific);
       document.getElementById('srConfidence').textContent = result.isUncertain
-        ? `Opciones: ${candidates}`
-        : `${result.confidence}% de coincidencia${result.provider ? ' · ' + result.provider : ''}`;
+        ? `Candidates: ${candidates}`
+        : `${result.confidence}% match${result.provider ? ' · ' + result.provider : ''}`;
       scanResult.classList.add('show');
 
       // Add a "scan again" button instead of auto-hiding
-      scanResult.innerHTML += `<button onclick="resetTipScanner()" style="margin-top:12px;padding:10px 20px;border-radius:var(--radius-full);background:var(--primary);color:#fff;font-size:13px;font-weight:600;">📸 Escanear otra</button>`;
+      scanResult.innerHTML += `<button onclick="resetTipScanner()" style="margin-top:12px;padding:10px 20px;border-radius:var(--radius-full);background:var(--primary);color:#fff;font-size:13px;font-weight:600;">📸 Scan another</button>`;
     }, 1800);
   };
   img.src = URL.createObjectURL(fileInput.files[0]);
@@ -3869,9 +3869,9 @@ applyTheme();
    ONBOARDING
    ═══════════════════════════════════════════ */
 const onboardingSteps = [
-  { emoji: '🌸', title: 'Bienvenido a la demo de Rocío', desc: 'Explora el catálogo y prueba un jardín que permanece únicamente en este navegador.' },
-  { emoji: '🌱', title: 'Tu Jardín Personal', desc: 'Agrega flores a tu jardín, registra riegos y lleva notas de cada una de tus plantas.' },
-  { emoji: '📅', title: 'Nunca Olvides Regar', desc: 'El calendario te muestra cuándo cada planta necesita atención. ¡Tus flores te lo agradecerán!' }
+  { emoji: '🌸', title: 'Welcome to the Rocío demo', desc: 'Explore the catalog and try a garden that remains only in this browser.' },
+  { emoji: '🌱', title: 'Your personal garden', desc: 'Add flowers, record watering, and keep notes for each plant.' },
+  { emoji: '📅', title: 'Remember to water', desc: 'The calendar shows when each plant needs attention.' }
 ];
 
 let obStep = 0;
@@ -3882,7 +3882,7 @@ function renderOnboarding() {
   document.getElementById('obTitle').textContent = onboardingSteps[obStep].title;
   document.getElementById('obDesc').textContent = onboardingSteps[obStep].desc;
   document.querySelectorAll('.ob-dot').forEach((d, i) => d.classList.toggle('active', i === obStep));
-  document.getElementById('obBtn').textContent = obStep === 2 ? '¡Comenzar! 🌿' : 'Siguiente';
+  document.getElementById('obBtn').textContent = obStep === 2 ? 'Get started 🌿' : 'Next';
 }
 
 document.getElementById('obBtn').addEventListener('click', () => {
@@ -3905,11 +3905,11 @@ if (safeStorageGet(rocioLocalStorage, ROCIO_ONBOARDED_KEY)) {
 function sharePlant(id) {
   const f = FLOWERS.find(fl => fl.id === id);
   if (!f) return;
-  const text = `${f.emoji} ${f.name} (${f.scientific})\n☀️ ${f.sunlightLabel} | 💧 ${f.waterMl}ml cada ${f.waterDays} días\n🌡️ ${f.tempMin}-${f.tempMax}°C\n\n${f.fact}\n\n— Rocío 🌸`;
+  const text = `${f.emoji} ${f.name} (${f.scientific})\n☀️ ${f.sunlightLabel} | 💧 ${f.waterMl}ml every ${f.waterDays} days\n🌡️ ${f.tempMin}-${f.tempMax}°C\n\n${f.fact}\n\n— Rocío 🌸`;
   if (navigator.share) {
     navigator.share({title:`${f.name} — Rocío 🌸`, text}).catch(()=>{});
   } else {
-    navigator.clipboard.writeText(text).then(() => showToast('📋 Copiado al portapapeles'));
+    navigator.clipboard.writeText(text).then(() => showToast('📋 Copied to clipboard'));
   }
 }
 
@@ -3947,7 +3947,7 @@ function renderSymptoms() {
           <div class="remedy-card">
             <div class="rc-header"><div class="rc-title">${c.cause}</div></div>
             <div class="rc-body">${c.detail}</div>
-            <div class="rc-section"><div class="rc-section-title">Solución</div><div class="rc-body">PENDING verificación botánica: ${c.solution}</div><div class="rc-body" style="font-size:11px;color:var(--text-muted);margin-top:6px">Guía orientativa; confirma el diagnóstico antes de aplicar tratamientos.</div></div>
+            <div class="rc-section"><div class="rc-section-title">Possible response</div><div class="rc-body">PENDING botanical review: ${c.solution}</div><div class="rc-body" style="font-size:11px;color:var(--text-muted);margin-top:6px">Assistive guidance only. Confirm the diagnosis before applying a treatment.</div></div>
           </div>
         `).join('')}
       </div>
@@ -3964,10 +3964,10 @@ function renderPests() {
   document.getElementById('pestsList').innerHTML = PESTS_DATA.map(p => `
     <div class="remedy-card">
       <div class="rc-header"><div class="rc-emoji">${p.emoji}</div><div><div class="rc-title">${p.title}</div><div class="rc-subtitle">${p.desc}</div></div></div>
-      <div class="rc-body"><strong>Aspecto:</strong> ${p.visual}</div>
-      <div class="rc-section"><div class="rc-section-title">Daño</div><div class="rc-body">${p.damage}</div></div>
-      <div class="rc-section"><div class="rc-section-title">🌿 Control orgánico</div><div class="rc-body">${p.organic}</div></div>
-      <div class="rc-section"><div class="rc-section-title">🧪 Control químico</div><div class="rc-body">${p.chemical}</div></div>
+      <div class="rc-body"><strong>Appearance:</strong> ${p.visual}</div>
+      <div class="rc-section"><div class="rc-section-title">Damage</div><div class="rc-body">${p.damage}</div></div>
+      <div class="rc-section"><div class="rc-section-title">🌿 Lower-impact control</div><div class="rc-body">${p.organic}</div></div>
+      <div class="rc-section"><div class="rc-section-title">🧪 Chemical control</div><div class="rc-body">${p.chemical}</div></div>
     </div>
   `).join('');
 }
@@ -3976,9 +3976,9 @@ function renderRemedies() {
   document.getElementById('remediesList').innerHTML = REMEDIES.map(r => `
     <div class="remedy-card">
       <div class="rc-header"><div class="rc-emoji">${r.emoji}</div><div><div class="rc-title">${r.title}</div><div class="rc-subtitle">${r.subtitle}</div></div></div>
-      <div class="rc-section"><div class="rc-section-title">Ingredientes</div><div class="rc-body"><ul class="detail-list">${r.ingredients.map(i => `<li>${i}</li>`).join('')}</ul></div></div>
-      <div class="rc-section"><div class="rc-section-title">Preparación</div><div class="rc-body">${r.preparation}</div></div>
-      <div class="rc-section"><div class="rc-section-title">Aplicación</div><div class="rc-body">${r.application}</div></div>
+      <div class="rc-section"><div class="rc-section-title">Ingredients</div><div class="rc-body"><ul class="detail-list">${r.ingredients.map(i => `<li>${i}</li>`).join('')}</ul></div></div>
+      <div class="rc-section"><div class="rc-section-title">Preparation</div><div class="rc-body">${r.preparation}</div></div>
+      <div class="rc-section"><div class="rc-section-title">Application</div><div class="rc-body">${r.application}</div></div>
     </div>
   `).join('');
 }
@@ -3986,31 +3986,31 @@ function renderRemedies() {
 function renderCompost() {
   const d = COMPOST_DATA;
   document.getElementById('compostContent').innerHTML = `
-    <h3 style="font-size:18px;font-weight:800;margin-bottom:14px">♻️ Composta 101</h3>
-    <p class="detail-text" style="margin-bottom:16px">La composta es oro para tu jardín. Transforma desechos orgánicos en alimento nutritivo para tus plantas.</p>
+    <h3 style="font-size:18px;font-weight:800;margin-bottom:14px">♻️ Compost 101</h3>
+    <p class="detail-text" style="margin-bottom:16px">Compost turns organic scraps into a useful soil amendment for the garden.</p>
 
     <div class="compost-grid">
       <div class="compost-col" style="background:rgba(123,198,123,0.1)">
-        <h4>🟢 Verdes (Nitrógeno)</h4>
+        <h4>🟢 Greens (Nitrogen)</h4>
         <ul>${d.greens.map(g => `<li>✅ ${g}</li>`).join('')}</ul>
       </div>
       <div class="compost-col" style="background:rgba(139,115,85,0.1)">
-        <h4>🟤 Marrones (Carbono)</h4>
+        <h4>🟤 Browns (Carbon)</h4>
         <ul>${d.browns.map(b => `<li>✅ ${b}</li>`).join('')}</ul>
       </div>
     </div>
 
     <div class="remedy-card">
-      <div class="rc-header"><div class="rc-emoji">🚫</div><div><div class="rc-title">NO compostar</div></div></div>
+      <div class="rc-header"><div class="rc-emoji">🚫</div><div><div class="rc-title">Do NOT compost</div></div></div>
       <div class="rc-body">${d.noCompost.join('<br>')}</div>
     </div>
 
     <div class="remedy-card">
-      <div class="rc-header"><div class="rc-emoji">📋</div><div><div class="rc-title">Paso a Paso</div><div class="rc-subtitle">Tu primera composta casera</div></div></div>
+      <div class="rc-header"><div class="rc-emoji">📋</div><div><div class="rc-title">Step by step</div><div class="rc-subtitle">Your first home compost</div></div></div>
       <ol class="detail-steps">${d.steps.map(s => `<li><strong>${s.step}:</strong> ${s.detail}</li>`).join('')}</ol>
     </div>
 
-    <h3 style="font-size:16px;font-weight:700;margin:16px 0 10px">🌿 Fertilizantes DIY</h3>
+    <h3 style="font-size:16px;font-weight:700;margin:16px 0 10px">🌿 DIY amendments</h3>
     ${d.diyFertilizers.map(f => `
       <div class="remedy-card">
         <div class="rc-title">${f.name}</div>
@@ -4019,17 +4019,17 @@ function renderCompost() {
     `).join('')}
 
     <div class="remedy-card">
-      <div class="rc-header"><div class="rc-emoji">🪱</div><div><div class="rc-title">Vermicomposta (Lombricomposta)</div><div class="rc-subtitle">El mejor abono del mundo</div></div></div>
+      <div class="rc-header"><div class="rc-emoji">🪱</div><div><div class="rc-title">Vermicompost</div><div class="rc-subtitle">Compost produced by worms</div></div></div>
       <div class="rc-body">
-        <strong>¿Qué es?</strong> Composta hecha por lombrices rojas californianas.<br><br>
-        <strong>Ventajas:</strong> Sin olor, rápida (1-2 meses), apta para departamentos.<br><br>
-        <strong>Cómo empezar:</strong><br>
-        1. Consigue una caja con tapa y agujeros de ventilación<br>
-        2. Cama de cartón húmedo y tierra<br>
-        3. Agrega lombrices rojas (Eisenia fetida)<br>
-        4. Alimenta con restos de cocina 2-3 veces por semana<br>
-        5. Cosecha humus cada 2-3 meses del fondo<br><br>
-        <strong>El humus de lombriz</strong> es el mejor fertilizante orgánico universal. Mezcla 20% con tu sustrato.
+        <strong>What is it?</strong> Compost made by red wiggler worms.<br><br>
+        <strong>Advantages:</strong> Low odor, relatively fast at 1-2 months, and suitable for apartments.<br><br>
+        <strong>How to begin:</strong><br>
+        1. Get a lidded box with ventilation holes<br>
+        2. Add a bed of damp cardboard and soil<br>
+        3. Add red wigglers (Eisenia fetida)<br>
+        4. Feed kitchen scraps 2-3 times per week<br>
+        5. Harvest castings from the bottom every 2-3 months<br><br>
+        <strong>Worm castings</strong> are a rich general-purpose organic amendment. Mix about 20% into the growing medium.
       </div>
     </div>
   `;
@@ -4038,35 +4038,35 @@ function renderCompost() {
 function renderCalculator() {
   document.getElementById('calculatorContent').innerHTML = `
     <div class="calc-section">
-      <h3>💧 Calculadora de Riego</h3>
+      <h3>💧 Watering Calculator</h3>
       <div class="calc-row">
-        <span class="calc-label">Planta</span>
+        <span class="calc-label">Plant</span>
         <select class="calc-select" id="calcPlant">
           ${FLOWERS.map(f => `<option value="${f.id}">${f.emoji} ${f.name}</option>`).join('')}
         </select>
       </div>
       <div class="calc-row">
-        <span class="calc-label">Maceta (cm)</span>
+        <span class="calc-label">Pot (cm)</span>
         <input class="calc-input" type="number" id="calcPotSize" value="20" min="5" max="80">
       </div>
       <div class="calc-row">
-        <span class="calc-label">Ubicación</span>
+        <span class="calc-label">Location</span>
         <select class="calc-select" id="calcLocation">
-          <option value="indoor">🏠 Interior</option>
-          <option value="outdoor">🌳 Exterior</option>
-          <option value="balcony">🏗️ Balcón</option>
+          <option value="indoor">🏠 Indoors</option>
+          <option value="outdoor">🌳 Outdoors</option>
+          <option value="balcony">🏗️ Balcony</option>
         </select>
       </div>
       <div class="calc-row">
-        <span class="calc-label">Clima</span>
+        <span class="calc-label">Climate</span>
         <select class="calc-select" id="calcClimate">
-          <option value="temperate">🌤️ Templado</option>
-          <option value="hot">🔥 Caluroso</option>
-          <option value="cold">❄️ Frío</option>
-          <option value="humid">🌧️ Húmedo</option>
+          <option value="temperate">🌤️ Temperate</option>
+          <option value="hot">🔥 Hot</option>
+          <option value="cold">❄️ Cold</option>
+          <option value="humid">🌧️ Humid</option>
         </select>
       </div>
-      <button class="btn-primary" onclick="calculateWater()" style="margin-top:8px">🔢 Calcular</button>
+      <button class="btn-primary" onclick="calculateWater()" style="margin-top:8px">🔢 Calculate</button>
 
       <div id="calcResultArea"></div>
     </div>
@@ -4084,7 +4084,7 @@ function calculateWater() {
   // Base water from plant data, adjusted by pot size
   let ml = flower.waterMl * (potSize / 20);
   let freq = flower.waterDays;
-  let time = '🌅 Temprano por la mañana (7-9 AM)';
+  let time = '🌅 Early morning (7-9 AM)';
 
   // Location adjustments
   if (location === 'outdoor') { ml *= 1.3; freq = Math.max(1, freq - 1); }
@@ -4092,8 +4092,8 @@ function calculateWater() {
   if (location === 'indoor') { ml *= 0.85; freq += 1; }
 
   // Climate adjustments
-  if (climate === 'hot') { ml *= 1.4; freq = Math.max(1, freq - 1); time = '🌅 Al amanecer (6-7 AM) o al atardecer'; }
-  if (climate === 'cold') { ml *= 0.6; freq += 2; time = '☀️ Media mañana (10-11 AM)'; }
+  if (climate === 'hot') { ml *= 1.4; freq = Math.max(1, freq - 1); time = '🌅 At dawn (6-7 AM) or in the evening'; }
+  if (climate === 'cold') { ml *= 0.6; freq += 2; time = '☀️ Mid-morning (10-11 AM)'; }
   if (climate === 'humid') { ml *= 0.7; freq += 1; }
 
   // Season adjustment
@@ -4111,8 +4111,8 @@ function calculateWater() {
       <div class="water-gauge-label">${ml}ml</div>
     </div>
     <div class="calc-result">
-      <div class="cr-amount">${ml}ml cada ${freq} días</div>
-      <div class="cr-freq">Para ${flower.emoji} ${flower.name} en maceta de ${potSize}cm</div>
+      <div class="cr-amount">${ml}ml every ${freq} days</div>
+      <div class="cr-freq">For ${flower.emoji} ${flower.name} in a ${potSize}cm pot</div>
       <div class="cr-time">${time}</div>
     </div>
   `;
@@ -4131,10 +4131,10 @@ function renderMoonSection() {
     <div class="moon-phase-name">${info.name}</div>
     <div class="moon-phase-desc">${info.desc}</div>
     <div class="moon-recs">
-      <div class="moon-rec"><div class="mr-icon">🌱</div><div class="mr-label">Sembrar</div><div class="mr-value">${info.recs.plant}</div></div>
-      <div class="moon-rec"><div class="mr-icon">✂️</div><div class="mr-label">Podar</div><div class="mr-value">${info.recs.prune}</div></div>
-      <div class="moon-rec"><div class="mr-icon">🧺</div><div class="mr-label">Cosechar</div><div class="mr-value">${info.recs.harvest}</div></div>
-      <div class="moon-rec"><div class="mr-icon">⭐</div><div class="mr-label">Especial</div><div class="mr-value">${info.recs.special}</div></div>
+      <div class="moon-rec"><div class="mr-icon">🌱</div><div class="mr-label">Plant</div><div class="mr-value">${info.recs.plant}</div></div>
+      <div class="moon-rec"><div class="mr-icon">✂️</div><div class="mr-label">Prune</div><div class="mr-value">${info.recs.prune}</div></div>
+      <div class="moon-rec"><div class="mr-icon">🧺</div><div class="mr-label">Harvest</div><div class="mr-value">${info.recs.harvest}</div></div>
+      <div class="moon-rec"><div class="mr-icon">⭐</div><div class="mr-label">Other</div><div class="mr-value">${info.recs.special}</div></div>
     </div>
   `;
 }
@@ -4200,7 +4200,7 @@ function checkWateringNotifications() {
       .map(g => ({ item: g, flower: FLOWERS.find(f => f.id === g.flowerId), urgency: getUrgency(g) }))
       .filter(x => x.flower && x.urgency !== 'good');
     if (!due.length) return;
-    showLocalPlantNotification('Rocío te recuerda regar 🌿', `${due[0].flower.name}${due.length > 1 ? ` y ${due.length - 1} planta(s) más` : ''} necesitan agua.`);
+    showLocalPlantNotification('Rocío watering reminder 🌿', `${due[0].flower.name}${due.length > 1 ? ` and ${due.length - 1} more plant(s)` : ''} need water.`);
     safeStorageSet(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY, today);
   } catch(e) {}
 }
@@ -4608,8 +4608,8 @@ function updatePlantNetStatus() {
   const status = document.getElementById('plantNetStatus');
   if (!status) return;
   status.textContent = ROCIO_SUPABASE_URL && ROCIO_SUPABASE_PUBLISHABLE_KEY
-    ? 'IA Plant.id activa'
-    : 'Modo local activo';
+    ? 'Plant.id AI active'
+    : 'Local mode active';
   status.classList.add('active');
 }
 
@@ -4676,7 +4676,7 @@ async function canvasToPlantIdImage(canvas) {
 async function identifyPlantWithProvider(canvas) {
   if (!ROCIO_SUPABASE_URL || !ROCIO_SUPABASE_PUBLISHABLE_KEY) {
     const fallback = identifyPlant(canvas);
-    fallback.provider = 'Modo local';
+    fallback.provider = 'Local mode';
     fallback.isUncertain = true;
     return fallback;
   }
@@ -4722,7 +4722,7 @@ async function identifyPlantWithProvider(canvas) {
         confidence: best.confidence,
         isUncertain: best.confidence < 68,
         candidates: mapped.slice(0, 3),
-        provider: 'Plant.id real',
+        provider: 'Live Plant.id',
         providerScientific: best.scientific,
         rawProviderCount: suggestions.length
       };
@@ -4730,14 +4730,14 @@ async function identifyPlantWithProvider(canvas) {
 
     const top = suggestions[0];
     const fallback = identifyPlant(canvas);
-    fallback.provider = top?.name ? `Plant.id detectó ${top.name}, sin ficha local` : 'Plant.id sin coincidencia local';
+    fallback.provider = top?.name ? `Plant.id detected ${top.name}, with no local profile` : 'Plant.id returned no local match';
     fallback.providerScientific = top?.scientific_name || top?.name || '';
     fallback.isUncertain = true;
     return fallback;
   } catch (err) {
     console.warn('Plant.id proxy fallback:', err);
     const fallback = identifyPlant(canvas);
-    fallback.provider = 'Modo local — IA no disponible';
+    fallback.provider = 'Local mode — AI unavailable';
     fallback.providerError = err.message;
     fallback.isUncertain = true;
     return fallback;
@@ -4779,7 +4779,7 @@ async function openScanner() {
   document.getElementById('scannerFreeze').classList.remove('active');
   document.getElementById('scannerResult').classList.remove('show');
   document.getElementById('scannerCaptureArea').style.display = '';
-  document.getElementById('scannerStatus').textContent = 'Apunta a una planta...';
+  document.getElementById('scannerStatus').textContent = 'Point at a plant...';
   document.getElementById('scannerProgress').classList.remove('active');
   document.getElementById('scannerScanline').classList.remove('active');
   document.getElementById('scannerProgressFill').style.width = '0%';
@@ -4854,10 +4854,10 @@ function captureAndAnalyze(sourceCanvas) {
   progressFill.style.width = '0%';
 
   const statusMessages = [
-    { text: 'Analizando colores...', pct: '25%', t: 0 },
-    { text: ROCIO_SUPABASE_URL ? 'Consultando IA Plant.id...' : 'Comparando con catálogo local...', pct: '50%', t: 800 },
-    { text: 'Calculando coincidencias honestas...', pct: '75%', t: 1600 },
-    { text: '¡Planta identificada!', pct: '100%', t: 2400 }
+    { text: 'Analyzing colors...', pct: '25%', t: 0 },
+    { text: ROCIO_SUPABASE_URL ? 'Consulting Plant.id AI...' : 'Comparing with the local catalog...', pct: '50%', t: 800 },
+    { text: 'Calculating transparent matches...', pct: '75%', t: 1600 },
+    { text: 'Identification ready', pct: '100%', t: 2400 }
   ];
 
   // Add sample dots
@@ -4909,12 +4909,12 @@ function showScanResult(result, canvas, persist = true) {
   tctx.drawImage(canvas, sx, sy, size, size, 0, 0, 70, 70);
 
   document.getElementById('scannerResultName').textContent = result.noClearFlower
-    ? '🤔 Flor no detectada claramente'
-    : (result.isUncertain ? '🤔 Posible: ' : '') + flower.emoji + ' ' + flower.name;
+    ? '🤔 No clear flower detected'
+    : (result.isUncertain ? '🤔 Possible: ' : '') + flower.emoji + ' ' + flower.name;
   document.getElementById('scannerResultScientific').textContent = result.noClearFlower
-    ? `Veo mucha hoja o fondo. ${result.provider ? result.provider + '. ' : ''}Centra una flor abierta para identificarla.`
+    ? `Foliage or background dominates the frame. ${result.provider ? result.provider + '. ' : ''}Center one open flower to identify it.`
     : result.isUncertain
-    ? `No estoy completamente segura. ${result.provider ? result.provider + '. ' : ''}Confirma antes de agregarla a tu jardín.`
+    ? `The result is uncertain. ${result.provider ? result.provider + '. ' : ''}Confirm before adding it to your garden.`
     : (result.providerScientific || flower.scientific);
 
   // Animated confidence counter
@@ -4939,20 +4939,20 @@ function showScanResult(result, canvas, persist = true) {
 
   // Care info
   document.getElementById('scannerResultCare').innerHTML = result.noClearFlower ? `
-    <div class="scanner-result-care-item"><div class="src-icon">🌿</div><div class="src-label">Lectura</div><div class="src-value">Predomina hoja/fondo, no flor</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Opciones</div><div class="src-value">${candidateNames || 'Sin coincidencia confiable'}</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Acércate a una flor abierta, con fondo limpio y luz natural</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">🌿</div><div class="src-label">Reading</div><div class="src-value">Foliage or background dominates, not a flower</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Candidates</div><div class="src-value">${candidateNames || 'No reliable match'}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Move closer to one open flower with natural light and a clean background</div></div>
   ` : result.isUncertain ? `
-    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Opciones</div><div class="src-value">${candidateNames}</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">✅</div><div class="src-label">Corregir</div><div class="src-value">${(result.candidates || []).map(c => {
+    <div class="scanner-result-care-item"><div class="src-icon">🔎</div><div class="src-label">Candidates</div><div class="src-value">${candidateNames}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">✅</div><div class="src-label">Correct</div><div class="src-value">${(result.candidates || []).map(c => {
       const f = FLOWERS.find(fl => fl.id === c.flowerId);
       return f ? `<button class="scanner-candidate-btn" data-flower-id="${f.id}" style="margin:2px;padding:6px 8px;border:1px solid rgba(0,0,0,.08);border-radius:999px;background:#fff;font-size:11px">${f.emoji} ${f.name}</button>` : '';
     }).join('')}</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Toma otra foto con luz natural, fondo limpio y solo la flor centrada</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📸</div><div class="src-label">Tip</div><div class="src-value">Take another photo with natural light, a clean background, and only the flower centered</div></div>
   ` : `
-    <div class="scanner-result-care-item"><div class="src-icon">💧</div><div class="src-label">Riego</div><div class="src-value">${flower.waterMl}ml / ${flower.waterDays}d</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">☀️</div><div class="src-label">Luz</div><div class="src-value">${flower.sunlightLabel}</div></div>
-    <div class="scanner-result-care-item"><div class="src-icon">📊</div><div class="src-label">Dificultad</div><div class="src-value">${difficultyLabel(flower.difficulty)}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">💧</div><div class="src-label">Water</div><div class="src-value">${flower.waterMl}ml / ${flower.waterDays}d</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">☀️</div><div class="src-label">Light</div><div class="src-value">${flower.sunlightLabel}</div></div>
+    <div class="scanner-result-care-item"><div class="src-icon">📊</div><div class="src-label">Difficulty</div><div class="src-value">${difficultyLabel(flower.difficulty)}</div></div>
   `;
 
   // Store matched flower id for detail button
@@ -5077,13 +5077,13 @@ document.getElementById('scanHistoryClear').addEventListener('click', () => {
   scanHistory = [];
   saveScanHistory();
   renderScanHistory();
-  showToast('🗑 Historial limpiado');
+  showToast('🗑 History cleared');
 });
 
 function renderScanHistory() {
   const grid = document.getElementById('scanHistoryGrid');
   if(scanHistory.length === 0) {
-    grid.innerHTML = '<div class="scan-history-empty"><div style="font-size:48px;margin-bottom:12px">📷</div><p>Aún no has escaneado ninguna planta</p></div>';
+    grid.innerHTML = '<div class="scan-history-empty"><div style="font-size:48px;margin-bottom:12px">📷</div><p>You have not scanned any plants yet</p></div>';
     document.getElementById('scanHistoryClear').style.display = 'none';
     return;
   }

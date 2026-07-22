@@ -4,8 +4,8 @@
 
 This section describes the single-file PWA demo unless a bullet explicitly says native iOS.
 
-- **Flower Catalog** — 15 flowers with botanical care data and local app-owned image assets (Rosa, Tulipán, Orquídea, Girasol, Lavanda, Gardenia, Jazmín, Hortensia, Lirio, Margarita, Clavel, Violeta, Geranio, Petunia, Cempasúchil).
-- **Mi Jardín** — Add/remove plants, track watering, set status, write notes. Persisted in localStorage and sorted by urgency.
+- **Flower Catalog** — 15 flowers with botanical care data and local app-owned image assets (rose, tulip, orchid, sunflower, lavender, gardenia, jasmine, hydrangea, lily, daisy, carnation, violet, geranium, petunia, and Mexican marigold).
+- **My Garden** — Add/remove plants, track watering, set status, and write notes. Persisted in localStorage and sorted by urgency.
 - **Watering Tracker** — Tap to water with animation, last-watered tracking, urgency dots, streak, and stats dashboard.
 - **Weekly Calendar** — Shows which plants need water by day; tasks have water buttons directly inside the calendar.
 - **Moon Phase Calendar** — Real Conway-style moon phase algorithm with gardening recommendations.
@@ -20,6 +20,7 @@ This section describes the single-file PWA demo unless a bullet explicitly says 
 - **Share** — Native share API or clipboard fallback for plant info cards.
 - **Onboarding** — 3-step welcome flow for first-time visitors.
 - **Splash Screen** — Animated launch screen once per session.
+- **Real native screenshots** — Five privacy-safe English screens captured from the running iPhone 17 simulator build are stored in `docs/screenshots/ios/`; they are documentation evidence, not mockups or final App Store artwork.
 
 ## What Is Still Limited
 
@@ -43,9 +44,9 @@ These are post-beta opportunities, not blockers for the native Beta 0.1 sequence
 
 Add Web Push subscriptions plus a daily job that sends watering reminders even when Rocío has not opened the app.
 
-### 2. Expand Plant.id Result Coverage
+### 2. Complete Arbitrary-Plant Support
 
-The Supabase proxy is now the intended architecture. Next: add generic care guidance for Plant.id species that are outside the 15-flower local catalog.
+The Supabase proxy is the intended architecture. The next 12-hour production sprint removes the `FlowerCatalog` runtime ceiling so scanned or manually entered plants can be saved, scheduled, used offline, synchronized, and rendered throughout the native app. See `GSTACK_APP_STORE_DAILY_PLAN.md`.
 
 ### 3. Family Sharing
 
