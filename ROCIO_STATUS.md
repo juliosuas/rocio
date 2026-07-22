@@ -21,10 +21,10 @@
 
 ## What Is Still Limited
 
-- **Plant.id needs a new/healthy Supabase deploy** — Real recognition requires restoring or replacing the old `rocio` Supabase project, deploying `identify-flower`, setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret, and then re-enabling the public URL/key in `index.html`.
+- **Plant.id cloud path is active for native iOS** — The healthy Rocio Supabase project exposes `identify-flower` v5, validates bearer sessions manually, and rejects unauthenticated requests with 401. An authenticated real-device scan still needs release smoke testing; the web demo intentionally keeps its cloud configuration blank.
 - **Local matcher is fallback only** — It samples image colors and compares against hardcoded flower profiles when Plant.id/Supabase is unavailable. It is clearly labeled as uncertain and never presented as market-grade recognition.
 - **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
-- **Native cloud deployment pending** — The SwiftUI app implements required accounts, Keychain sessions, account-scoped Supabase garden sync, analytics opt-out, quotas, and account deletion. The web demo remains localStorage-only. Production still requires reactivating Supabase and deploying the migration/function.
+- **Native cloud hardening is pending one ordered migration** — The foundation schema and Edge Function are deployed. The SwiftUI app implements required accounts, Keychain sessions, account-scoped garden sync, analytics opt-out, quotas, and account deletion. A missing/slow epoch endpoint no longer rejects a valid login: changes remain local and no garden write is sent until the current session obtains a causally valid epoch. Ambiguous/inherited conflicts are quarantined without blocking safe edits, validated queue provenance survives relaunch, and post-reset edits adopt the returned epoch. Deploy the deletion-preserving tombstone/epoch migration only after this matching client code is integrated; the web demo remains localStorage-only.
 - **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
 - **No Weather Integration** — Watering calculator still uses manual climate input.
 - **Disease/treatment evidence is not source-audited yet** — Existing symptom and treatment guidance is visible only as PENDING verification and must be checked against reliable horticultural sources before being sold as diagnosis or treatment advice.

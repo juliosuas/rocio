@@ -44,18 +44,18 @@ final class GardenStore: ObservableObject {
         cloudChangeHandler?(.upsert(plants[index]))
     }
 
-    func delete(_ plant: GardenPlant) {
+    func delete(_ plant: GardenPlant, at date: Date = Date()) {
         plants.removeAll { $0.id == plant.id }
         persist()
-        cloudChangeHandler?(.delete(plant.id))
+        cloudChangeHandler?(.delete(plant.id, at: date))
     }
 
-    func reset() {
+    func reset(at date: Date = Date()) {
         plants.removeAll()
         if !isDemoMode {
             GardenPersistence.clearPlants()
         }
-        cloudChangeHandler?(.reset)
+        cloudChangeHandler?(.reset(at: date))
     }
 
     func clearLocalCache() {
@@ -220,8 +220,8 @@ final class GardenStore: ObservableObject {
 
 enum GardenChange {
     case upsert(GardenPlant)
-    case delete(UUID)
-    case reset
+    case delete(UUID, at: Date)
+    case reset(at: Date)
 }
 
 struct GardenSummary: Equatable {

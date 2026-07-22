@@ -13,6 +13,20 @@ jobs:
   release-gate:
     name: Rocio release gate
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      ROCIO_SECURITY_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/postgres
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,5 +36,13 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
       - name: Run complete release QA
         run: node qa/release-gate.mjs
+
+      - name: Validate ordered Supabase migrations in PostgreSQL 16
+        run: node qa/run-cloud-ai-security-postgres.mjs

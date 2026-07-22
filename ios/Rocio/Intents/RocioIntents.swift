@@ -71,7 +71,9 @@ struct LogWateringIntent: AppIntent {
               let index = plants.firstIndex(where: { $0.id == uuid }) else {
             return .result(dialog: "I could not find that plant in My Garden.")
         }
-        plants[index].lastWateredAt = Date()
+        let now = Date()
+        plants[index].lastWateredAt = now
+        plants[index].updatedAt = now
         if plants[index].status == .needsWater {
             plants[index].status = .healthy
         }
