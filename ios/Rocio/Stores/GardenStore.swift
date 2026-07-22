@@ -17,7 +17,7 @@ final class GardenStore: ObservableObject {
         let plant = GardenPlant(flowerId: flower.id, nickname: flower.name)
         plants.append(plant)
         persist()
-        cloudChangeHandler?(.upsert(plant))
+        cloudChangeHandler?(.create(plant))
     }
 
     func water(_ plant: GardenPlant, at date: Date = Date()) {
@@ -219,6 +219,7 @@ final class GardenStore: ObservableObject {
 }
 
 enum GardenChange {
+    case create(GardenPlant)
     case upsert(GardenPlant)
     case delete(UUID, at: Date)
     case reset(at: Date)

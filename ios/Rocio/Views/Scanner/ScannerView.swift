@@ -4,20 +4,19 @@ import UIKit
 
 struct ScannerView: View {
     @EnvironmentObject private var sessionStore: SessionStore
-    @AppStorage("rocio.cloud.photoConsent") private var hasCloudPhotoConsent = false
     // Tab switches must not cancel an in-flight scan; this object owns it until replacement or completion.
     @StateObject private var analysisCoordinator = ScannerAnalysisCoordinator()
-    @State private var selectedItem: PhotosPickerItem?
+    @State private var pickerSelection = ScannerPhotoPickerSelectionState<PhotosPickerItem>()
     @State private var selectedImage: UIImage?
     @State private var selectedFlower: Flower?
     @State private var isShowingCamera = false
     @State private var cameraUnavailableMessage: String?
-    @State private var pendingConsentImage: UIImage?
-    @State private var isShowingPhotoConsent = false
+    @State private var photoConsent = ScannerPhotoConsentState()
     @State private var imageLoadTask: Task<Void, Never>?
-    @State private var imageLoadGeneration: UInt = 0
+    @State private var imagePreparationGeneration = ScannerImagePreparationGeneration()
 
     private let identifier = HybridFlowerIdentifier()
+    private let imageProcessor = ScannerImageProcessor()
     private var canUseCamera: Bool {
         UIImagePickerController.isSourceTypeAvailable(.camera)
     }
@@ -65,7 +64,7 @@ struct ScannerView: View {
                         }
                         .buttonStyle(RocioPrimaryButtonStyle())
 
-                        PhotosPicker(selection: $selectedItem, matching: .images) {
+                        PhotosPicker(selection: $pickerSelection.item, matching: .images) {
                             Label(L10n.text("scanner.choose", fallback: "Choose photo"), systemImage: "photo")
                                 .frame(maxWidth: .infinity)
                         }
@@ -100,25 +99,38 @@ struct ScannerView: View {
             .navigationTitle(L10n.text("scanner.title", fallback: "Scanner"))
             .sheet(isPresented: $isShowingCamera) {
                 CameraCaptureView { image in
-                    accept(image)
+                    prepareCapturedImage(image)
                 }
             }
             .sheet(item: $selectedFlower) { flower in
                 FlowerDetailView(flower: flower)
             }
-            .alert(L10n.text("scanner.consent.title", fallback: "Use cloud identification?"), isPresented: $isShowingPhotoConsent) {
+            .alert(
+                L10n.text("scanner.consent.title", fallback: "How should Rocio identify this photo?"),
+                isPresented: Binding(
+                    get: { photoConsent.isPresented },
+                    set: { if !$0 { photoConsent.discard() } }
+                )
+            ) {
                 Button(L10n.text("scanner.consent.continue", fallback: "Send this photo")) {
-                    hasCloudPhotoConsent = true
-                    if let image = pendingConsentImage { startAnalysis(image) }
-                    pendingConsentImage = nil
+                    if let image = photoConsent.takeImage() {
+                        startAnalysis(image, destination: .cloud)
+                    }
+                }
+                Button(L10n.text("scanner.consent.on_device", fallback: "Analyze on this iPhone")) {
+                    if let image = photoConsent.takeImage() {
+                        startAnalysis(image, destination: .onDevice)
+                    }
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {
-                    pendingConsentImage = nil
+                    photoConsent.discard()
+                    selectedImage = nil
+                    pickerSelection.item = nil
                 }
             } message: {
-                Text(L10n.text("scanner.consent.copy", fallback: "Rocio will send a compressed copy of this flower photo to Plant.id through Rocio Cloud. The photo is used for identification and is not stored by Rocio."))
+                Text(L10n.text("scanner.consent.copy", fallback: "For this photo, choose Plant.id through Rocio Cloud or keep the analysis entirely on this iPhone. Rocio does not store the photo."))
             }
-            .onChange(of: selectedItem) { _, item in
+            .onChange(of: pickerSelection.item) { _, item in
                 load(item)
             }
         }
@@ -144,59 +156,121 @@ struct ScannerView: View {
     }
 
     private func load(_ item: PhotosPickerItem?) {
-        imageLoadTask?.cancel()
-        imageLoadGeneration &+= 1
-        let generation = imageLoadGeneration
-        analysisCoordinator.cancel()
-        pendingConsentImage = nil
+        guard let item else { return }
+        let generation = beginImagePreparation()
+        let imageProcessor = imageProcessor
 
         imageLoadTask = Task {
-            guard let data = try? await item?.loadTransferable(type: Data.self),
-                  let image = UIImage(data: data),
+            defer {
+                if imagePreparationGeneration.isCurrent(generation) {
+                    imageLoadTask = nil
+                }
+                // Clear both successful and failed loads so PhotosPicker can
+                // deliver the same asset again. An older load may never clear
+                // a newer selection.
+                pickerSelection.clearAfterLoading(item)
+            }
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = await imageProcessor.prepare(data: data),
                   !Task.isCancelled,
-                  generation == imageLoadGeneration else { return }
-            imageLoadTask = nil
-            accept(image, cancellingImageLoad: false)
+                  imagePreparationGeneration.isCurrent(generation) else { return }
+            acceptPreparedImage(image)
         }
     }
 
-    private func accept(_ image: UIImage, cancellingImageLoad: Bool = true) {
-        if cancellingImageLoad {
-            cancelImageLoad()
+    private func prepareCapturedImage(_ image: UIImage) {
+        let generation = beginImagePreparation()
+        let imageProcessor = imageProcessor
+
+        imageLoadTask = Task {
+            guard let image = await imageProcessor.prepare(image: image),
+                  !Task.isCancelled,
+                  imagePreparationGeneration.isCurrent(generation) else { return }
+            imageLoadTask = nil
+            acceptPreparedImage(image)
         }
-        analysisCoordinator.cancel()
-        pendingConsentImage = nil
+    }
+
+    private func acceptPreparedImage(_ image: UIImage) {
         selectedImage = image
         requestAnalysis(image)
     }
 
-    private func cancelImageLoad() {
-        imageLoadGeneration &+= 1
+    private func beginImagePreparation() -> UInt {
+        let generation = imagePreparationGeneration.begin()
         imageLoadTask?.cancel()
         imageLoadTask = nil
+        analysisCoordinator.cancel()
+        photoConsent.discard()
+        return generation
     }
 
     private func requestAnalysis(_ image: UIImage) {
 #if DEBUG
         if sessionStore.isDemoMode {
-            startAnalysis(image)
+            startAnalysis(image, destination: .onDevice)
             return
         }
 #endif
-        guard hasCloudPhotoConsent else {
-            pendingConsentImage = image
-            isShowingPhotoConsent = true
-            return
-        }
-        startAnalysis(image)
+        photoConsent.begin(image)
     }
 
-    private func startAnalysis(_ image: UIImage) {
+    private func startAnalysis(
+        _ image: UIImage,
+        destination: ScannerAnalysisDestination
+    ) {
         let identifier = identifier
         let sessionStore = sessionStore
         analysisCoordinator.start {
-            await identifier.identify(image: image, sessionStore: sessionStore)
+            await identifier.identify(
+                image: image,
+                destination: destination,
+                sessionStore: sessionStore
+            )
         }
+    }
+}
+
+struct ScannerPhotoPickerSelectionState<Item: Equatable> {
+    var item: Item?
+
+    @discardableResult
+    mutating func clearAfterLoading(_ loadedItem: Item) -> Bool {
+        guard item == loadedItem else { return false }
+        item = nil
+        return true
+    }
+}
+
+struct ScannerPhotoConsentState {
+    private(set) var pendingImage: UIImage?
+
+    var isPresented: Bool { pendingImage != nil }
+
+    mutating func begin(_ image: UIImage) {
+        pendingImage = image
+    }
+
+    mutating func takeImage() -> UIImage? {
+        defer { pendingImage = nil }
+        return pendingImage
+    }
+
+    mutating func discard() {
+        pendingImage = nil
+    }
+}
+
+struct ScannerImagePreparationGeneration {
+    private(set) var current: UInt = 0
+
+    mutating func begin() -> UInt {
+        current &+= 1
+        return current
+    }
+
+    func isCurrent(_ generation: UInt) -> Bool {
+        generation == current
     }
 }
 

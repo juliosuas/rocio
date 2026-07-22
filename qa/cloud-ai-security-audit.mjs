@@ -47,7 +47,12 @@ const clientKeyValidatorPath = path.join(root, 'ios', 'Scripts', 'validate-supab
 const gitignore = read('.gitignore');
 const scanner = read('ios/Rocio/Views/Scanner/ScannerView.swift');
 const settings = read('ios/Rocio/Views/Settings/SettingsView.swift');
+const rootView = read('ios/Rocio/Views/RootView.swift');
+const localizations = read('ios/Rocio/Resources/Localizable.xcstrings');
 const privacy = read('APP_STORE_PRIVACY_ANSWERS.md');
+const releaseChecklist = read('APP_STORE_RELEASE_CHECKLIST.md');
+const appStoreMetadata = read('APP_STORE_METADATA.md');
+const publicPrivacy = read('privacy.html');
 const policyStatements = foundationMigration.match(/create policy[\s\S]*?;/gi) || [];
 const grantStatements = foundationMigration.match(/grant[\s\S]*?;/gi) || [];
 const clientSecretPattern = /\b(?:SUPABASE_SERVICE_ROLE_KEY|PLANT_ID_API_KEY)\b|\bsb_secret_[A-Za-z0-9_-]{16,}\b|\beyJ[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\.[A-Za-z0-9_-]{20,}\b/;
@@ -226,7 +231,8 @@ const checks = [
     tombstoneMigration.includes('and plants.deleted_at is null') &&
     /for\s+share/i.test(tombstoneMigration) &&
     tombstoneMigration.includes('watering_requires_active_plant') &&
-    tombstoneMigration.includes('revoke update on table public.watering_events from authenticated')],
+    tombstoneMigration.includes('revoke update on table public.watering_events from authenticated') &&
+    tombstoneMigration.includes('revoke delete on table public.watering_events from authenticated')],
   ['atomic-quota', foundationMigration.includes('consume_scan_quota') && foundationMigration.includes("current_plan = 'pro' then 50 else 5")],
   ['plan-not-user-editable', !foundationMigration.includes('profiles_update_own')],
   ['analytics-opt-out-rpc', foundationMigration.includes('set_analytics_enabled(enabled boolean)') && settings.includes('setAnalyticsEnabled(enabled)')],
@@ -277,10 +283,18 @@ const checks = [
   ['edge-auth-validation',
     edge.includes('authorization?.startsWith("Bearer ")') &&
     edge.includes('userClient.auth.getUser(authorization.slice(7))') &&
+    edge.indexOf('authorization?.startsWith("Bearer ")') < edge.indexOf('userClient.auth.getUser(authorization.slice(7))') &&
+    edge.indexOf('userClient.auth.getUser(authorization.slice(7))') < edge.indexOf('!serviceRoleKey || !apiKey') &&
     edge.includes('photo_consent_required')],
   ['service-role-fails-closed', edge.includes('!serviceRoleKey') && edge.includes('service_not_configured')],
   ['quota-empty-result-guarded', edge.includes('if (!quota) return json(req, { error: "quota_unavailable" }, 503)')],
-  ['client-photo-consent', scanner.includes('rocio.cloud.photoConsent') && scanner.includes('Send this photo')],
+  ['client-photo-consent',
+    !scanner.includes('@AppStorage("rocio.cloud.photoConsent")') &&
+      scanner.includes('photoConsent.begin(image)') &&
+      scanner.includes('scanner.consent.continue') &&
+      scanner.includes('scanner.consent.on_device') &&
+      scanner.includes('destination: .cloud') &&
+      scanner.includes('destination: .onDevice')],
   ['account-deletion', foundationMigration.includes('delete_my_account') && settings.includes('Permanently delete account')],
   ['shared-key-default-empty', /^ROCIO_SUPABASE_PUBLISHABLE_KEY =\s*$/m.test(sharedXcconfig)],
   ['optional-local-config', sharedXcconfig.includes('#include? "Local.xcconfig"')],
@@ -306,6 +320,31 @@ const checks = [
     rocioBuildConfigurationNamed(name)?.body.includes('ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";'))],
   ['no-supabase-client-key-committed', credentialFiles.length === 0 && oversizedTextFiles.length === 0],
   ['privacy-disclosure', privacy.includes('Plant.id/Kindwise') && privacy.includes('Data Linked To The User')],
+  ['per-photo-consent-docs',
+    privacy.includes('for every selected photo') &&
+      privacy.includes('consent for that photo') &&
+      releaseChecklist.includes('consent for each transferred photo') &&
+      appStoreMetadata.includes('For every selected scanner photo') &&
+      appStoreMetadata.includes('Only the second choice transfers') &&
+      publicPrivacy.includes('Para cada foto') &&
+      !privacy.includes('one-time explicit disclosure') &&
+      !publicPrivacy.includes('Antes del primer análisis en la nube')],
+  ['notification-entrypoint-docs',
+    privacy.includes('first-care Garden card or in Settings') &&
+      releaseChecklist.includes('explicit tap in Garden or Settings') &&
+      appStoreMetadata.includes('first-care card in Garden') &&
+      appStoreMetadata.includes('cloud deletion as pending until Rocio confirms synchronization') &&
+      !appStoreMetadata.includes('requested only in Settings')],
+  ['notification-entrypoint-app-copy',
+    rootView.includes('Garden or Settings') &&
+      localizations.includes('Garden or Settings') &&
+      localizations.includes('Jardín o en Ajustes') &&
+      !rootView.includes('only after you enable them in Settings') &&
+      !localizations.includes('solo cuando las activas en Ajustes')],
+  ['cloud-delete-reminder-copy',
+    settings.includes('Garden deleted from this device and Rocio Cloud; local reminders canceled.') &&
+      localizations.includes('Jardín eliminado de este dispositivo y de Rocio Cloud; recordatorios locales cancelados.') &&
+      !localizations.includes('Jardín y recordatorios eliminados de este dispositivo y Rocio Cloud.')],
 ];
 
 console.table(checks.map(([id, pass]) => ({ id, pass })));

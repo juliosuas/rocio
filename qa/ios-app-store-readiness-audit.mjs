@@ -28,6 +28,15 @@ const privacyAccessedApiErrors = privacyManifestParseError
 const privacyManifestErrors = [...privacyCollectedDataErrors, ...privacyAccessedApiErrors];
 const settingsView = fs.readFileSync(path.join(iosRoot, 'Views', 'Settings', 'SettingsView.swift'), 'utf8');
 const scannerView = fs.readFileSync(path.join(iosRoot, 'Views', 'Scanner', 'ScannerView.swift'), 'utf8');
+const backendConfigurationSource = fs.readFileSync(
+  path.join(iosRoot, 'Services', 'BackendConfiguration.swift'),
+  'utf8',
+);
+const passwordRecoverySources = [
+  path.join(iosRoot, 'Services', 'BackendConfiguration.swift'),
+  path.join(iosRoot, 'Services', 'KeychainSessionStore.swift'),
+  path.join(iosRoot, 'Services', 'RocioBackendClient.swift'),
+].map((filePath) => fs.readFileSync(filePath, 'utf8')).join('\n');
 const stringCatalogPath = path.join(iosRoot, 'Resources', 'Localizable.xcstrings');
 const stringCatalog = fs.existsSync(stringCatalogPath)
   ? JSON.parse(fs.readFileSync(stringCatalogPath, 'utf8'))
@@ -112,6 +121,23 @@ const checks = [
   ['marketing version', projectFile.includes('MARKETING_VERSION = 1.0;')],
   ['camera purpose string', appInfoPlist.includes('<key>NSCameraUsageDescription</key>')],
   ['photo purpose string', appInfoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>')],
+  [
+    'password recovery URL scheme',
+    appInfoPlist.includes('<key>CFBundleURLSchemes</key>')
+      && appInfoPlist.includes('<string>com.juliosuas.rocio</string>'),
+  ],
+  [
+    'app route URL scheme',
+    appInfoPlist.includes('<string>rocio</string>'),
+  ],
+  [
+    'password recovery uses PKCE instead of URL bearer tokens',
+    passwordRecoverySources.includes('grant_type=pkce')
+      && passwordRecoverySources.includes('codeChallengeMethod: "s256"')
+      && passwordRecoverySources.includes('PasswordRecoveryCodeVerifierStore')
+      && passwordRecoverySources.includes('let authorizationCode: String')
+      && !backendConfigurationSource.includes('let accessToken: String'),
+  ],
   ['privacy manifest collected data declarations', privacyCollectedDataErrors.length === 0],
   ['privacy manifest UserDefaults declaration', privacyAccessedApiErrors.length === 0],
   ['English localization region', /knownRegions = \([\s\S]*\ben,/.test(projectFile)],

@@ -3,6 +3,7 @@ import SwiftUI
 struct FlowerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var gardenStore: GardenStore
+    @EnvironmentObject private var router: AppRouter
     let flower: Flower
 
     private var inGarden: Bool {
@@ -87,8 +88,12 @@ struct FlowerDetailView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 Button {
-                    gardenStore.add(flower)
-                    dismiss()
+                    FirstCareFlow.addToGarden(
+                        flower,
+                        gardenStore: gardenStore,
+                        router: router,
+                        dismiss: dismiss.callAsFunction
+                    )
                 } label: {
                     Label(
                         inGarden
@@ -104,6 +109,20 @@ struct FlowerDetailView: View {
                 .background(.bar)
             }
         }
+    }
+}
+
+@MainActor
+enum FirstCareFlow {
+    static func addToGarden(
+        _ flower: Flower,
+        gardenStore: GardenStore,
+        router: AppRouter,
+        dismiss: () -> Void
+    ) {
+        gardenStore.add(flower)
+        dismiss()
+        router.selectedTab = .garden
     }
 }
 

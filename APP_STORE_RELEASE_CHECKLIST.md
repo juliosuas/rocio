@@ -1,16 +1,18 @@
 # Rocio App Store Release Checklist
 
-Date: 2026-07-20
+Date: 2026-07-21
 
 ## Current Build Strategy
 
-Full Xcode 26.3 is selected locally. The unsigned simulator build passed on 2026-07-20 with the generic iOS Simulator destination, and the iPhone 17 simulator test run passed the native unit suite. GitHub Actions remains the shared gate for PR review, and local Xcode is now available for smoke testing, screenshots, and Xcode Organizer upload.
+Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-21, and 115/115 native tests passed on an iPhone 17 simulator running iOS 26.3.1 on 2026-07-22. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
 
 The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
 
 An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, seeded garden, bundled photos, and the local scanner disclosure. Real-device camera/photo and notification permission/delivery testing is still required before external TestFlight or App Store submission.
 
-The remote Supabase foundation and `identify-flower` v5 are active and fail closed for unauthenticated callers. Migration `20260721000100_preserve_garden_deletions` remains pending by design until the matching iOS tombstone/epoch clients are integrated; see `SUPABASE_DIAGNOSTIC_2026-07-21.md`.
+A Personal Team Debug build for `com.juliosuas.rocio`, team `67QTYANL3F`, installed and launched successfully on the connected iPhone after the developer profile was trusted. Its provisioning profile expires on 2026-07-28. This confirms the earlier launch block was the iOS signing/trust boundary rather than a Supabase crash. The project-level `DEVELOPMENT_TEAM` remains blank, and paid membership is needed only for distribution/TestFlight signing.
+
+The read-only diagnostic on 2026-07-21 confirmed the remote Supabase foundation and `identify-flower` v5, including fail-closed unauthenticated responses. This is dated evidence, not a perpetual guarantee: revalidate the remote state against the exact release commit. Migration `20260721000100_preserve_garden_deletions` remains pending by design until the matching iOS tombstone/epoch clients are integrated; see `SUPABASE_DIAGNOSTIC_2026-07-21.md`.
 
 The matching client now treats Auth and garden readiness separately: pre-migration `profiles.garden_epoch` failures keep the valid session and local garden available, queue edits without cloud writes, and retry through the same guarded preflight. Only causally authorized edits adopt a fetched epoch; ambiguous/inherited conflicts stay quarantined without blocking safe edits, validated queue provenance survives relaunch, post-reset edits adopt the returned epoch, and sign-out uses Supabase `scope=local` so one Mac/iPhone does not revoke the user's other devices.
 
@@ -21,14 +23,16 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - iOS GitHub Actions build passes.
 - iOS GitHub Actions tests pass.
 - Manual unsigned archive workflow succeeds.
-- Apple Developer account/team available.
-- Bundle id `com.juliosuas.rocio` created or available.
-- `DEVELOPMENT_TEAM` set in the Rocio target.
-- App runs on an iPhone simulator or device before external TestFlight.
+- Paid Apple Developer Program membership and distribution team active. This is currently **not met**; only a free Personal Team is available.
+- Bundle id `com.juliosuas.rocio` created or available for the distribution team; the local Personal Team Debug app already uses the correct identifier.
+- Distribution `DEVELOPMENT_TEAM` set in the Rocio target; it is currently blank.
+- The installed Personal Team Debug app launches after the developer profile is trusted, then camera/photo and notification permissions pass on the physical iPhone before external TestFlight.
 - Signed archive upload succeeds.
 - Privacy policy URL and support URL are live and entered in App Store Connect.
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
-- The deletion-preserving Supabase migration and authenticated Edge Function are deployed from the integrated release commit.
+- Supabase Auth allowlists exactly `com.juliosuas.rocio://auth/recovery` and uses the chosen stable HTTPS product URL instead of localhost as Site URL.
+- Custom SMTP is configured for external users, and a real reset email opens Rocio, exchanges the PKCE code, changes the password, and permits a fresh sign-in.
+- The deletion-preserving Supabase migration is applied once, and the active authenticated Edge Function/configuration is verified against the integrated release commit (redeployed only when changed).
 - Production anonymous key is injected through release configuration; Plant.id secret exists only in Supabase.
 - Account creation, login, sync, analytics opt-out, photo consent, quota, sign out, and in-app account deletion pass on a device.
 - App Review demo account is active and included in Review Information.
@@ -53,9 +57,9 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 
 ## App Store Notes Draft
 
-Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id flower identification after explicit photo-transfer consent.
+Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id flower identification after explicit consent for each transferred photo.
 
-Camera and photo access are used only after a scanner action. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. Notification permission is requested only from Settings.
+Camera and photo access are used only after a scanner action. For every photo, the user chooses on-device analysis or cloud transfer. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. Notification permission is requested only after an explicit tap in Garden or Settings.
 
 Detailed App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md` and must be rechecked before App Store Connect submission.
 

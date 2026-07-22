@@ -3,6 +3,204 @@ import XCTest
 
 @MainActor
 final class GardenStoreTests: XCTestCase {
+    func testReturningUserStartsInGarden() {
+        XCTAssertEqual(AppRouter().selectedTab, .garden)
+    }
+
+    func testAuthenticatedSessionReturnsFromSettingsToGarden() {
+        let router = AppRouter()
+        let identity = AppAuthenticationIdentity.user(UUID())
+        router.selectedTab = .settings
+
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+
+        XCTAssertEqual(router.selectedTab, .garden)
+    }
+
+    func testPreAuthenticationDeepLinkWinsOverDefaultGardenLanding() throws {
+        let router = AppRouter()
+        let identity = AppAuthenticationIdentity.user(UUID())
+        let scannerURL = try XCTUnwrap(URL(string: "rocio://scanner"))
+
+        router.route(scannerURL, authenticatedIdentity: nil)
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+
+        XCTAssertEqual(router.selectedTab, .scanner)
+    }
+
+    func testLatestAuthenticatedDeepLinkReplacesAnOlderPendingRoute() throws {
+        let router = AppRouter()
+        let firstIdentity = AppAuthenticationIdentity.user(UUID())
+        let secondIdentity = AppAuthenticationIdentity.user(UUID())
+        let scannerURL = try XCTUnwrap(URL(string: "rocio://scanner"))
+        let calendarURL = try XCTUnwrap(URL(string: "rocio://calendar"))
+
+        router.prepareForAuthenticatedSession(firstIdentity, hasSeenOnboarding: true)
+        router.beginAuthenticatedTransition(from: firstIdentity)
+        router.route(scannerURL, authenticatedIdentity: nil)
+        router.route(calendarURL, authenticatedIdentity: secondIdentity)
+        router.prepareForAuthenticatedSession(secondIdentity, hasSeenOnboarding: true)
+
+        XCTAssertEqual(router.selectedTab, .calendar)
+    }
+
+    func testAuthenticatedRouteDoesNotLeakIntoANewerLogin() throws {
+        let router = AppRouter()
+        let identity = AppAuthenticationIdentity.user(UUID())
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+        router.route(
+            try XCTUnwrap(URL(string: "rocio://calendar")),
+            authenticatedIdentity: identity
+        )
+
+        router.endAuthenticatedSession(identity)
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+
+        XCTAssertEqual(router.selectedTab, .garden)
+    }
+
+    func testLateSessionEndDoesNotEraseADeepLinkForTheNextLogin() throws {
+        let router = AppRouter()
+        let identity = AppAuthenticationIdentity.user(UUID())
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+        router.endAuthenticatedSession(identity)
+
+        router.route(try XCTUnwrap(URL(string: "rocio://scanner")), authenticatedIdentity: nil)
+        router.endAuthenticatedSession(identity)
+        router.prepareForAuthenticatedSession(identity, hasSeenOnboarding: true)
+
+        XCTAssertEqual(router.selectedTab, .scanner)
+    }
+
+    func testRestoredAuthenticatedSessionPreservesItsTabUnlessANewerRouteIsPending() throws {
+        let router = AppRouter()
+        let identity = AppAuthenticationIdentity.user(UUID())
+        router.selectedTab = .settings
+
+        router.restoreAuthenticatedSession(identity, hasSeenOnboarding: true)
+        XCTAssertEqual(router.selectedTab, .settings)
+
+        router.beginAuthenticatedTransition(from: identity)
+        router.route(try XCTUnwrap(URL(string: "rocio://scanner")), authenticatedIdentity: nil)
+        router.restoreAuthenticatedSession(identity, hasSeenOnboarding: true)
+        XCTAssertEqual(router.selectedTab, .scanner)
+    }
+
+    func testSharedRouterRestoresOnlyTheSameAuthenticatedIdentityAfterRecovery() {
+        let firstUser = AuthSession(
+            accessToken: "first-access",
+            refreshToken: "first-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "first@example.com")
+        )
+        let secondUser = AuthSession(
+            accessToken: "second-access",
+            refreshToken: "second-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "second@example.com")
+        )
+        let sameAccountRouter = AppRouter()
+        sameAccountRouter.prepareForAuthenticatedSession(.user(firstUser.user.id), hasSeenOnboarding: true)
+        sameAccountRouter.selectedTab = .settings
+        sameAccountRouter.handleSessionTransition(
+            from: .signedIn(firstUser),
+            to: .checking,
+            hasSeenOnboarding: true
+        )
+        sameAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .recoveringPassword(firstUser),
+            hasSeenOnboarding: true
+        )
+        sameAccountRouter.handleSessionTransition(
+            from: .recoveringPassword(firstUser),
+            to: .checking,
+            hasSeenOnboarding: true
+        )
+        sameAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .signedIn(firstUser),
+            hasSeenOnboarding: true
+        )
+        // A second scene receives the same transition after the first one.
+        sameAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .signedIn(firstUser),
+            hasSeenOnboarding: true
+        )
+        XCTAssertEqual(sameAccountRouter.selectedTab, .settings)
+
+        let crossAccountRouter = AppRouter()
+        crossAccountRouter.prepareForAuthenticatedSession(.user(firstUser.user.id), hasSeenOnboarding: true)
+        crossAccountRouter.selectedTab = .settings
+        crossAccountRouter.handleSessionTransition(
+            from: .signedIn(firstUser),
+            to: .checking,
+            hasSeenOnboarding: true
+        )
+        crossAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .signedIn(secondUser),
+            hasSeenOnboarding: true
+        )
+        XCTAssertEqual(crossAccountRouter.selectedTab, .garden)
+
+        // A second scene may replay the complete A -> B transition after the
+        // first one already prepared B. It must not leave A suspended.
+        crossAccountRouter.handleSessionTransition(
+            from: .signedIn(firstUser),
+            to: .checking,
+            hasSeenOnboarding: true
+        )
+        crossAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .signedIn(secondUser),
+            hasSeenOnboarding: true
+        )
+        crossAccountRouter.handleSessionTransition(
+            from: .signedIn(secondUser),
+            to: .signedOut,
+            hasSeenOnboarding: true
+        )
+        crossAccountRouter.selectedTab = .settings
+        crossAccountRouter.handleSessionTransition(
+            from: .signedOut,
+            to: .checking,
+            hasSeenOnboarding: true
+        )
+        crossAccountRouter.handleSessionTransition(
+            from: .checking,
+            to: .signedIn(firstUser),
+            hasSeenOnboarding: true
+        )
+        XCTAssertEqual(crossAccountRouter.selectedTab, .garden)
+    }
+
+    func testFirstCareFlowAddsPlantDismissesDetailRoutesToGardenAndAllowsFirstWatering() {
+        let store = GardenStore(plants: [])
+        let router = AppRouter()
+        let flower = FlowerCatalog.all[0]
+        let wateredAt = Date(timeIntervalSince1970: 1_800_000_000)
+        var didDismiss = false
+
+        FirstCareFlow.addToGarden(
+            flower,
+            gardenStore: store,
+            router: router,
+            dismiss: { didDismiss = true }
+        )
+
+        XCTAssertTrue(didDismiss)
+        XCTAssertEqual(router.selectedTab, .garden)
+        XCTAssertEqual(store.plants.map(\.flowerId), [flower.id])
+
+        let firstPlant = store.plants[0]
+        store.water(firstPlant, at: wateredAt)
+
+        XCTAssertEqual(store.plants[0].lastWateredAt, wateredAt)
+        XCTAssertEqual(store.plants[0].updatedAt, wateredAt)
+    }
+
     func testAddAndWaterPlant() {
         let store = GardenStore(plants: [])
         let flower = FlowerCatalog.all[0]
@@ -183,17 +381,51 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(occurredAt, resetDate)
     }
 
-    func testLocalDataResetClearsPlantsAndCancelsPendingNotifications() {
+    func testLocalDataResetClearsPlantsCancelsRemindersAndReportsLocalCompletion() async {
         let store = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
         var didCancelPendingNotifications = false
         let resetter = LocalDataResetter {
             didCancelPendingNotifications = true
         }
 
-        resetter.reset(gardenStore: store)
+        let status = await resetter.reset(gardenStore: store)
 
         XCTAssertTrue(store.plants.isEmpty)
         XCTAssertTrue(didCancelPendingNotifications)
+        XCTAssertEqual(status, .localOnly)
+    }
+
+    func testLocalDataResetNeverClaimsCloudDeletionBeforeConfirmation() async {
+        let pendingStore = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
+        let confirmedStore = GardenStore(plants: [GardenPlant(flowerId: "lavanda", nickname: "Lavanda")])
+        let resetter = LocalDataResetter(cancelPendingNotifications: {})
+
+        let pendingStatus = await resetter.reset(
+            gardenStore: pendingStore,
+            waitForCloudConfirmation: { false }
+        )
+        let confirmedStatus = await resetter.reset(
+            gardenStore: confirmedStore,
+            waitForCloudConfirmation: { true }
+        )
+
+        XCTAssertEqual(pendingStatus, .cloudPending)
+        XCTAssertEqual(confirmedStatus, .cloudConfirmed)
+    }
+
+    func testPendingDataResetBecomesConfirmedOnlyAfterCloudSyncCompletes() {
+        XCTAssertEqual(
+            GardenDataResetStatus.cloudPending.reconciled(with: .pending),
+            .cloudPending
+        )
+        XCTAssertEqual(
+            GardenDataResetStatus.cloudPending.reconciled(with: .syncing),
+            .cloudPending
+        )
+        XCTAssertEqual(
+            GardenDataResetStatus.cloudPending.reconciled(with: .synced),
+            .cloudConfirmed
+        )
     }
 
 #if DEBUG

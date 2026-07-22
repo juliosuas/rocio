@@ -1,20 +1,52 @@
 import SwiftUI
+import UIKit
+import UserNotifications
 
+@MainActor
 struct GardenView: View {
+    @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @EnvironmentObject private var gardenStore: GardenStore
     @EnvironmentObject private var router: AppRouter
+    @EnvironmentObject private var sessionStore: SessionStore
+    @StateObject private var reminderController: FirstCareReminderController
     @State private var editingPlant: GardenPlant?
+    @State private var recentlyWateredPlantID: UUID?
+
+    init() {
+        _reminderController = StateObject(wrappedValue: .live())
+    }
+
+    init(reminderController: FirstCareReminderController) {
+        _reminderController = StateObject(wrappedValue: reminderController)
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(spacing: 14) {
+                    GardenSyncStatusView(status: sessionStore.gardenSyncStatus)
+
                     if gardenStore.plants.isEmpty {
                         EmptyGardenView {
                             router.selectedTab = .catalog
                         }
                     } else {
                         GardenSummaryView(summary: gardenStore.summary())
+
+                        if gardenStore.plants.count == 1, !gardenStore.isDemoMode {
+                            FirstCareReminderCard(
+                                state: reminderController.state,
+                                onEnable: {
+                                    Task {
+                                        await reminderController.enable(
+                                            currentPlants: { gardenStore.plants }
+                                        )
+                                    }
+                                },
+                                onOpenSettings: openNotificationSettings
+                            )
+                        }
 
                         ForEach(gardenStore.plants) { plant in
                             if let flower = gardenStore.flower(for: plant) {
@@ -23,7 +55,8 @@ struct GardenView: View {
                                     flower: flower,
                                     urgency: gardenStore.urgency(for: plant),
                                     nextWatering: gardenStore.nextWateringDate(for: plant),
-                                    onWater: { gardenStore.water(plant) },
+                                    isWateredConfirmationVisible: recentlyWateredPlantID == plant.id,
+                                    onWater: { water(plant) },
                                     onEdit: { editingPlant = plant }
                                 )
                             }
@@ -38,6 +71,127 @@ struct GardenView: View {
                 GardenEditView(plant: plant)
                     .environmentObject(gardenStore)
             }
+            .task {
+                await refreshReminderAuthorization()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                guard newPhase == .active else { return }
+                Task {
+                    await refreshReminderAuthorization()
+                }
+            }
+        }
+    }
+
+    private func openNotificationSettings() {
+        guard let settingsURL = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+        openURL(settingsURL)
+    }
+
+    private func refreshReminderAuthorization() async {
+        guard !gardenStore.isDemoMode else { return }
+        await reminderController.refreshAuthorization(
+            currentPlants: { gardenStore.plants }
+        )
+    }
+
+    private func water(_ plant: GardenPlant) {
+        gardenStore.water(plant)
+        withAnimation(.easeInOut(duration: 0.18)) {
+            recentlyWateredPlantID = plant.id
+        }
+
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            guard recentlyWateredPlantID == plant.id else { return }
+            withAnimation(.easeInOut(duration: 0.18)) {
+                recentlyWateredPlantID = nil
+            }
+        }
+    }
+}
+
+@MainActor
+final class FirstCareReminderController: ObservableObject {
+    enum State: Equatable {
+        case checking
+        case available
+        case requesting
+        case enabled
+        case denied
+    }
+
+    @Published private(set) var state: State = .checking
+
+    private let authorizationStatus: () async -> UNAuthorizationStatus
+    private let requestAuthorization: () async -> Bool
+    private let refreshNotifications: ([GardenPlant]) async -> Void
+
+    init(
+        authorizationStatus: @escaping () async -> UNAuthorizationStatus,
+        requestAuthorization: @escaping () async -> Bool,
+        refreshNotifications: @escaping ([GardenPlant]) async -> Void
+    ) {
+        self.authorizationStatus = authorizationStatus
+        self.requestAuthorization = requestAuthorization
+        self.refreshNotifications = refreshNotifications
+    }
+
+    static func live() -> FirstCareReminderController {
+        let scheduler = WateringNotificationScheduler()
+        return FirstCareReminderController(
+            authorizationStatus: {
+                await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            },
+            requestAuthorization: {
+                await scheduler.requestAuthorization()
+            },
+            refreshNotifications: { plants in
+                await scheduler.refreshNotifications(for: plants)
+            }
+        )
+    }
+
+    func refreshAuthorization(
+        currentPlants: @MainActor () -> [GardenPlant]
+    ) async {
+        guard state != .requesting else { return }
+        let previousState = state
+        let nextState = Self.state(for: await authorizationStatus())
+        guard state != .requesting else { return }
+
+        if nextState == .enabled, previousState != .enabled {
+            await refreshNotifications(currentPlants())
+            guard state != .requesting else { return }
+        }
+        state = nextState
+    }
+
+    func enable(
+        currentPlants: @MainActor () -> [GardenPlant]
+    ) async {
+        guard state == .available else { return }
+        state = .requesting
+
+        guard await requestAuthorization() else {
+            state = .denied
+            return
+        }
+
+        await refreshNotifications(currentPlants())
+        state = .enabled
+    }
+
+    private static func state(for authorizationStatus: UNAuthorizationStatus) -> State {
+        switch authorizationStatus {
+        case .notDetermined:
+            .available
+        case .authorized, .provisional, .ephemeral:
+            .enabled
+        case .denied:
+            .denied
+        @unknown default:
+            .denied
         }
     }
 }
@@ -118,6 +272,127 @@ private struct GardenSummaryView: View {
     }
 }
 
+private struct GardenSyncStatusView: View {
+    let status: GardenCloudSyncStatus
+
+    private var tint: Color {
+        switch status {
+        case .synced, .demo, .local: .rocioTeal
+        case .syncing: .rocioLeafDeep
+        case .pending: .rocioAmber
+        }
+    }
+
+    private var systemImage: String {
+        switch status {
+        case .local, .demo: "iphone"
+        case .syncing: "icloud.and.arrow.up"
+        case .synced: "checkmark.icloud.fill"
+        case .pending: "icloud.slash"
+        }
+    }
+
+    var body: some View {
+        Label(status.message, systemImage: systemImage)
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .accessibilityElement(children: .combine)
+    }
+}
+
+private struct FirstCareReminderCard: View {
+    let state: FirstCareReminderController.State
+    let onEnable: () -> Void
+    let onOpenSettings: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: state == .enabled ? "bell.badge.fill" : "bell.badge")
+                    .font(.title2)
+                    .foregroundStyle(state == .enabled ? Color.rocioTeal : Color.rocioLeafDeep)
+                    .frame(width: 42, height: 42)
+                    .background(Color.rocioLeafSoft, in: Circle())
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L10n.text("garden.reminders.title", fallback: "Keep care on schedule"))
+                        .font(.headline)
+                    Text(reminderCopy)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+            }
+
+            reminderAction
+        }
+        .padding(14)
+        .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
+    }
+
+    private var reminderCopy: String {
+        switch state {
+        case .checking, .available, .requesting:
+            L10n.text(
+                "garden.reminders.copy",
+                fallback: "Enable local reminders for this plant. Rocio asks iOS only after you tap."
+            )
+        case .enabled:
+            L10n.text("garden.reminders.enabled", fallback: "Watering reminders are on for your garden.")
+        case .denied:
+            L10n.text(
+                "garden.reminders.denied",
+                fallback: "Notifications are off. You can enable them in iOS Settings."
+            )
+        }
+    }
+
+    @ViewBuilder
+    private var reminderAction: some View {
+        switch state {
+        case .checking:
+            ProgressView(L10n.text("garden.reminders.checking", fallback: "Checking reminder access"))
+                .font(.footnote)
+        case .available:
+            Button(action: onEnable) {
+                Label(
+                    L10n.text("garden.reminders.enable", fallback: "Enable watering reminders"),
+                    systemImage: "bell.badge"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(RocioPrimaryButtonStyle())
+        case .requesting:
+            HStack(spacing: 8) {
+                ProgressView()
+                Text(L10n.text("garden.reminders.requesting", fallback: "Waiting for your choice"))
+            }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.secondary)
+        case .enabled:
+            Label(
+                L10n.text("garden.reminders.enabled.short", fallback: "Reminders active"),
+                systemImage: "checkmark.circle.fill"
+            )
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(Color.rocioTeal)
+        case .denied:
+            Button(action: onOpenSettings) {
+                Label(
+                    L10n.text("garden.reminders.open.settings", fallback: "Open notification settings"),
+                    systemImage: "gear"
+                )
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(RocioSecondaryButtonStyle())
+        }
+    }
+}
+
 private struct SummaryMetric: View {
     let title: String
     let value: String
@@ -141,6 +416,7 @@ private struct GardenRow: View {
     let flower: Flower
     let urgency: WateringUrgency
     let nextWatering: Date
+    let isWateredConfirmationVisible: Bool
     let onWater: () -> Void
     let onEdit: () -> Void
 
@@ -180,23 +456,49 @@ private struct GardenRow: View {
 
             Divider()
 
-            HStack(spacing: 12) {
-                Label(nextWatering.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button(action: onWater) {
-                    Label(L10n.text("action.water", fallback: "Water"), systemImage: "drop.fill")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .frame(height: 38)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 12) {
+                    nextWateringLabel
+                    Spacer()
+                    waterButton
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Color.rocioTeal)
+                VStack(alignment: .leading, spacing: 10) {
+                    nextWateringLabel
+                    waterButton
+                        .frame(maxWidth: .infinity)
+                }
             }
         }
         .padding(14)
         .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
+    }
+
+    private var nextWateringLabel: some View {
+        Label(nextWatering.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    private var waterButton: some View {
+        Button(action: onWater) {
+            Label(
+                isWateredConfirmationVisible
+                    ? L10n.text("garden.watered.confirmation", fallback: "Watered")
+                    : L10n.text("action.water", fallback: "Water"),
+                systemImage: isWateredConfirmationVisible ? "checkmark.circle.fill" : "drop.fill"
+            )
+            .font(.subheadline.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .frame(minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(isWateredConfirmationVisible ? Color.rocioLeafAction : Color.rocioTeal)
+        .disabled(isWateredConfirmationVisible)
+        .sensoryFeedback(.success, trigger: isWateredConfirmationVisible) { _, isVisible in
+            isVisible
+        }
     }
 }

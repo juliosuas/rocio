@@ -7,19 +7,30 @@ struct RootView: View {
     @AppStorage("rocio.ios.hasSeenOnboarding") private var hasSeenOnboarding = false
 
     var body: some View {
-        switch sessionStore.state {
-        case .checking:
-            ProgressView(L10n.text("cloud.loading", fallback: "Opening Rocio"))
-        case .unconfigured:
-            CloudConfigurationRequiredView()
-        case .signedOut:
-            AuthView()
-        case .signedIn:
-            authenticatedContent
+        Group {
+            switch sessionStore.state {
+            case .checking:
+                ProgressView(L10n.text("cloud.loading", fallback: "Opening Rocio"))
+            case .unconfigured:
+                CloudConfigurationRequiredView()
+            case .signedOut:
+                AuthView()
+            case .recoveringPassword, .passwordUpdated, .passwordUpdatedRequiresSignIn:
+                PasswordRecoveryView()
+            case .signedIn:
+                authenticatedContent
 #if DEBUG
-        case .demo:
-            authenticatedContent
+            case .demo:
+                authenticatedContent
 #endif
+            }
+        }
+        .onChange(of: sessionStore.state) { oldState, newState in
+            router.handleSessionTransition(
+                from: oldState,
+                to: newState,
+                hasSeenOnboarding: hasSeenOnboarding
+            )
         }
     }
 
@@ -87,7 +98,10 @@ private struct OnboardingView: View {
                         OnboardingStep(
                             systemImage: "bell.badge",
                             title: L10n.text("onboarding.reminders.title", fallback: "Enable reminders"),
-                            copy: L10n.text("onboarding.reminders.copy", fallback: "Rocio uses local notifications only after you enable them in Settings.")
+                            copy: L10n.text(
+                                "onboarding.reminders.copy",
+                                fallback: "Rocio asks for notification permission only after you enable reminders in your Garden or Settings."
+                            )
                         )
                         Divider()
                         OnboardingStep(

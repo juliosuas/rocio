@@ -34,6 +34,59 @@ actor RocioBackendClient {
         return try await authSession(for: request)
     }
 
+    func requestPasswordReset(email: String, codeChallenge: String) async throws {
+        let endpoint = configuration.baseURL
+            .appendingPathComponent("auth")
+            .appendingPathComponent("v1")
+            .appendingPathComponent("recover")
+        guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
+            throw BackendError.invalidResponse
+        }
+        components.queryItems = [
+            URLQueryItem(name: "redirect_to", value: PasswordRecoveryCallback.redirectURL.absoluteString),
+        ]
+        guard let url = components.url else { throw BackendError.invalidResponse }
+        let request = try request(
+            url: url,
+            method: "POST",
+            body: PasswordResetPayload(
+                email: email,
+                codeChallenge: codeChallenge,
+                codeChallengeMethod: "s256"
+            )
+        )
+        _ = try await responseData(for: request)
+    }
+
+    func recoverySession(from callback: PasswordRecoveryCallback, codeVerifier: String) async throws -> AuthSession {
+        let exchangeRequest = try request(
+            path: "/auth/v1/token?grant_type=pkce",
+            method: "POST",
+            body: PasswordRecoveryExchangePayload(
+                authCode: callback.authorizationCode,
+                codeVerifier: codeVerifier
+            )
+        )
+        // The PKCE authorization code is single-use. authSession(for:) already
+        // requires a valid user id and email in Supabase's token response, so a
+        // second request would only add a fallible step after consuming the code.
+        return try await authSession(for: exchangeRequest)
+    }
+
+    func updatePassword(_ password: String, session: AuthSession) async throws {
+        let request = try request(
+            path: "/auth/v1/user",
+            method: "PUT",
+            token: session.accessToken,
+            body: PasswordUpdatePayload(password: password)
+        )
+        let data = try await responseData(for: request)
+        let response = try decoder.decode(AuthUserResponse.self, from: data)
+        guard UUID(uuidString: response.id) == session.user.id else {
+            throw BackendError.invalidResponse
+        }
+    }
+
     func refresh(_ session: AuthSession) async throws -> AuthSession {
         let payload = RefreshPayload(refreshToken: session.refreshToken)
         let request = try request(path: "/auth/v1/token?grant_type=refresh_token", method: "POST", body: payload)
@@ -151,8 +204,18 @@ actor RocioBackendClient {
         return request
     }
 
+    private func request<T: Encodable>(url: URL, method: String, token: String? = nil, body: T) throws -> URLRequest {
+        var request = request(url: url, method: method, token: token)
+        request.httpBody = try encoder.encode(body)
+        return request
+    }
+
     private func request(path: String, method: String, token: String? = nil) throws -> URLRequest {
         guard let url = URL(string: path, relativeTo: configuration.baseURL) else { throw BackendError.invalidResponse }
+        return request(url: url, method: method, token: token)
+    }
+
+    private func request(url: URL, method: String, token: String? = nil) -> URLRequest {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.timeoutInterval = 25
@@ -196,6 +259,16 @@ actor RocioBackendClient {
 private struct Credentials: Encodable { let email: String; let password: String }
 private struct RefreshPayload: Encodable { let refreshToken: String }
 private struct SignUpPayload: Encodable { let email: String; let password: String; let data: [String: String] }
+struct PasswordResetPayload: Encodable, Equatable {
+    let email: String
+    let codeChallenge: String
+    let codeChallengeMethod: String
+}
+struct PasswordRecoveryExchangePayload: Encodable, Equatable {
+    let authCode: String
+    let codeVerifier: String
+}
+struct PasswordUpdatePayload: Encodable, Equatable { let password: String }
 private struct EmptyPayload: Encodable {}
 private struct GardenResetPayload: Encodable { let requestID: UUID }
 struct GardenDeletionPayload: Encodable, Equatable {
@@ -212,6 +285,11 @@ private struct AuthResponse: Decodable {
     let expiresIn: Int?
     let user: User?
     struct User: Decodable { let id: String; let email: String? }
+}
+
+private struct AuthUserResponse: Decodable {
+    let id: String
+    let email: String?
 }
 
 private struct ServerError: Decodable {
