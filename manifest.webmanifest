@@ -1,8 +1,8 @@
 {
-  "name": "Rocío — Cuida tus Flores",
-  "short_name": "Rocío",
-  "description": "Catálogo, jardín personal, recordatorios de riego e identificador experimental de flores.",
-  "start_url": "./?v=2026-05-27-3",
+  "name": "Rocío 1.0 — Demo web",
+  "short_name": "Rocío Demo",
+  "description": "Vista previa web local del catálogo, jardín, calendario e identificador experimental de Rocío.",
+  "start_url": "./index.html?demo=1&v=2026-07-22-1",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fff8f7",

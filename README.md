@@ -1,122 +1,184 @@
-# 🌸 Rocío
+<div align="center">
+  <img src="assets/flowers/rosa.jpg" alt="Rosa del catálogo de Rocío" width="160">
 
-**Cuida tus flores con amor**
+# Rocío 1.0
 
-Rocío (meaning "dew" in Spanish) is a flower-care product with a zero-dependency web demo and a native SwiftUI iOS app. The web demo keeps an honest local flower matcher. The native iOS track now includes an authenticated Supabase/Plant.id path, while deployment credentials remain a release blocker.
+**Cuidado de flores, claro y privado, en una app nativa para iPhone.**
 
-The iOS version is SwiftUI, not a WebView wrapper. It uses a required account for garden sync and AI quota, keeps a local cache for resilience, stores sessions in Keychain, and retains local notifications and App Intents.
+Versión de marketing **1.0** · build **1** · iOS **17+** · Swift **5** · candidata beta en desarrollo
 
-## ✨ Features
+[![QA](https://github.com/juliosuas/rocio/actions/workflows/qa.yml/badge.svg)](https://github.com/juliosuas/rocio/actions/workflows/qa.yml)
+[![iOS](https://github.com/juliosuas/rocio/actions/workflows/ios.yml/badge.svg)](https://github.com/juliosuas/rocio/actions/workflows/ios.yml)
+[![Archive](https://github.com/juliosuas/rocio/actions/workflows/ios-archive.yml/badge.svg)](https://github.com/juliosuas/rocio/actions/workflows/ios-archive.yml)
 
-- **🌸 Catálogo** — Browse 15+ flowers with detailed care information (Spanish + scientific names)
-- **🌱 Mi Jardín** — Track your personal garden, watering schedule, and plant health
-- **📅 Calendario** — Weekly care schedule with color-coded urgency
-- **💡 Tips** — Seasonal gardening tips that rotate monthly
-- **📸 Identificador experimental** — Authenticated Plant.id recognition with explicit consent, uncertainty, top candidates, and an honest local fallback
-- **🔔 Recordatorios** — Local watering reminder support for due/overdue plants while the app is open
-- **🌙 Dark Mode** — Beautiful dark theme toggle
-- **🌐 Cloud recognition path** — Authenticated Supabase Edge Function + Plant.id, explicit photo consent, monthly quota, no raw image database storage, and local fallback
+[Sitio público](https://juliosuas.github.io/rocio/launch.html) · [Demo web local](https://juliosuas.github.io/rocio/index.html?demo=1) · [Privacidad](https://juliosuas.github.io/rocio/privacy.html) · [Soporte](https://juliosuas.github.io/rocio/support.html)
+</div>
 
-## 🎨 Design
+> [!IMPORTANT]
+> El producto nativo está implementado y verificado localmente, pero todavía no está publicado en TestFlight ni en App Store. Faltan la membresía pagada de Apple, firma de distribución, configuración final de recuperación de cuenta y smoke tests físicos.
 
-- Soft sage green, cream ivory, rose pink, and earth brown palette
-- Glassmorphism elements and micro-animations
-- Mobile-first responsive layout
-- Smooth CSS-only page transitions
-- Onboarding walkthrough for first-time visitors
+Rocío acompaña el ciclo que importa: elegir una flor, agregarla al jardín, entender el siguiente cuidado, activar un recordatorio de forma voluntaria y registrar el primer riego. La app iOS está construida con SwiftUI. El sitio web conserva una demo interactiva local y nunca debe confundirse con el cliente nativo ni con una descarga de App Store.
 
-## 🛠 Tech
+## App iOS nativa: lo que ya funciona
 
-### Web MVP
+- **Catálogo de 15 flores** con fotografía atribuida, nombre científico, dificultad y cuidados.
+- **Primera planta a primer cuidado**: agregar, volver a Mi Jardín, activar recordatorio y confirmar riego.
+- **Jardín resiliente** con caché local, reintentos, estados de sincronización honestos y separación por cuenta.
+- **Calendario de siete días** y notificaciones locales solicitadas únicamente después de una acción explícita.
+- **Scanner experimental con privacidad por foto**: análisis en el iPhone o consentimiento nuevo antes de enviar una copia reducida a Plant.id/Kindwise mediante Supabase.
+- **Recuperación de contraseña PKCE** sin tokens bearer en la URL, verifier en Keychain y protección contra carreras entre escenas.
+- **Controles de datos** para exportar, borrar el jardín, desactivar analítica y eliminar permanentemente la cuenta.
+- **English + Español**, App Intents y rutas nativas para jardín, scanner y riego.
+- **Modo demo solo en Debug** para recorrer la UI sin Supabase ni contaminar datos reales.
 
-- Single `index.html` app
-- Zero framework dependencies
-- Optional Plant.id API integration
-- localStorage persistence
-- Pure vanilla JS + modern CSS
-- Works on iPhone Safari, Android Chrome, Desktop
+## Demo web/PWA: una superficie separada
 
-### Native iOS Track
+`index.html` es una demo sin framework y no forma parte del binario iOS. Incluye el catálogo de 15 flores, jardín e historial en `localStorage`, registro de riegos, calendario semanal y lunar, 36 tips estacionales, Plant Doctor, compostaje, calculadora de agua, tema oscuro y scanner local con candidatos e incertidumbre. También permite exportar o borrar los datos del navegador.
 
-- SwiftUI app under `ios/`
-- Bundle id: `com.juliosuas.rocio`
-- Catalog, Garden, Calendar, Scanner, and Settings tabs
-- Native onboarding, catalog filters, garden summary, and scanner confidence bands
-- Supabase email accounts, Keychain session storage, and account-owned garden sync
-- Native local notifications for watering reminders
-- App Intents for opening the garden, opening scanner, and logging watering
-- Export, cloud garden deletion, analytics opt-out, sign out, and permanent in-app account deletion
-- Privacy manifest and App Store privacy answers
-- GitHub Actions build/test/archive gates on macOS runners
+Su configuración cloud está deliberadamente vacía. La versión publicada no crea cuentas, no sincroniza con Supabase y no envía imágenes a Plant.id. Las notificaciones web dependen de los permisos y límites del navegador.
 
-## 🚀 Launch Demo
+## Estado real
 
-Run a local demo:
+| Superficie | Estado | Qué significa |
+|---|---|---|
+| Demo web | Disponible | Guarda datos únicamente en este navegador y usa el matcher local. |
+| App iOS 1.0 (build 1) | Candidata beta | Compila en Debug y Release; 115/115 pruebas pasan en iPhone 17 con iOS 26.3.1. |
+| Supabase | Base verificada | Auth, RLS, ACL, cuota, sincronización y borrado están probados; la migración nueva aún no se despliega. |
+| iPhone físico | Launch verificado | Abre con Personal Team; faltan cámara, fotos, notificaciones y scanner autenticado de punta a punta. |
+| TestFlight / App Store | Bloqueado externamente | Requiere Apple Developer Program pagado, `DEVELOPMENT_TEAM`, firma y App Store Connect. |
 
-```sh
-python3 -m http.server 3002
+## Límites conocidos
+
+- El scanner y el contenido de cuidado son orientativos; no sustituyen un diagnóstico botánico o profesional.
+- Las fichas locales cubren exactamente 15 flores. Un candidato externo puede no tener una ficha equivalente.
+- El contenido de enfermedades y tratamientos de la demo web todavía requiere revisión botánica antes de presentarse como recomendación validada.
+- La migración `20260721000100_preserve_garden_deletions.sql` está verificada en PostgreSQL 16 desechable, pero aún no se despliega al proyecto remoto.
+- El cliente PKCE está implementado; faltan Site URL HTTPS, allowlist, SMTP y la prueba real correo → app → contraseña nueva.
+- Faltan smoke tests productivos con dos sesiones y pruebas físicas completas de cámara, fotos y entrega de notificaciones.
+- El icono pasa los controles automatizados; faltan screenshots finales y revisión visual para App Store.
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    UI["SwiftUI iOS 1.0"] --> Cache["Caché local y Keychain"]
+    UI --> Notify["Notificaciones y App Intents"]
+    UI --> Auth["Supabase Auth"]
+    Auth --> API["PostgREST + RLS"]
+    API --> DB["PostgreSQL"]
+    UI --> Choice{"Elección por foto"}
+    Choice --> Local["Matcher local"]
+    Choice --> Edge["Edge Function autenticada"]
+    Edge --> PlantID["Plant.id / Kindwise"]
 ```
 
-Open:
+La publishable key de Supabase es configuración pública del cliente. `SUPABASE_SERVICE_ROLE_KEY` y `PLANT_ID_API_KEY` viven exclusivamente en el servidor. La función Edge valida primero la sesión y no guarda la imagen original en PostgreSQL.
 
-- Landing: `http://localhost:3002/launch.html`
-- App: `http://localhost:3002/index.html`
-- Privacy: `http://localhost:3002/privacy.html`
-- Support: `http://localhost:3002/support.html`
+## Ejecutar la app iOS
 
-Launch materials live in:
+### Requisitos
 
-- `DEMO_RUNBOOK.md`
-- `APP_STORE_METADATA.md`
-- `APP_STORE_PRIVACY_ANSWERS.md`
-- `APP_STORE_VISUAL_RELEASE_CHECKLIST.md`
-- `COMPETITIVE_BENCHMARK.md`
-- `MARKETING_LAUNCH_KIT.md`
-- `APPLE_DEVELOPER_RUNBOOK.md`
-- `APP_STORE_RELEASE_CHECKLIST.md`
-- `GSTACK_APP_STORE_DAILY_PLAN.md`
-- `ROCIO_BRAIN.md`
+- macOS 15.7.4 o compatible.
+- Xcode 26.3 seleccionado.
+- Un runtime de iOS Simulator disponible.
+- La publishable key de Supabase solo si quieres probar cloud; Debug puede usar el demo local sin ella.
 
-## ✅ CI / Release Gates
+### Configuración pública de Supabase
 
-GitHub Actions currently validates:
+```sh
+cp ios/Config/Local.xcconfig.example ios/Config/Local.xcconfig
+```
 
-- PWA flower classifier QA
-- iOS simulator build and unit tests
-- Unsigned iOS Release archive
-- GitHub Pages deployment
+Edita `ios/Config/Local.xcconfig` y agrega únicamente la `sb_publishable_...` del proyecto. El archivo está ignorado por Git. Nunca coloques ahí una `sb_secret_...`, un JWT `service_role` ni `PLANT_ID_API_KEY`.
 
-The local machine does not need full Xcode for the core build gate because iOS validation runs on GitHub macOS runners. Full Xcode is still useful later for local simulator screenshots, device smoke testing, and Xcode Organizer upload.
+### Build y pruebas
 
-## 🍎 App Store Status
+```sh
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio \
+  -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio \
+  -destination 'platform=iOS Simulator,name=iPhone 17' test
+```
 
-Ready in repo:
+El detalle operativo del cliente nativo está en [`ios/README.md`](ios/README.md).
 
-- Native SwiftUI foundation
-- App Store metadata draft
-- Privacy answers draft
-- Privacy/support web pages
-- Launch/marketing kit
-- Apple Developer runbook
-- CI build/test/archive gates
+## Ejecutar el sitio y la demo web
 
-Still external/manual:
+```sh
+python3 -m http.server 8000
+```
 
-- Apple Developer Program enrollment
-- App Store Connect app record
-- Bundle ID confirmation for `com.juliosuas.rocio`
-- Signing certificate/provisioning setup
-- TestFlight upload
-- Final screenshots and app icon review
+- Presentación: <http://localhost:8000/launch.html>
+- Demo con jardín de ejemplo: <http://localhost:8000/index.html?demo=1>
+- Privacidad: <http://localhost:8000/privacy.html>
+- Soporte: <http://localhost:8000/support.html>
 
-## 📸 Screenshots
+La demo web es una superficie local separada: no crea cuentas, no sincroniza con Supabase y no envía fotos a Plant.id. Sirve para explorar el catálogo y los conceptos del producto mientras el binario iOS avanza a TestFlight.
 
-<!-- Add screenshots here -->
+## QA verificado
 
-## 🔗 Live
+```sh
+node qa/release-gate.mjs
+node qa/cloud-ai-security-audit.mjs
+node qa/ios-app-store-readiness-audit.mjs
+ROCIO_SECURITY_DATABASE_URL='<postgres-16-desechable>' \
+  node qa/run-cloud-ai-security-postgres.mjs
+```
 
-**[https://juliosuas.github.io/rocio/](https://juliosuas.github.io/rocio/)**
+Evidencia local del 22 de julio de 2026:
 
-## 📄 License
+- **115/115 XCTest** en iPhone 17, iOS 26.3.1.
+- **Release unsigned** compilado con Xcode 26.3.
+- **Release gate 11/11**.
+- **Cloud/security 41/41**.
+- **App Store audit 20/20**, `unsignedReady=true`.
+- **PostgreSQL 16**: migraciones ordenadas, upgrade fixture, RLS, ACL, cuota, tombstones, reset y purge con rollback.
 
-MIT
+`signedReady=false` sigue siendo correcto mientras no exista un equipo de distribución configurado.
+
+Los workflows reales son:
+
+- `.github/workflows/qa.yml`: release gate y migraciones sobre PostgreSQL 16.
+- `.github/workflows/ios.yml`: build y XCTest en Simulator.
+- `.github/workflows/ios-archive.yml`: Archive Release unsigned y validación de configuración.
+
+El repositorio no contiene un workflow que despliegue GitHub Pages; los cambios del sitio quedan visibles cuando llegan a la fuente configurada de Pages.
+
+## Estructura del repositorio
+
+```text
+ios/                  App SwiftUI, recursos y XCTest
+supabase/             Migraciones y Edge Functions
+qa/                   Gates de producto, seguridad y App Store
+assets/               Fotografías atribuidas y materiales del sitio
+index.html            Demo web local
+launch.html           Sitio público de la versión actual
+privacy.html          Política pública de privacidad
+support.html          Centro público de soporte
+```
+
+## Ruta a distribución
+
+1. Integrar la cadena de PR en orden y repetir CI desde `main`.
+2. Ejecutar `supabase db push --linked --dry-run` y aplicar la migración pendiente una sola vez.
+3. Configurar Site URL HTTPS, redirect allowlist exacta y SMTP; probar correo → PKCE → contraseña nueva → login.
+4. Completar smoke físico de cámara, fotos, notificaciones y dos sesiones sincronizadas.
+5. Activar Apple Developer Program, configurar `DEVELOPMENT_TEAM`, firmar Archive y subir a TestFlight.
+6. Capturar screenshots finales y completar App Store Connect.
+
+El plan vivo está en [`APP_STORE_LAUNCH_PLAN.md`](APP_STORE_LAUNCH_PLAN.md) y el checklist de release en [`APP_STORE_RELEASE_CHECKLIST.md`](APP_STORE_RELEASE_CHECKLIST.md).
+
+## Documentación útil
+
+- [`DESIGN.md`](DESIGN.md) — sistema visual y reglas de interfaz.
+- [`APP_STORE_METADATA.md`](APP_STORE_METADATA.md) — copy de App Store.
+- [`APP_STORE_PRIVACY_ANSWERS.md`](APP_STORE_PRIVACY_ANSWERS.md) — declaraciones de privacidad.
+- [`APPLE_DEVELOPER_RUNBOOK.md`](APPLE_DEVELOPER_RUNBOOK.md) — firma y distribución.
+- [`PHOTO_ATTRIBUTIONS.md`](PHOTO_ATTRIBUTIONS.md) — fuentes y licencias de imágenes.
+- [`SUPABASE_DIAGNOSTIC_2026-07-21.md`](SUPABASE_DIAGNOSTIC_2026-07-21.md) — diagnóstico cloud fechado.
+- [`ROCIO_STATUS.md`](ROCIO_STATUS.md) — snapshot operativo actual.
+
+## Soporte y reportes
+
+Usa [GitHub Issues](https://github.com/juliosuas/rocio/issues/new) para errores o solicitudes. No publiques contraseñas, tokens, fotografías privadas ni datos personales en un issue.

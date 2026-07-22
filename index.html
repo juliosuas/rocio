@@ -2,19 +2,21 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="description" content="Rocío es una app privada y cariñosa para cuidar flores: catálogo, jardín personal, calendario de riego e identificación local asistida.">
+<meta name="description" content="Demo web local de Rocío 1.0: explora 15 flores, un jardín de ejemplo, calendario de riego e identificación experimental sin cuenta ni sincronización cloud.">
 <meta name="author" content="Rocío">
-<meta property="og:title" content="Rocío — Cuida tus flores con amor">
-<meta property="og:description" content="Catálogo floral, recordatorios de riego e identificador local asistido.">
+<link rel="canonical" href="https://juliosuas.github.io/rocio/index.html">
+<meta property="og:title" content="Rocío 1.0 — Demo web local">
+<meta property="og:description" content="Vista previa web separada de la app nativa: catálogo, jardín y scanner experimental con datos en este navegador.">
 <meta property="og:type" content="website">
-<meta property="og:image" content="./icon-192.svg">
+<meta property="og:url" content="https://juliosuas.github.io/rocio/index.html">
+<meta property="og:image" content="https://juliosuas.github.io/rocio/assets/flowers/rosa.jpg">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="./icon-192.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.svg">
@@ -22,8 +24,8 @@
 <meta name="theme-color" content="#7a9b57">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-<title>Rocío — Cuida tus flores con amor 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800;900&amp;family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<title>Rocío 1.0 — Demo web local</title>
 <script>
 (function() {
   function releaseSplash() {
@@ -125,6 +127,10 @@ body {
 button { font: inherit; border: none; cursor: pointer; background: none; color: inherit; }
 input, textarea { font: inherit; border: none; outline: none; background: none; color: inherit; }
 img { display: block; max-width: 100%; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 3px solid var(--accent-dark);
+  outline-offset: 3px;
+}
 
 /* ═══════════════════════════════════════════
    HEADER
@@ -258,6 +264,22 @@ img { display: block; max-width: 100%; }
   font-size: 30px; font-weight: 800; letter-spacing: -0.3px;
   margin-bottom: 4px;
 }
+
+.release-notice {
+  width: calc(100% - 32px);
+  max-width: 800px;
+  margin: 16px auto 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(143,188,143,0.38);
+  border-radius: 8px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.release-notice strong { display: block; margin-bottom: 3px; color: var(--text); }
+.release-notice a { color: var(--primary-dark); font-weight: 800; }
 .page-subtitle {
   font-size: 14px; color: var(--text-secondary); margin-bottom: 20px;
 }
@@ -315,6 +337,7 @@ img { display: block; max-width: 100%; }
 }
 
 .flower-card {
+  width: 100%;
   background: var(--bg-card);
   border-radius: var(--radius);
   padding: 14px;
@@ -324,6 +347,7 @@ img { display: block; max-width: 100%; }
   cursor: pointer;
   position: relative;
   overflow: hidden;
+  text-align: left;
 }
 .flower-card:active { transform: scale(0.96) translateY(2px); }
 .flower-card:hover {
@@ -1638,6 +1662,7 @@ img { display: block; max-width: 100%; }
 }
 
 @media (min-width: 600px) {
+  .release-notice { width: calc(100% - 48px); margin-top: 24px; }
   .page { padding: 24px 24px 0; max-width: 600px; margin: 0 auto; }
   .card-grid { grid-template-columns: repeat(3, 1fr); }
   .hero-section { margin: -24px -24px 20px; border-radius: 0 0 24px 24px; }
@@ -2016,7 +2041,7 @@ img { display: block; max-width: 100%; }
   <div class="splash-logo">Rocío 🌸</div>
   <div class="splash-subtitle">Cuida tus flores con amor</div>
   <div class="splash-dots">
-    <span></span><span></span><span></span>
+    <span aria-hidden="true">&nbsp;</span><span aria-hidden="true">&nbsp;</span><span aria-hidden="true">&nbsp;</span>
   </div>
 </div>
 
@@ -2025,10 +2050,10 @@ img { display: block; max-width: 100%; }
 
 <!-- HEADER -->
 <header class="header">
-  <span class="header-title">Rocío 🌸</span>
+  <span class="header-title">Rocío · Demo web</span>
   <div class="header-actions">
-    <button class="icon-btn" id="identifierBtn" title="Identificar planta">📸</button>
-    <button class="icon-btn" id="themeToggle" title="Cambiar tema">🌙</button>
+    <button class="icon-btn" id="identifierBtn" title="Identificar planta" aria-label="Abrir identificador local">📸</button>
+    <button class="icon-btn" id="themeToggle" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
   </div>
 </header>
 
@@ -2041,6 +2066,11 @@ img { display: block; max-width: 100%; }
 <!-- MAIN CONTENT -->
 <main class="page-container">
 
+  <aside class="release-notice" aria-label="Estado de esta demo">
+    <strong>Vista previa web · Rocío 1.0</strong>
+    Esta demo guarda sus datos solo en este navegador y usa identificación local. La app iOS nativa continúa en preparación para TestFlight. <a href="launch.html#status">Ver estado real</a> · <a href="privacy.html">Privacidad</a>
+  </aside>
+
   <!-- ════════ CATÁLOGO ════════ -->
   <section class="page active" id="pageCatalog">
     <div class="hero-section" id="heroSection">
@@ -2052,8 +2082,8 @@ img { display: block; max-width: 100%; }
         <img src="./assets/flowers/girasol.jpg" alt="Girasol" loading="lazy">
         <img src="./assets/flowers/hortensia.jpg" alt="Hortensia" loading="lazy">
       </div>
-      <div class="hero-title">Descubre & Cultiva</div>
-      <div class="hero-subtitle">Tu guía botánica personal con amor 💚</div>
+      <div class="hero-title">Explora & Cultiva</div>
+      <div class="hero-subtitle">Catálogo y jardín local de la demo web 💚</div>
     </div>
 
     <div class="search-bar">
@@ -2084,10 +2114,10 @@ img { display: block; max-width: 100%; }
   <!-- ════════ MI JARDÍN ════════ -->
   <section class="page" id="pageGarden">
     <h1 class="page-title">Mi Jardín 🌱</h1>
-    <p class="page-subtitle">Tu colección personal de flores</p>
+    <p class="page-subtitle">Tu colección local de flores en esta demo</p>
     <div class="data-controls" id="dataControls" aria-label="Controles de datos locales">
-      <div class="data-controls-title">Tus datos viven en este dispositivo</div>
-      <div class="data-controls-copy">Exporta una copia JSON o borra tu jardín cuando quieras.</div>
+      <div class="data-controls-title">Los datos de esta demo viven en este navegador</div>
+      <div class="data-controls-copy">No se sincronizan con la app iOS. Exporta una copia JSON o borra tu jardín cuando quieras.</div>
       <div class="data-control-actions">
         <button class="data-control-btn" id="exportDataBtn" type="button">⬇️ Exportar datos</button>
         <button class="data-control-btn danger" id="clearLocalDataBtn" type="button">🗑 Borrar datos</button>
@@ -2192,8 +2222,8 @@ img { display: block; max-width: 100%; }
 
     <!-- Plant Identifier -->
     <div class="identifier-section" id="identifierSection">
-      <h3>📸 Identificador con IA</h3>
-      <p>Sube una foto clara de tu flor y Rocío hará una comparación local honesta</p>
+      <h3>📸 Identificador local experimental</h3>
+      <p>Sube una foto clara y Rocío la comparará con las 15 flores de esta demo; el resultado es orientativo.</p>
       <div class="identifier-tools">
         <span class="identifier-chip active" id="plantNetStatus">Modo local activo</span>
       </div>
@@ -2226,7 +2256,7 @@ img { display: block; max-width: 100%; }
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-top-bar">
     <button class="scanner-close" id="scannerClose">✕</button>
-    <span class="scanner-title">🌿 Identificador de Plantas</span>
+    <span class="scanner-title">🌿 Identificador local experimental</span>
     <button class="scanner-history-btn" id="scannerHistoryBtn">📷 Historial</button>
   </div>
   <div class="scanner-viewfinder" id="scannerViewfinder">
@@ -2987,6 +3017,11 @@ const ROCIO_GARDEN_KEY = 'rocio_garden';
 const ROCIO_SCAN_HISTORY_KEY = 'rocio_scan_history';
 const ROCIO_LAST_NOTIFICATION_LEGACY_KEY = 'rocio_last_notification_day';
 const ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY = 'rocio_last_notification_local_day_v2';
+const ROCIO_THEME_KEY = 'rocio_theme';
+const ROCIO_ONBOARDED_KEY = 'rocio_onboarded';
+const ROCIO_DEMO_SEEDED_KEY = 'rocio_demo_seeded_v1';
+const ROCIO_FLOWERS_CACHE_KEY = 'rocio_flowers_cache';
+const ROCIO_FLOWERS_CACHED_AT_KEY = 'rocio_cached_at';
 
 function safeStorageGet(storage, key, fallback = null) {
   try {
@@ -3063,6 +3098,11 @@ function demoDate(daysAgo) {
 function seedDemoGardenIfRequested() {
   const params = new URLSearchParams(window.location.search);
   if (params.get('demo') !== '1') return;
+  if (safeStorageGet(rocioLocalStorage, ROCIO_DEMO_SEEDED_KEY, null) === '1') return;
+  if (garden.length > 0) {
+    safeStorageSet(rocioLocalStorage, ROCIO_DEMO_SEEDED_KEY, '1');
+    return;
+  }
 
   garden = [
     { flowerId: 'rosa', addedAt: demoDate(42), lastWatered: demoDate(4), status: 'needs-water', notes: 'Riego profundo y poda ligera esta semana.' },
@@ -3071,7 +3111,8 @@ function seedDemoGardenIfRequested() {
     { flowerId: 'cempasuchil', addedAt: demoDate(12), lastWatered: demoDate(2), status: 'healthy', notes: 'Perfecta para maceta exterior.' }
   ];
   safeStorageSet(rocioLocalStorage, ROCIO_GARDEN_KEY, JSON.stringify(garden));
-  safeStorageSet(rocioLocalStorage, 'rocio_onboarded', '1');
+  safeStorageSet(rocioLocalStorage, ROCIO_DEMO_SEEDED_KEY, '1');
+  safeStorageSet(rocioLocalStorage, ROCIO_ONBOARDED_KEY, '1');
   safeStorageSet(rocioSessionStorage, 'rocio_splash_shown', '1');
 }
 
@@ -3107,13 +3148,20 @@ function downloadLocalDataExport() {
 }
 
 function clearLocalUserData() {
-  if (!confirm('¿Borrar tu jardín y el historial de escaneos de este dispositivo? Esta acción no se puede deshacer.')) return;
+  if (!confirm('¿Borrar tu jardín, historial y preferencias de esta demo? Esta acción no se puede deshacer.')) return;
   garden = [];
   scanHistory = [];
   safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY);
   safeStorageRemove(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY);
   safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LEGACY_KEY);
   safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_THEME_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_ONBOARDED_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHE_KEY);
+  safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHED_AT_KEY);
+  safeStorageSet(rocioLocalStorage, ROCIO_DEMO_SEEDED_KEY, '1');
+  isDark = false;
+  applyTheme();
   renderGarden();
   renderCalendar();
   renderScanHistory();
@@ -3230,7 +3278,7 @@ function renderCatalog() {
   if (podEl) { podEl.innerHTML = `${pod.img ? `<div class="plant-photo-wrapper"><img src="${pod.img}" alt="${pod.name}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:3px solid var(--primary-light)" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="plant-emoji-badge">${pod.emoji}</span><div style="display:none;font-size:48px">${pod.emoji}</div></div>` : `<div class="pod-emoji">${pod.emoji}</div>`}<div class="pod-info"><div class="pod-badge">✨ Planta del día</div><div class="pod-name">${pod.name}</div><div class="pod-fact">${pod.fact}</div></div>`; podEl.onclick = () => openFlowerDetail(pod.id); }
 
   grid.innerHTML = flowers.map(f => `
-    <div class="flower-card" data-id="${f.id}">
+    <button type="button" class="flower-card" data-id="${f.id}">
       ${f.img ? `
         <div class="plant-photo-wrapper" style="text-align:center">
           <img src="${f.img}" alt="${f.name}" class="plant-photo" loading="lazy"
@@ -3248,7 +3296,7 @@ function renderCatalog() {
         <span class="card-tag">${f.sunlightLabel}</span>
         <span class="card-tag">💧 ${f.waterMl}ml c/${f.waterDays}d</span>
       </div>
-    </div>
+    </button>
   `).join('');
 
   grid.querySelectorAll('.flower-card').forEach((card, i) => {
@@ -3802,7 +3850,7 @@ function resetTipScanner() {
    DARK MODE
    ═══════════════════════════════════════════ */
 const themeToggle = document.getElementById('themeToggle');
-let isDark = safeStorageGet(rocioLocalStorage, 'rocio_theme') === 'dark';
+let isDark = safeStorageGet(rocioLocalStorage, ROCIO_THEME_KEY) === 'dark';
 
 function applyTheme() {
   document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -3812,7 +3860,7 @@ function applyTheme() {
 
 themeToggle.addEventListener('click', () => {
   isDark = !isDark;
-  safeStorageSet(rocioLocalStorage, 'rocio_theme', isDark ? 'dark' : 'light');
+  safeStorageSet(rocioLocalStorage, ROCIO_THEME_KEY, isDark ? 'dark' : 'light');
   applyTheme();
 });
 applyTheme();
@@ -3821,7 +3869,7 @@ applyTheme();
    ONBOARDING
    ═══════════════════════════════════════════ */
 const onboardingSteps = [
-  { emoji: '🌸', title: 'Bienvenido a Rocío', desc: 'Cuida tus flores con amor. Descubre, aprende y cultiva las flores más hermosas.' },
+  { emoji: '🌸', title: 'Bienvenido a la demo de Rocío', desc: 'Explora el catálogo y prueba un jardín que permanece únicamente en este navegador.' },
   { emoji: '🌱', title: 'Tu Jardín Personal', desc: 'Agrega flores a tu jardín, registra riegos y lleva notas de cada una de tus plantas.' },
   { emoji: '📅', title: 'Nunca Olvides Regar', desc: 'El calendario te muestra cuándo cada planta necesita atención. ¡Tus flores te lo agradecerán!' }
 ];
@@ -3841,11 +3889,11 @@ document.getElementById('obBtn').addEventListener('click', () => {
   if (obStep < 2) { obStep++; renderOnboarding(); }
   else {
     onboarding.classList.add('hidden');
-    safeStorageSet(rocioLocalStorage, 'rocio_onboarded', '1');
+    safeStorageSet(rocioLocalStorage, ROCIO_ONBOARDED_KEY, '1');
   }
 });
 
-if (safeStorageGet(rocioLocalStorage, 'rocio_onboarded')) {
+if (safeStorageGet(rocioLocalStorage, ROCIO_ONBOARDED_KEY)) {
   onboarding.classList.add('hidden');
 } else {
   renderOnboarding();
@@ -4096,8 +4144,8 @@ function renderMoonSection() {
    ═══════════════════════════════════════════ */
 function clearLegacyAppCache() {
   try {
-    safeStorageRemove(rocioLocalStorage, 'rocio_flowers_cache');
-    safeStorageRemove(rocioLocalStorage, 'rocio_cached_at');
+    safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHE_KEY);
+    safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHED_AT_KEY);
   } catch(e) {}
 
   if ('serviceWorker' in navigator) {
@@ -4114,7 +4162,7 @@ function clearLegacyAppCache() {
 
   if (new URLSearchParams(window.location.search).has('reset')) {
     safeStorageRemove(rocioSessionStorage, 'rocio_splash_shown');
-    safeStorageRemove(rocioLocalStorage, 'rocio_onboarded');
+    safeStorageRemove(rocioLocalStorage, ROCIO_ONBOARDED_KEY);
   }
 }
 
@@ -4209,7 +4257,7 @@ function rgbToHsl(r,g,b) {
 }
 
 function sampleImageColors(canvas) {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const w = canvas.width, h = canvas.height;
   const samples = [];
   // Sample from grid of regions
@@ -4375,7 +4423,7 @@ function loadImageAsCanvas(src) {
       const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth || img.width;
       canvas.height = img.naturalHeight || img.height;
-      canvas.getContext('2d').drawImage(img, 0, 0);
+      canvas.getContext('2d', { willReadFrequently: true }).drawImage(img, 0, 0);
       resolve(canvas);
     };
     img.onerror = reject;

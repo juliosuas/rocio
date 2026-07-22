@@ -45,7 +45,7 @@ const checks = [
     id: 'scanner-honest-local-copy',
     area: 'recognitionClaims',
     pass: includesAll(indexHtml, [
-      'comparación local honesta',
+      'comparará con las 15 flores de esta demo; el resultado es orientativo.',
       'Modo local activo',
       'No estoy completamente segura',
       'Confirma antes de agregarla a tu jardín',

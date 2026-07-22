@@ -33,7 +33,7 @@ const checks = [
   {
     id: 'local-scanner-honest-copy',
     area: 'scannerClaims',
-    pass: indexHtml.includes('comparación local honesta') &&
+    pass: indexHtml.includes('comparará con las 15 flores de esta demo; el resultado es orientativo.') &&
       indexHtml.includes('Modo local activo') &&
       indexHtml.includes('Confirma antes de agregarla a tu jardín.'),
     evidence: 'Scanner copy labels local matching honestly and asks users to confirm uncertain results.',
@@ -49,10 +49,11 @@ const checks = [
   {
     id: 'readme-recognition-claims-honest',
     area: 'scannerClaims',
-    pass: readme.includes('web demo keeps an honest local flower matcher') &&
-      readme.includes('native iOS track now includes an authenticated Supabase/Plant.id path') &&
-      readme.includes('deployment credentials remain a release blocker'),
-    evidence: 'README distinguishes the local web demo from the implemented but not yet deployed native cloud path.',
+    pass: readme.includes('`index.html` es una demo sin framework y no forma parte del binario iOS.') &&
+      readme.includes('La versión publicada no crea cuentas, no sincroniza con Supabase y no envía imágenes a Plant.id.') &&
+      readme.includes('antes de enviar una copia reducida a Plant.id/Kindwise mediante Supabase.') &&
+      readme.includes('aún no se despliega al proyecto remoto.'),
+    evidence: 'README separates the local-only web demo from the authenticated native path and names the pending remote migration.',
   },
 ];
 
