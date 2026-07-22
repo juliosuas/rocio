@@ -1,5 +1,35 @@
 \set ON_ERROR_STOP on
 
+do $upgrade_fixture$
+begin
+  if not exists (
+    select 1
+    from public.profiles as profiles
+    join public.garden_plants as plants
+      on plants.user_id = profiles.id
+     and plants.garden_epoch = profiles.garden_epoch
+    where profiles.id = '33333333-3333-3333-3333-333333333333'
+      and profiles.garden_epoch is not null
+      and plants.id = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+      and plants.deleted_at is null
+      and plants.nickname = 'Pre-upgrade rose'
+      and plants.notes = 'Existing care history'
+  ) then
+    raise exception 'garden epoch upgrade did not preserve and backfill an existing plant';
+  end if;
+
+  if not exists (
+    select 1
+    from public.watering_events
+    where id = '44444444-4444-4444-4444-444444444444'
+      and user_id = '33333333-3333-3333-3333-333333333333'
+      and plant_id = 'ffffffff-ffff-ffff-ffff-ffffffffffff'
+  ) then
+    raise exception 'garden epoch upgrade did not preserve existing watering history';
+  end if;
+end;
+$upgrade_fixture$;
+
 -- Effective-state checks. These query PostgreSQL after every migration has
 -- executed, so a later DROP/REVOKE/CREATE OR REPLACE cannot hide in history.
 do $catalog$
@@ -60,6 +90,33 @@ begin
 
   if not exists (
     select 1
+    from pg_catalog.pg_class
+    where oid = 'public.scan_usage'::regclass
+      and relrowsecurity
+  ) then
+    raise exception 'scan_usage RLS is not enabled';
+  end if;
+
+  if (select count(*)
+      from pg_catalog.pg_policies
+      where schemaname = 'public'
+        and tablename = 'scan_usage') <> 1
+     or not exists (
+       select 1
+       from pg_catalog.pg_policies
+       where schemaname = 'public'
+         and tablename = 'scan_usage'
+         and policyname = 'scan_usage_select_own'
+         and permissive = 'PERMISSIVE'
+         and cmd = 'SELECT'
+         and qual like '%auth.uid() = user_id%'
+         and with_check is null
+     ) then
+    raise exception 'scan_usage owner policy is missing, weakened, or accompanied by another policy';
+  end if;
+
+  if not exists (
+    select 1
     from pg_catalog.pg_policies
     where schemaname = 'public'
       and tablename = 'garden_plants'
@@ -95,6 +152,23 @@ begin
      or not pg_catalog.has_table_privilege('authenticated', 'public.scan_results', 'SELECT')
      or not pg_catalog.has_table_privilege('service_role', 'public.scan_results', 'INSERT') then
     raise exception 'scan_results ACLs are not server-write/client-read';
+  end if;
+
+  if not pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'SELECT')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'INSERT')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'UPDATE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'DELETE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'TRUNCATE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'REFERENCES')
+     or pg_catalog.has_table_privilege('authenticated', 'public.scan_usage', 'TRIGGER')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'SELECT')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'INSERT')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'UPDATE')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'DELETE')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'TRUNCATE')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'REFERENCES')
+     or pg_catalog.has_table_privilege('anon', 'public.scan_usage', 'TRIGGER') then
+    raise exception 'scan_usage ACLs allow client quota forgery or anonymous reads';
   end if;
 
   if pg_catalog.has_table_privilege('authenticated', 'public.profiles', 'UPDATE') then
@@ -143,6 +217,11 @@ begin
     raise exception 'reset_my_garden execute ACL is unsafe';
   end if;
 
+  if not pg_catalog.has_function_privilege('authenticated', 'public.consume_scan_quota()', 'EXECUTE')
+     or pg_catalog.has_function_privilege('anon', 'public.consume_scan_quota()', 'EXECUTE') then
+    raise exception 'consume_scan_quota execute ACL is unsafe';
+  end if;
+
   if pg_catalog.has_function_privilege('authenticated', 'public.reject_stale_garden_update()', 'EXECUTE')
      or pg_catalog.has_function_privilege('authenticated', 'public.reject_watering_for_deleted_plant()', 'EXECUTE') then
     raise exception 'authenticated can execute an internal trigger function';
@@ -154,8 +233,14 @@ begin
     raise exception 'garden reset deduplication ledger is exposed';
   end if;
 
-  if pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'UPDATE') then
-    raise exception 'watering events are not append-only';
+  if not pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'SELECT')
+     or not pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'INSERT')
+     or pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'UPDATE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'DELETE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'TRUNCATE')
+     or pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'REFERENCES')
+     or pg_catalog.has_table_privilege('authenticated', 'public.watering_events', 'TRIGGER') then
+    raise exception 'watering events ACL is not append-only';
   end if;
 
   if not exists (
@@ -187,6 +272,99 @@ end;
 $profiles$;
 
 set role authenticated;
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '11111111-1111-1111-1111-111111111111',
+  false
+);
+
+-- The mobile role may observe its quota but cannot insert, lower, reset, or
+-- transfer usage. Only the parameterless RPC can advance the authenticated
+-- account's counter, and sequential calls advance it monotonically.
+do $quota_forgery$
+declare
+  quota_row record;
+  stored_used integer;
+begin
+  select * into quota_row from public.consume_scan_quota();
+  if not found then
+    raise exception 'first quota consumption returned no row';
+  end if;
+  if quota_row.allowed is distinct from true
+     or quota_row.used is distinct from 1
+     or quota_row.quota is distinct from 5
+     or quota_row.remaining is distinct from 4 then
+    raise exception 'first quota consumption returned unexpected values';
+  end if;
+
+  begin
+    insert into public.scan_usage (user_id, period_start, used)
+    values (
+      auth.uid(),
+      pg_catalog.date_trunc('month', pg_catalog.now())::date,
+      0
+    );
+    raise exception 'authenticated client inserted a forged quota row';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  begin
+    update public.scan_usage
+    set used = 0
+    where user_id = auth.uid();
+    raise exception 'authenticated client reset its quota counter';
+  exception
+    when insufficient_privilege then null;
+  end;
+
+  select used into stored_used
+  from public.scan_usage
+  where user_id = auth.uid()
+    and period_start = pg_catalog.date_trunc('month', pg_catalog.now())::date;
+  if not found or stored_used is distinct from 1 then
+    raise exception 'failed client forgery changed the quota counter';
+  end if;
+
+  select * into quota_row from public.consume_scan_quota();
+  if not found then
+    raise exception 'second quota consumption returned no row';
+  end if;
+  if quota_row.allowed is distinct from true
+     or quota_row.used is distinct from 2
+     or quota_row.quota is distinct from 5
+     or quota_row.remaining is distinct from 3 then
+    raise exception 'second quota consumption was not monotonic';
+  end if;
+
+  select used into stored_used
+  from public.scan_usage
+  where user_id = auth.uid()
+    and period_start = pg_catalog.date_trunc('month', pg_catalog.now())::date;
+  if not found or stored_used is distinct from 2 then
+    raise exception 'second quota consumption did not persist the returned counter';
+  end if;
+end;
+$quota_forgery$;
+
+select pg_catalog.set_config(
+  'request.jwt.claim.sub',
+  '22222222-2222-2222-2222-222222222222',
+  false
+);
+
+do $quota_isolation$
+begin
+  if exists (
+    select 1
+    from public.scan_usage
+    where user_id = '11111111-1111-1111-1111-111111111111'
+  ) then
+    raise exception 'scan_usage RLS exposed another account''s quota';
+  end if;
+end;
+$quota_isolation$;
+
 select pg_catalog.set_config(
   'request.jwt.claim.sub',
   '11111111-1111-1111-1111-111111111111',
@@ -598,4 +776,4 @@ $account_purge$;
 
 rollback;
 
-\echo 'PostgreSQL migration history: catalog, RLS, ACL, tombstone, reset, and account purge checks passed.'
+\echo 'PostgreSQL migration history: catalog, RLS, ACL, quota, tombstone, reset, and account purge checks passed.'

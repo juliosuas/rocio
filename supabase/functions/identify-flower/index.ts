@@ -57,15 +57,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
   if (req.method !== "POST") return json(req, { error: "method_not_allowed" }, 405);
 
+  const authorization = req.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer ")) return json(req, { error: "authentication_required" }, 401);
+
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const apiKey = Deno.env.get("PLANT_ID_API_KEY");
-  const authorization = req.headers.get("authorization");
-  if (!supabaseUrl || !anonKey || !serviceRoleKey || !apiKey) {
+  if (!supabaseUrl || !anonKey) {
     return json(req, { error: "service_not_configured" }, 503);
   }
-  if (!authorization?.startsWith("Bearer ")) return json(req, { error: "authentication_required" }, 401);
 
   // The user's JWT remains attached only to the RLS-scoped client. It authenticates
   // the caller and invokes the quota RPC without granting server privileges.
@@ -75,6 +74,12 @@ serve(async (req) => {
   });
   const { data: userData, error: userError } = await userClient.auth.getUser(authorization.slice(7));
   if (userError || !userData.user) return json(req, { error: "invalid_session" }, 401);
+
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const apiKey = Deno.env.get("PLANT_ID_API_KEY");
+  if (!serviceRoleKey || !apiKey) {
+    return json(req, { error: "service_not_configured" }, 503);
+  }
 
   // This client is server-only and never receives user-controlled headers. Its
   // sole use in this handler is writing the protected scan_results audit row.
