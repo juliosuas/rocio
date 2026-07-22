@@ -8,6 +8,7 @@ struct GardenEditView: View {
     @State private var nickname: String
     @State private var status: PlantStatus
     @State private var notes: String
+    @State private var showingRemovalConfirmation = false
 
     init(plant: GardenPlant) {
         self.plant = plant
@@ -59,8 +60,7 @@ struct GardenEditView: View {
                         dismiss()
                     }
                     Button(L10n.text("garden.edit.remove", fallback: "Remove from garden"), role: .destructive) {
-                        gardenStore.delete(plant)
-                        dismiss()
+                        showingRemovalConfirmation = true
                     }
                 }
             }
@@ -72,6 +72,27 @@ struct GardenEditView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(L10n.text("action.close", fallback: "Close")) { dismiss() }
                 }
+            }
+            .confirmationDialog(
+                L10n.text("garden.remove.title", fallback: "Remove this plant?"),
+                isPresented: $showingRemovalConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button(L10n.text("garden.edit.remove", fallback: "Remove from garden"), role: .destructive) {
+                    gardenStore.delete(plant)
+                    dismiss()
+                }
+                Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
+            } message: {
+                Text(gardenStore.isDemoMode
+                     ? L10n.text(
+                        "garden.remove.message.demo",
+                        fallback: "This removes the plant from this Debug demo. The change is not sent to Rocio Cloud."
+                     )
+                     : L10n.text(
+                        "garden.remove.message",
+                        fallback: "This removes the plant from this device now and requests removal from Rocio Cloud. If offline, cloud removal will retry."
+                     ))
             }
         }
     }

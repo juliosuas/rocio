@@ -1,30 +1,34 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Centro de soporte de Rocio para jardín, recordatorios y scanner experimental.">
-  <title>Soporte - Rocio</title>
+  <meta name="description" content="Rocío 1.0 support center for access, synchronization, reminders, and the experimental scanner.">
+  <link rel="canonical" href="https://juliosuas.github.io/rocio/support.html">
+  <title>Support — Rocío 1.0</title>
   <style>
     body { max-width: 820px; margin: 0 auto; padding: 42px 22px 72px; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2822; background: #fffaf2; line-height: 1.6; }
-    a { color: #2f6b4f; } h1 { font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 18px; } h2 { margin-top: 34px; }
-    .nav { margin-bottom: 38px; display: flex; gap: 14px; flex-wrap: wrap; } .muted { color: #5d685f; } .step { border-top: 1px solid rgba(31, 40, 34, 0.16); padding: 16px 0; }
+    a { color: #2f6b4f; } a:focus-visible { outline: 3px solid #b94f65; outline-offset: 3px; } h1 { font-size: clamp(2.4rem, 7vw, 4rem); line-height: 1; margin: 0 0 18px; } h2 { margin-top: 34px; }
+    .nav { margin-bottom: 38px; display: flex; gap: 14px; flex-wrap: wrap; } .muted { color: #5d685f; } .step { border-top: 1px solid rgba(31, 40, 34, 0.16); padding: 16px 0; } .box { border: 1px solid rgba(31, 40, 34, 0.16); border-radius: 8px; padding: 18px; background: white; }
   </style>
 </head>
 <body>
-  <nav class="nav" aria-label="Principal"><a href="launch.html">Rocio</a><a href="index.html?demo=1">Demo</a><a href="privacy.html">Privacidad</a></nav>
-  <h1>Centro de soporte</h1>
-  <p class="muted">Ayuda para la app iOS de Rocio y su scanner experimental.</p>
+  <nav class="nav" aria-label="Main"><a href="launch.html">Rocío 1.0</a><a href="index.html?demo=1">Web demo</a><a href="privacy.html">Privacy</a></nav>
+  <h1>Support center</h1>
+  <p class="muted">Help for the iOS 1.0 beta candidate (build 1) and its experimental scanner.</p>
+  <div class="box"><strong>Current availability:</strong> Rocío is not yet published through TestFlight or the App Store. The web demo is a separate preview that stores data only in your browser.</div>
 
-  <h2>Soluciones rápidas</h2>
-  <div class="step"><strong>Mis plantas no aparecen.</strong><p>Comprueba que iniciaste sesión con la misma cuenta y que tienes conexión para completar la sincronización. Los cambios recientes permanecen en caché y se vuelven a intentar.</p></div>
-  <div class="step"><strong>No recibo recordatorios.</strong><p>Activa los recordatorios desde Ajustes y confirma que iOS permite notificaciones para Rocio.</p></div>
-  <div class="step"><strong>El scanner se equivoca.</strong><p>Usa luz natural, enfoca una sola flor abierta y revisa los candidatos antes de cambiar cuidados. Plant.id y el fallback local son orientativos.</p></div>
+  <h2>Quick fixes</h2>
+  <div class="step"><strong>My plants do not appear.</strong><p>Make sure you signed in with the same account and have a connection so synchronization can finish. Recent changes remain cached and will be retried.</p></div>
+  <div class="step"><strong>The recovery link expired or does not open.</strong><p>Request a new email from the app and open only the latest link on the same iPhone. Do not share the link or any code.</p></div>
+  <div class="step"><strong>I do not receive reminders.</strong><p>Enable the reminder from the plant and confirm that iOS allows notifications for Rocío. The app does not request permission until you take that action.</p></div>
+  <div class="step"><strong>The scanner is wrong.</strong><p>Use natural light, focus on one open flower, and review the candidates before changing care. Plant.id and the local fallback are assistive, not definitive.</p></div>
+  <div class="step"><strong>The web demo does not synchronize.</strong><p>This is expected: the demo does not create accounts or use Supabase. Export your data before clearing browser storage.</p></div>
 
-  <h2>Enviar una solicitud</h2>
-  <p>Reporta errores, solicitudes de privacidad o problemas de acceso mediante <a href="https://github.com/juliosuas/rocio/issues/new">GitHub Issues</a>. No incluyas fotos, direcciones ni otra información personal en una solicitud pública.</p>
+  <h2>Send a request</h2>
+  <p>Report bugs, privacy requests, or access problems through <a href="https://github.com/juliosuas/rocio/issues/new">GitHub Issues</a>. Include version 1.0 (build 1), your iPhone model, and iOS version, but do not include email addresses, photos, recovery links, tokens, street addresses, or other personal information.</p>
 
-  <h2>Privacidad</h2>
-  <p>Consulta la <a href="privacy.html">política de privacidad</a> para conocer la sincronización, el uso de Plant.id, la analítica opcional y la lista de espera.</p>
+  <h2>Privacy</h2>
+  <p>Read the <a href="privacy.html">privacy policy</a> for details about synchronization, Plant.id processing, optional analytics, and your data controls.</p>
 </body>
 </html>

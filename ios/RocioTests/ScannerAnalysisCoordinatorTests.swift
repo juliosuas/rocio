@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import Rocio
 
 @MainActor
@@ -38,6 +39,113 @@ final class ScannerAnalysisCoordinatorTests: XCTestCase {
         XCTAssertFalse(coordinator.isProcessing)
     }
 
+    func testPickerDataIsDownsampledBeforeScannerStateRetainsIt() async throws {
+        let source = image(width: 1_200, height: 600, color: .systemPink)
+        let data = try XCTUnwrap(source.jpegData(compressionQuality: 0.9))
+
+        let preparedImage = await ScannerImageProcessor().prepare(
+            data: data,
+            maximumPixelDimension: 320
+        )
+        let prepared = try XCTUnwrap(preparedImage)
+        let dimensions = ScannerImageProcessor.pixelDimensions(of: prepared)
+
+        XCTAssertLessThanOrEqual(max(dimensions.width, dimensions.height), 320)
+        XCTAssertEqual(dimensions.width / dimensions.height, 2, accuracy: 0.03)
+        XCTAssertEqual(prepared.imageOrientation, .up)
+    }
+
+    func testCameraImageIsDownsampledWithoutLosingItsOrientation() async throws {
+        let rendered = image(width: 1_200, height: 600, color: .systemGreen)
+        let cgImage = try XCTUnwrap(rendered.cgImage)
+        let cameraImage = UIImage(cgImage: cgImage, scale: 1, orientation: .right)
+
+        let preparedImage = await ScannerImageProcessor().prepare(
+            image: cameraImage,
+            maximumPixelDimension: 300
+        )
+        let prepared = try XCTUnwrap(preparedImage)
+        let dimensions = ScannerImageProcessor.pixelDimensions(of: prepared)
+
+        XCTAssertLessThanOrEqual(max(dimensions.width, dimensions.height), 300)
+        XCTAssertEqual(prepared.imageOrientation, .right)
+    }
+
+    func testOnDeviceChoiceProducesLocalResultWithoutAnAuthenticatedSession() async throws {
+        let source = image(width: 240, height: 240, color: .systemRed)
+        let sessionStore = SessionStore(configuration: nil)
+
+        let identification = await HybridFlowerIdentifier().identify(
+            image: source,
+            destination: .onDevice,
+            sessionStore: sessionStore
+        )
+        let result = try XCTUnwrap(identification)
+
+        XCTAssertEqual(result.provider, .onDevice)
+        XCTAssertFalse(result.candidates.isEmpty)
+        XCTAssertNil(result.remainingCloudScans)
+    }
+
+    func testCloudChoiceUsesFallbackWhenCloudSessionIsUnavailable() async throws {
+        let source = image(width: 240, height: 240, color: .systemPurple)
+        let sessionStore = SessionStore(configuration: nil)
+
+        let identification = await HybridFlowerIdentifier().identify(
+            image: source,
+            destination: .cloud,
+            sessionStore: sessionStore
+        )
+        let result = try XCTUnwrap(identification)
+
+        XCTAssertEqual(result.provider, .onDeviceFallback)
+    }
+
+    func testEveryPreparedPhotoCreatesANewConsentDecision() {
+        let first = image(width: 120, height: 120, color: .systemPink)
+        let second = image(width: 120, height: 120, color: .systemBlue)
+        var consent = ScannerPhotoConsentState()
+
+        consent.begin(first)
+        XCTAssertTrue(consent.isPresented)
+        XCTAssertNotNil(consent.takeImage())
+        XCTAssertFalse(consent.isPresented)
+
+        consent.begin(second)
+        XCTAssertTrue(consent.isPresented)
+        consent.discard()
+        XCTAssertFalse(consent.isPresented)
+    }
+
+    func testNewPreparationOrCancelInvalidatesEveryOlderImageGeneration() {
+        var generations = ScannerImagePreparationGeneration()
+
+        let slowPhoto = generations.begin()
+        let replacementPhoto = generations.begin()
+
+        XCTAssertFalse(generations.isCurrent(slowPhoto))
+        XCTAssertTrue(generations.isCurrent(replacementPhoto))
+
+        _ = generations.begin() // Cancel/discard uses the same invalidation boundary.
+
+        XCTAssertFalse(generations.isCurrent(replacementPhoto))
+    }
+
+    func testPickerLoadCompletionClearsOnlyItsSelectionAndAllowsTheSameAssetAgain() {
+        var selection = ScannerPhotoPickerSelectionState<String>()
+        selection.item = "first-photo"
+
+        selection.item = "replacement-photo"
+        XCTAssertFalse(selection.clearAfterLoading("first-photo"))
+        XCTAssertEqual(selection.item, "replacement-photo")
+
+        XCTAssertTrue(selection.clearAfterLoading("replacement-photo"))
+        XCTAssertNil(selection.item)
+
+        selection.item = "replacement-photo"
+        XCTAssertEqual(selection.item, "replacement-photo")
+    }
+
     private func result(flowerID: String) -> IdentificationResult {
         let flower = FlowerCatalog.flower(id: flowerID)!
         return IdentificationResult(
@@ -46,5 +154,17 @@ final class ScannerAnalysisCoordinatorTests: XCTestCase {
             candidates: [],
             isUncertain: false
         )
+    }
+
+    private func image(width: CGFloat, height: CGFloat, color: UIColor) -> UIImage {
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        return UIGraphicsImageRenderer(
+            size: CGSize(width: width, height: height),
+            format: format
+        ).image { context in
+            color.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        }
     }
 }

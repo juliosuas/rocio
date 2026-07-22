@@ -1,22 +1,23 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-07-20
+Date: 2026-07-21
 
 This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, CI, a locally verified unsigned simulator build, passing local simulator unit tests, and an isolated Debug-only local demo. The remaining release path is backend deployment, production credentials, real-device permission smoke, signing, screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 115 passing integrated simulator tests, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The first-plant-to-first-care loop, per-photo scanner choice, and password-recovery client are implemented locally. The remaining release path is integrating the client PR chain, applying the pending deletion migration, configuring and smoke-testing password-recovery delivery, authenticated two-session and real-device permission smoke, paid distribution signing, screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
 1. Real-device permission smoke is not locally verified on this machine.
-   - Full Xcode 26.3 is selected; the unsigned simulator build and iPhone 17 simulator tests passed locally on 2026-07-20.
+   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 115/115 iPhone 17 simulator tests passed on 2026-07-22 with iOS 26.3.1. Re-run these gates from the exact release commit.
    - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
    - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
-2. Signing and App Store Connect are not configured.
-   - Set Apple Developer Team, confirm bundle id `com.juliosuas.rocio`, create the App Store Connect app record, and produce an archive.
+2. Development signing works locally; distribution signing and App Store Connect are not configured.
+   - A Personal Team Debug build for bundle id `com.juliosuas.rocio` and team `67QTYANL3F` installed and launched successfully after the developer profile was trusted in Settings. Its provisioning profile expires on 2026-07-28.
+   - The project-level `DEVELOPMENT_TEAM` remains blank. Paid Apple Developer Program membership, a distribution team, the App Store Connect app record, and a signed distribution archive are required only when TestFlight is the immediate next step.
 
 3. Privacy materials need final App Store Connect entry, not first publication.
    - App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md`.
@@ -30,19 +31,19 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Su
    - Scanner UX must keep uncertainty visible.
    - Review notes must explain that identification is assistive, not guaranteed.
 
-5. Reminder reliability needs device testing.
-   - Native local notifications exist, but permission flow and scheduled delivery must be tested on a real simulator/device before TestFlight.
+5. Reminder reliability needs physical-device testing.
+   - Native local notifications exist, but permission flow and scheduled delivery must be tested on a physical iPhone before TestFlight.
 
 6. Cloud deployment is partially complete.
-   - The foundation migration, six RLS-protected tables, production public client configuration, and `identify-flower` v5 are active remotely.
-   - Deploy `20260721000100_preserve_garden_deletions` only after its client PRs are integrated, then verify two-account delete-wins/reset convergence, quota, analytics opt-out, and account deletion against production.
+   - The read-only production diagnostic on 2026-07-21 confirmed the foundation migration, six RLS-protected tables, public client configuration, and `identify-flower` v5. Revalidate this remote state from the exact release commit before deployment.
+   - Apply `20260721000100_preserve_garden_deletions` only after its client PRs are integrated, then verify two-account delete-wins/reset convergence, quota, analytics opt-out, and account deletion against production.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
    - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
-8. QA is still too narrow.
-   - Existing classifier harness is good. iOS CI exists for build, local simulator unit tests pass, and a trusted simulator smoke covers core Debug demo screens; real-device permission smoke is still required before submission.
+8. QA must finish on hardware and production cloud state.
+   - Classifier, release, App Store, security, unsigned Release build, and 115/115 simulator tests pass locally on the integrated tree as of 2026-07-22. A verified simulator smoke covers core Debug demo screens and the signed app now launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
 
 ## Garry Tan Tooling Context
 
@@ -144,12 +145,15 @@ Acceptance criteria:
 
 ## Current Smallest Shippable PR
 
-Finish active garden convergence:
+Ship `Rocio Beta 0.1 — first plant to first care` on top of the locally completed cloud client and migration hardening. The matching migration remains unapplied in production:
 
-- Run the complete flush/readback/reconciliation path after every queued mutation.
-- Pull the authoritative garden when the app returns to the foreground.
-- Prevent cancelled or cross-account work from applying a stale snapshot.
-- Keep valid authentication usable when garden REST is offline or awaiting migration, while requiring a causally observed current-session epoch before any garden write.
-- Revoke only the current device on sign-out and publish the local signed-out state without waiting for the remote request.
-- Preserve the conflict timestamp of watering logged through Siri/App Intents.
-- Cover server no-op/tombstone readback, foreground deletion, handshake recovery, preflight/reset races, inherited/current mixed queues, relaunch-safe epoch provenance, and sign-out cancellation with deterministic tests.
+- Upload a first plant created during the authenticated epoch handshake without requiring a second edit.
+- Move directly to My Garden after adding a plant and show cloud sync state beside the action that created it.
+- Offer watering reminders in context, while requesting iOS permission only after an explicit tap.
+- Confirm the first watering immediately in the garden UI.
+- Ask for cloud-photo consent for every scan, preserve an on-device-only choice, and downsample large photos before retaining or analyzing them.
+- Require confirmation before the irreversible removal of one plant.
+- Report garden deletion as cloud-confirmed only after the reset RPC and authoritative reconciliation succeed; otherwise keep a visible pending state.
+- Include the locally integrated PKCE password-recovery client, while keeping it externally blocked until the callback allowlist, stable HTTPS Site URL, custom SMTP, and a real email-to-app password-change smoke test are complete.
+
+Landing order is fixed: merge PR 18, retarget and merge PR 19, land this beta critical-path cut, then apply migration `20260721000100` exactly once and run the authenticated two-session smoke. Do not deploy the migration ahead of the matching client stack.

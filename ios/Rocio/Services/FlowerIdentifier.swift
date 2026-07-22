@@ -1,6 +1,7 @@
+import ImageIO
 import UIKit
 
-struct IdentificationResult: Identifiable, Equatable {
+struct IdentificationResult: Identifiable, Equatable, Sendable {
     let id = UUID()
     let flower: Flower
     let confidence: Double
@@ -12,7 +13,7 @@ struct IdentificationResult: Identifiable, Equatable {
     let externalScientificName: String?
     let externalCandidates: [ExternalCandidate]
 
-    struct ExternalCandidate: Identifiable, Equatable {
+    struct ExternalCandidate: Identifiable, Equatable, Sendable {
         let id: String
         let name: String
         let scientificName: String
@@ -45,7 +46,7 @@ struct IdentificationResult: Identifiable, Equatable {
     var displayScientificName: String { externalScientificName ?? flower.scientific }
     var usesExternalSuggestion: Bool { externalName != nil }
 
-    struct Candidate: Identifiable, Equatable {
+    struct Candidate: Identifiable, Equatable, Sendable {
         let id: String
         let flower: Flower
         let confidence: Double
@@ -56,7 +57,122 @@ struct IdentificationResult: Identifiable, Equatable {
     }
 }
 
-enum IdentificationProvider: Equatable {
+struct ScannerImageProcessor {
+    static let maximumPixelDimension = 1_600
+
+    func prepare(
+        data: Data,
+        maximumPixelDimension: Int = Self.maximumPixelDimension
+    ) async -> UIImage? {
+        guard maximumPixelDimension > 0 else { return nil }
+        let task = Task.detached(priority: .userInitiated) {
+            autoreleasepool {
+                Self.downsampledImage(
+                    data: data,
+                    maximumPixelDimension: maximumPixelDimension
+                ).map(PreparedImage.init)
+            }
+        }
+        return await withTaskCancellationHandler {
+            await task.value?.image
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    func prepare(
+        image: UIImage,
+        maximumPixelDimension: Int = Self.maximumPixelDimension
+    ) async -> UIImage? {
+        guard maximumPixelDimension > 0 else { return nil }
+        let source = PreparedImage(image)
+        let task = Task.detached(priority: .userInitiated) {
+            autoreleasepool {
+                Self.downsampledImage(
+                    image: source.image,
+                    maximumPixelDimension: maximumPixelDimension
+                ).map(PreparedImage.init)
+            }
+        }
+        return await withTaskCancellationHandler {
+            await task.value?.image
+        } onCancel: {
+            task.cancel()
+        }
+    }
+
+    static func pixelDimensions(of image: UIImage) -> CGSize {
+        if let cgImage = image.cgImage {
+            return CGSize(width: cgImage.width, height: cgImage.height)
+        }
+        return CGSize(
+            width: image.size.width * image.scale,
+            height: image.size.height * image.scale
+        )
+    }
+
+    private static func downsampledImage(
+        data: Data,
+        maximumPixelDimension: Int
+    ) -> UIImage? {
+        guard !Task.isCancelled,
+              let source = CGImageSourceCreateWithData(data as CFData, [
+                  kCGImageSourceShouldCache: false,
+              ] as CFDictionary) else { return nil }
+        let options = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: maximumPixelDimension,
+            kCGImageSourceShouldCacheImmediately: true,
+        ] as CFDictionary
+        guard !Task.isCancelled,
+              let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, options) else {
+            return nil
+        }
+        return UIImage(cgImage: thumbnail, scale: 1, orientation: .up)
+    }
+
+    private static func downsampledImage(
+        image: UIImage,
+        maximumPixelDimension: Int
+    ) -> UIImage? {
+        guard !Task.isCancelled, let source = image.cgImage else { return nil }
+        let largestDimension = max(source.width, source.height)
+        guard largestDimension > maximumPixelDimension else { return image }
+
+        let scale = Double(maximumPixelDimension) / Double(largestDimension)
+        let width = max(1, Int((Double(source.width) * scale).rounded()))
+        let height = max(1, Int((Double(source.height) * scale).rounded()))
+        let bytesPerPixel = 4
+        guard let context = CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * bytesPerPixel,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else { return nil }
+        context.interpolationQuality = .high
+        context.draw(source, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard !Task.isCancelled, let thumbnail = context.makeImage() else { return nil }
+        return UIImage(
+            cgImage: thumbnail,
+            scale: 1,
+            orientation: image.imageOrientation
+        )
+    }
+
+    private final class PreparedImage: @unchecked Sendable {
+        let image: UIImage
+
+        init(_ image: UIImage) {
+            self.image = image
+        }
+    }
+}
+
+enum IdentificationProvider: Equatable, Sendable {
     case cloud
     case onDevice
     case onDeviceFallback
@@ -70,7 +186,12 @@ enum IdentificationProvider: Equatable {
     }
 }
 
-enum IdentificationConfidenceBand: String, Equatable {
+enum ScannerAnalysisDestination: Equatable, Sendable {
+    case cloud
+    case onDevice
+}
+
+enum IdentificationConfidenceBand: String, Equatable, Sendable {
     case experimental
     case possible
     case probable
@@ -107,7 +228,12 @@ enum IdentificationConfidenceBand: String, Equatable {
 
 struct FlowerIdentifier {
     func identify(image: UIImage, catalog: [Flower] = FlowerCatalog.all) -> IdentificationResult? {
-        guard let signature = ImageColorSignature(image: image) else { return nil }
+        guard let cgImage = image.cgImage else { return nil }
+        return identify(cgImage: cgImage, catalog: catalog)
+    }
+
+    func identify(cgImage: CGImage, catalog: [Flower] = FlowerCatalog.all) -> IdentificationResult? {
+        guard !Task.isCancelled, let signature = ImageColorSignature(cgImage: cgImage) else { return nil }
         let ranked = catalog.map { flower -> IdentificationResult.Candidate in
             let score = score(signature, against: flower.colorProfile)
             return .init(id: flower.id, flower: flower, confidence: min(96, max(15, score * 100)))
@@ -146,17 +272,60 @@ struct FlowerIdentifier {
     }
 }
 
-@MainActor
-struct HybridFlowerIdentifier {
-    private let local = FlowerIdentifier()
+struct OnDeviceFlowerIdentifier {
+    func identify(image: UIImage) async -> IdentificationResult? {
+        guard let cgImage = image.cgImage else { return nil }
+        let source = SourceImage(cgImage)
+        let task = Task.detached(priority: .userInitiated) {
+            FlowerIdentifier().identify(cgImage: source.cgImage)
+        }
+        return await withTaskCancellationHandler {
+            await task.value
+        } onCancel: {
+            task.cancel()
+        }
+    }
 
+    private final class SourceImage: @unchecked Sendable {
+        let cgImage: CGImage
+
+        init(_ cgImage: CGImage) {
+            self.cgImage = cgImage
+        }
+    }
+}
+
+struct HybridFlowerIdentifier {
+    private let local = OnDeviceFlowerIdentifier()
+
+    func identifyOnDevice(image: UIImage) async -> IdentificationResult? {
+        await local.identify(image: image)
+    }
+
+    @MainActor
+    func identify(
+        image: UIImage,
+        destination: ScannerAnalysisDestination,
+        sessionStore: SessionStore
+    ) async -> IdentificationResult? {
+        switch destination {
+        case .cloud:
+            await identify(image: image, sessionStore: sessionStore)
+        case .onDevice:
+            await identifyOnDevice(image: image)
+        }
+    }
+
+    @MainActor
     func identify(image: UIImage, sessionStore: SessionStore) async -> IdentificationResult? {
-        let localResult = local.identify(image: image)
+        let localTask = Task { await local.identify(image: image) }
+        defer { localTask.cancel() }
         if sessionStore.isDemoMode {
-            return localResult
+            return await localTask.value
         }
         do {
             let remote = try await sessionStore.identify(image: image)
+            let localResult = await localTask.value
             let candidates = matchedCandidates(remote.suggestions)
             guard let best = candidates.first else {
                 guard let result = localResult, let top = remote.suggestions.first else { return localResult }
@@ -182,6 +351,7 @@ struct HybridFlowerIdentifier {
                 externalCandidates: externalCandidates(remote.suggestions)
             )
         } catch {
+            let localResult = await localTask.value
             return localResult.map { result in
                 IdentificationResult(
                     flower: result.flower,
@@ -249,8 +419,7 @@ private struct ImageColorSignature {
     let purpleRatio: Double
     let blueRatio: Double
 
-    init?(image: UIImage) {
-        guard let cgImage = image.cgImage else { return nil }
+    init?(cgImage: CGImage) {
         let size = 72
         let bytesPerPixel = 4
         let bytesPerRow = size * bytesPerPixel
@@ -284,14 +453,7 @@ private struct ImageColorSignature {
             let g = CGFloat(rawData[offset + 1]) / 255.0
             let b = CGFloat(rawData[offset + 2]) / 255.0
 
-            var hue: CGFloat = 0
-            var saturation: CGFloat = 0
-            var brightness: CGFloat = 0
-            UIColor(red: r, green: g, blue: b, alpha: 1).getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: nil)
-
-            let h = Double(hue * 360)
-            let s = Double(saturation)
-            let v = Double(brightness)
+            let (h, s, v) = Self.hsv(red: Double(r), green: Double(g), blue: Double(b))
 
             satTotal += s
             brightTotal += v
@@ -332,5 +494,23 @@ private struct ImageColorSignature {
         self.redRatio = red / denom
         self.purpleRatio = purple / denom
         self.blueRatio = blue / denom
+    }
+
+    private static func hsv(red: Double, green: Double, blue: Double) -> (Double, Double, Double) {
+        let maximum = max(red, max(green, blue))
+        let minimum = min(red, min(green, blue))
+        let delta = maximum - minimum
+        let saturation = maximum == 0 ? 0 : delta / maximum
+        guard delta > 0 else { return (0, saturation, maximum) }
+
+        let hue: Double
+        if maximum == red {
+            hue = 60 * ((green - blue) / delta).truncatingRemainder(dividingBy: 6)
+        } else if maximum == green {
+            hue = 60 * (((blue - red) / delta) + 2)
+        } else {
+            hue = 60 * (((red - green) / delta) + 4)
+        }
+        return (hue < 0 ? hue + 360 : hue, saturation, maximum)
     }
 }

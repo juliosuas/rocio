@@ -46,9 +46,15 @@ if (invalidNames.length || duplicateVersions.length) {
   process.exit(1);
 }
 
+const foundationMigration = '20260709000100_rocio_cloud_foundation.sql';
+const upgradeFixture = path.join(root, 'qa', 'cloud-ai-security-postgres-upgrade-fixture.sql');
+const migrationFiles = migrations.flatMap((file) => {
+  const migration = path.join(migrationsDirectory, file);
+  return file === foundationMigration ? [migration, upgradeFixture] : [migration];
+});
 const files = [
   path.join(root, 'qa', 'cloud-ai-security-postgres-bootstrap.sql'),
-  ...migrations.map((file) => path.join(migrationsDirectory, file)),
+  ...migrationFiles,
   path.join(root, 'qa', 'cloud-ai-security-postgres.test.sql'),
 ];
 const args = [

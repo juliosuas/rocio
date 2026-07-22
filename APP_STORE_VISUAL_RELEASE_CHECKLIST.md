@@ -8,11 +8,21 @@ Use this before TestFlight screenshots and before App Review submission.
 
 Capture five iPhone screenshots from the native app:
 
-1. Catalogo: filters visible, real flower photos, one flower already marked in garden.
-2. Mi Jardin: summary card, at least two saved flowers, one watering action visible.
-3. Calendario: weekly watering schedule with saved plants.
+1. Catalog: filters visible, real flower photos, one flower already marked in the garden.
+2. Garden: summary card, at least two saved flowers, one watering action visible.
+3. Calendar: weekly watering schedule with saved plants.
 4. Scanner: selected flower image, confidence band, candidates, experimental copy.
-5. Ajustes: reminders, local privacy copy, export data, delete local data.
+5. Settings: reminders, local privacy copy, export data, delete local data.
+
+Current real-build documentation evidence, captured from the running iPhone 17 simulator on iOS 26.3 on 2026-07-22:
+
+- `docs/screenshots/ios/catalog.png`
+- `docs/screenshots/ios/garden.png`
+- `docs/screenshots/ios/calendar.png`
+- `docs/screenshots/ios/scanner.png`
+- `docs/screenshots/ios/settings.png`
+
+These are raw app screenshots, not mockups. Re-capture the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
 
 ## Visual Quality Gate
 
@@ -33,5 +43,5 @@ Capture five iPhone screenshots from the native app:
 ## Copy Gate
 
 - Capture the primary App Store screenshot set in English, then verify the Spanish localized set for the same layouts.
-- Avoid "AI precisa", "diagnostico", "garantizado", or "identificacion perfecta".
-- Prefer "candidatos", "scanner experimental", "jardín sincronizado", "cuenta segura", and "recordatorios locales".
+- Avoid "precise AI", "diagnosis", "guaranteed", or "perfect identification".
+- Prefer "candidates", "experimental scanner", "synchronized garden", "secure account", and "local reminders".

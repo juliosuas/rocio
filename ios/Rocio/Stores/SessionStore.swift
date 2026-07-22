@@ -7,26 +7,82 @@ private struct GardenPreflightAuthorization {
     let epoch: UUID
 }
 
+private struct PasswordRecoveryValidationOperation {
+    let id: UUID
+    let callback: PasswordRecoveryCallback
+    let generation: UInt
+    let activeRecoverySession: AuthSession?
+    let task: Task<AuthSession, Error>
+}
+
+private struct ValidatedPasswordRecovery {
+    let id: UUID
+    let callback: PasswordRecoveryCallback
+    var session: AuthSession
+}
+
+enum GardenCloudSyncStatus: Equatable {
+    case local
+    case syncing
+    case synced
+    case pending
+    case demo
+
+    var message: String {
+        switch self {
+        case .local:
+            L10n.text("garden.sync.local", fallback: "Saved on this device")
+        case .syncing:
+            L10n.text("cloud.syncing", fallback: "Syncing")
+        case .synced:
+            L10n.text("cloud.synced", fallback: "Synced")
+        case .pending:
+            L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        case .demo:
+            L10n.text("demo.local.only", fallback: "Demo - local only")
+        }
+    }
+}
+
 @MainActor
 final class SessionStore: ObservableObject {
     enum State: Equatable {
         case checking
         case unconfigured
         case signedOut
+        case recoveringPassword(AuthSession)
+        case passwordUpdated(AuthSession)
+        case passwordUpdatedRequiresSignIn
         case signedIn(AuthSession)
 #if DEBUG
         case demo
 #endif
     }
 
+    enum PasswordResetRequestState: Equatable {
+        case idle
+        case sending
+        case sent
+        case failed(String)
+    }
+
     @Published private(set) var state: State = .checking
-    @Published private(set) var syncMessage = ""
+    @Published private(set) var gardenSyncStatus: GardenCloudSyncStatus = .local
+    @Published private(set) var passwordResetRequestState: PasswordResetRequestState = .idle
     @Published var errorMessage: String?
+
+    var syncMessage: String { gardenSyncStatus.message }
 
     private let client: RocioBackendClient?
     private let sessionPersistence: SessionPersistence
     private let refreshSession: (AuthSession) async throws -> AuthSession
+    private let passwordRecoveryActions: PasswordRecoveryActions
     private var hasBootstrapped = false
+    private var passwordResetRequestGeneration: UInt = 0
+    private var recoveryReturnState: RecoveryReturnState?
+    private var passwordRecoveryValidationOperation: PasswordRecoveryValidationOperation?
+    private var validatedPasswordRecovery: ValidatedPasswordRecovery?
+    private var isPasswordUpdateInProgress = false
     private var isEndingSession = false
     private var sessionBeingPrepared: AuthSession?
     private var sessionLifecycleGeneration: UInt = 0
@@ -47,17 +103,23 @@ final class SessionStore: ObservableObject {
             guard let client else { throw BackendError.unavailable }
             return try await client.refresh(session)
         }
+        passwordRecoveryActions = .live(client: client)
     }
 
     init(
         configuration: BackendConfiguration?,
+        backendClient: RocioBackendClient? = nil,
         sessionPersistence: SessionPersistence,
         refreshSession: @escaping (AuthSession) async throws -> AuthSession,
+        passwordRecoveryActions: PasswordRecoveryActions? = nil,
         urlSession: URLSession = .shared
     ) {
-        client = configuration.map { RocioBackendClient(configuration: $0, urlSession: urlSession) }
+        let client = backendClient
+            ?? configuration.map { RocioBackendClient(configuration: $0, urlSession: urlSession) }
+        self.client = client
         self.sessionPersistence = sessionPersistence
         self.refreshSession = refreshSession
+        self.passwordRecoveryActions = passwordRecoveryActions ?? .live(client: client)
     }
 
     var session: AuthSession? {
@@ -72,6 +134,11 @@ final class SessionStore: ObservableObject {
     var isGardenCloudReady: Bool {
         guard let userID = session?.user.id else { return false }
         return gardenHandshakeUserID == userID
+    }
+
+    var hasPendingGardenReset: Bool {
+        guard let userID = session?.user.id else { return false }
+        return hasPendingGardenReset(for: userID)
     }
 
     var isDemoMode: Bool {
@@ -114,7 +181,7 @@ final class SessionStore: ObservableObject {
                 state = .signedOut
             } else {
                 state = .signedIn(saved)
-                syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+                gardenSyncStatus = .pending
             }
         }
     }
@@ -132,15 +199,231 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    func preparePasswordResetRequest() {
+        passwordResetRequestGeneration &+= 1
+        passwordResetRequestState = .idle
+    }
+
+    func requestPasswordReset(email: String) async {
+        passwordResetRequestGeneration &+= 1
+        let generation = passwordResetRequestGeneration
+        let normalizedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard AuthInputValidator.isValidEmail(normalizedEmail) else {
+            passwordResetRequestState = .failed(
+                L10n.text("error.auth.email_invalid", fallback: "Enter a valid email address.")
+            )
+            return
+        }
+
+        passwordResetRequestState = .sending
+        do {
+            try await passwordRecoveryActions.requestReset(normalizedEmail)
+            guard generation == passwordResetRequestGeneration else { return }
+            passwordResetRequestState = .sent
+        } catch {
+            guard generation == passwordResetRequestGeneration else { return }
+            passwordResetRequestState = .failed(passwordRecoveryMessage(for: error, requestingEmail: true))
+        }
+    }
+
+    func handlePasswordRecoveryURL(_ url: URL, gardenStore: GardenStore) async {
+        guard PasswordRecoveryCallback.matches(url) else { return }
+        await waitForSessionEnd()
+        guard !Task.isCancelled else { return }
+
+        let callback: PasswordRecoveryCallback
+        do {
+            callback = try PasswordRecoveryCallback.parse(url)
+        } catch {
+            passwordRecoveryValidationOperation = nil
+            guard let transition = await beginPasswordRecoveryTransition() else { return }
+            await finishPasswordRecoveryFailure(
+                error,
+                activeRecoverySession: transition.activeRecoverySession,
+                generation: transition.generation,
+                gardenStore: gardenStore
+            )
+            return
+        }
+
+        if let operation = passwordRecoveryValidationOperation,
+           operation.callback == callback {
+            // iOS can deliver the same custom URL more than once while the app
+            // is activating. Share the single-use PKCE exchange instead of
+            // racing two requests and discarding whichever one consumed it.
+            await finishPasswordRecoveryValidation(operation, gardenStore: gardenStore)
+            return
+        }
+
+        if let validatedRecovery = validatedPasswordRecovery,
+           validatedRecovery.callback == callback {
+            // Supabase authorization codes are single-use. A later delivery of
+            // the same callback should reuse its validated in-memory session,
+            // including any refresh-token rotation completed since validation.
+            if case .recoveringPassword = state {
+                errorMessage = nil
+                state = .recoveringPassword(validatedRecovery.session)
+                return
+            }
+            passwordRecoveryValidationOperation = nil
+            guard let transition = await beginPasswordRecoveryTransition() else { return }
+            guard
+                isCurrentSessionLifecycle(transition.generation),
+                let currentRecovery = validatedPasswordRecovery,
+                currentRecovery.id == validatedRecovery.id
+            else { return }
+            state = .recoveringPassword(currentRecovery.session)
+            return
+        }
+
+        // A different callback remains newest-wins. Its lifecycle invalidates
+        // the older result even if that network request cannot be cancelled.
+        passwordRecoveryValidationOperation = nil
+        guard let transition = await beginPasswordRecoveryTransition() else { return }
+        let task = Task { try await passwordRecoveryActions.validate(callback) }
+        let operation = PasswordRecoveryValidationOperation(
+            id: UUID(),
+            callback: callback,
+            generation: transition.generation,
+            activeRecoverySession: transition.activeRecoverySession,
+            task: task
+        )
+        passwordRecoveryValidationOperation = operation
+        await finishPasswordRecoveryValidation(operation, gardenStore: gardenStore)
+    }
+
+    func updateRecoveredPassword(_ password: String, gardenStore: GardenStore) async {
+        guard case let .recoveringPassword(publishedRecoverySession) = state else { return }
+        guard !isPasswordUpdateInProgress else { return }
+        isPasswordUpdateInProgress = true
+        defer { isPasswordUpdateInProgress = false }
+        errorMessage = nil
+        let generation = sessionLifecycleGeneration
+        let recoveryLineageID: UUID?
+        let recoverySession: AuthSession
+        if let validatedRecovery = validatedPasswordRecovery,
+           validatedRecovery.session.user.id == publishedRecoverySession.user.id {
+            recoveryLineageID = validatedRecovery.id
+            recoverySession = validatedRecovery.session
+        } else {
+            recoveryLineageID = nil
+            recoverySession = publishedRecoverySession
+        }
+
+        do {
+            let activeRecoverySession: AuthSession
+            if recoverySession.needsRefresh {
+                activeRecoverySession = try await refreshSession(recoverySession)
+            } else {
+                activeRecoverySession = recoverySession
+            }
+            if let recoveryLineageID {
+                updateValidatedPasswordRecoverySession(
+                    activeRecoverySession,
+                    lineageID: recoveryLineageID
+                )
+            }
+            guard isCurrentSessionLifecycle(generation) else { return }
+
+            // Recovery credentials stay memory-only until the password change
+            // succeeds. Keep a rotated refresh token in both the published
+            // state and its durable in-memory lineage so a callback race cannot
+            // make a retry reuse the already-consumed token.
+            state = .recoveringPassword(activeRecoverySession)
+
+            try await passwordRecoveryActions.updatePassword(password, activeRecoverySession)
+            guard isCurrentSessionLifecycle(generation) else { return }
+
+            let cancelledSyncTask = cancelGardenSyncTask()
+            _ = await cancelledSyncTask?.value
+            guard isCurrentSessionLifecycle(generation) else { return }
+
+            if recoveryReturnState?.userID != activeRecoverySession.user.id {
+#if DEBUG
+                if gardenStore.isDemoMode {
+                    gardenStore.endDemo()
+                }
+#endif
+                gardenStore.clearLocalCache()
+                UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
+                gardenSyncStatus = .local
+            }
+
+            do {
+                try sessionPersistence.save(activeRecoverySession)
+                // A later duplicate or invalid callback may restore only this
+                // newly persisted account, never the pre-recovery account.
+                clearValidatedPasswordRecovery(lineageID: recoveryLineageID)
+                recoveryReturnState = .signedIn(activeRecoverySession)
+                state = .passwordUpdated(activeRecoverySession)
+            } catch {
+                // The provider has already changed the password. Without a
+                // persisted replacement session, fail closed to avoid exposing
+                // a garden cache whose owner cannot be proven after relaunch.
+                sessionPersistence.clear()
+                gardenStore.clearLocalCache()
+                UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
+                gardenSyncStatus = .local
+                clearValidatedPasswordRecovery(lineageID: recoveryLineageID)
+                recoveryReturnState = client == nil ? .unconfigured : .signedOut
+                state = .passwordUpdatedRequiresSignIn
+            }
+        } catch {
+            guard isCurrentSessionLifecycle(generation) else { return }
+            errorMessage = passwordRecoveryMessage(for: error)
+        }
+    }
+
+    func completePasswordRecovery(gardenStore: GardenStore) async {
+        if state == .passwordUpdatedRequiresSignIn {
+            clearValidatedPasswordRecovery(lineageID: nil)
+            invalidateSessionLifecycle()
+            recoveryReturnState = nil
+            errorMessage = nil
+            gardenSyncStatus = .local
+            state = client == nil ? .unconfigured : .signedOut
+            return
+        }
+
+        guard case let .passwordUpdated(recoveredSession) = state else { return }
+        clearValidatedPasswordRecovery(lineageID: nil)
+        recoveryReturnState = nil
+        errorMessage = nil
+        let generation = beginSessionPreparation(recoveredSession)
+        guard let prepared = completeSessionPreparation(generation: generation) else { return }
+        state = .signedIn(prepared)
+        guard isCurrentSessionLifecycle(generation), !isEndingSession else { return }
+        await refreshGarden(gardenStore: gardenStore)
+        guard
+            isCurrentSessionLifecycle(generation),
+            !isEndingSession,
+            let activeSession = session
+        else { return }
+        if analyticsEnabled, let client {
+            await client.track(name: "password_recovery_completed", properties: [:], session: activeSession)
+        }
+    }
+
+    func cancelPasswordRecovery(gardenStore: GardenStore) async {
+        guard case .recoveringPassword = state else { return }
+        clearValidatedPasswordRecovery(lineageID: nil)
+        invalidateSessionLifecycle()
+        let generation = sessionLifecycleGeneration
+        errorMessage = nil
+        await restoreStateAfterRecovery(gardenStore: gardenStore, generation: generation)
+    }
+
     func signOut(gardenStore: GardenStore) async {
         guard !isEndingSession else { return }
         isEndingSession = true
         let sessionToSignOut = sessionForOperations
+        clearValidatedPasswordRecovery(lineageID: nil)
         invalidateSessionLifecycle()
         let cancelledSyncTask = cancelGardenSyncTask()
         sessionPersistence.clear()
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
         gardenStore.clearLocalCache()
+        gardenSyncStatus = .local
         state = client == nil ? .unconfigured : .signedOut
         _ = await cancelledSyncTask?.value
         if let client, let sessionToSignOut { await client.signOut(session: sessionToSignOut) }
@@ -160,6 +443,7 @@ final class SessionStore: ObservableObject {
             gardenStore.clearLocalCache()
             sessionPersistence.clear()
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
+            gardenSyncStatus = .local
             state = .signedOut
             finishEndingSession()
         } catch {
@@ -186,14 +470,14 @@ final class SessionStore: ObservableObject {
     func enterDemo(gardenStore: GardenStore) {
         cancelGardenSyncTask()
         errorMessage = nil
-        syncMessage = L10n.text("demo.local.only", fallback: "Demo - local only")
+        gardenSyncStatus = .demo
         gardenStore.beginDemo()
         state = .demo
     }
 
     func exitDemo(gardenStore: GardenStore) {
         gardenStore.endDemo()
-        syncMessage = ""
+        gardenSyncStatus = .local
         state = client == nil ? .unconfigured : .signedOut
     }
 #endif
@@ -201,7 +485,7 @@ final class SessionStore: ObservableObject {
     func enqueueGardenChange(_ change: GardenChange, gardenStore: GardenStore) {
         guard let session else { return }
         var pending = loadPendingChanges(userID: session.user.id)
-        let queuedChange = PendingCloudChange(
+        var queuedChange = PendingCloudChange(
             change,
             gardenEpoch: authorizedGardenEpoch(userID: session.user.id),
             lifecycleID: sessionLifecycleID
@@ -213,6 +497,17 @@ final class SessionStore: ObservableObject {
             pending = [queuedChange]
         } else {
             if let affectedPlantID = queuedChange.affectedPlantID {
+                // Edits made immediately after a new local plant must retain
+                // creation provenance when they collapse into one upsert.
+                // This is the only preflight mutation safe to authorize after
+                // observing a reset epoch because its UUID did not exist before.
+                if pending.contains(where: {
+                    $0.affectedPlantID == affectedPlantID &&
+                        $0.isCreation == true &&
+                        $0.lifecycleID == sessionLifecycleID
+                }) {
+                    queuedChange.isCreation = true
+                }
                 // Only the newest local intent for one UUID matters. This also
                 // lets a deliberate edit replace an older quarantined intent
                 // without disturbing conflicts for other plants.
@@ -245,13 +540,13 @@ final class SessionStore: ObservableObject {
     @discardableResult
     func waitForGardenSync() async -> Bool {
         var didRun = false
-        var allCompleted = true
+        var latestCompleted = false
         while let task = gardenSyncTask {
             didRun = true
-            allCompleted = await task.value && allCompleted
+            latestCompleted = await task.value
             guard !Task.isCancelled else { return false }
         }
-        return didRun && allCompleted
+        return didRun && latestCompleted && gardenSyncStatus == .synced
     }
 
     func identify(image: UIImage) async throws -> RemoteIdentificationResponse {
@@ -262,6 +557,200 @@ final class SessionStore: ObservableObject {
             await client.track(name: "flower_scan_completed", properties: ["provider": response.provider], session: active)
         }
         return response
+    }
+
+    private func currentRecoveryReturnState() -> RecoveryReturnState {
+        switch state {
+        case .unconfigured:
+            return .unconfigured
+        case .signedOut:
+            return .signedOut
+        case let .signedIn(session):
+            return .signedIn(session)
+        case .checking:
+            if let saved = sessionBeingPrepared ?? sessionPersistence.load() {
+                return .signedIn(saved)
+            }
+            return client == nil ? .unconfigured : .signedOut
+        case .recoveringPassword, .passwordUpdated, .passwordUpdatedRequiresSignIn:
+            return recoveryReturnState ?? (client == nil ? .unconfigured : .signedOut)
+#if DEBUG
+        case .demo:
+            return .demo
+#endif
+        }
+    }
+
+    private func beginPasswordRecoveryTransition() async -> (
+        activeRecoverySession: AuthSession?,
+        generation: UInt
+    )? {
+        let activeRecoverySession: AuthSession?
+        if let validatedRecovery = validatedPasswordRecovery {
+            activeRecoverySession = validatedRecovery.session
+        } else if case let .recoveringPassword(session) = state {
+            activeRecoverySession = session
+        } else {
+            activeRecoverySession = nil
+        }
+        if recoveryReturnState == nil {
+            recoveryReturnState = currentRecoveryReturnState()
+        }
+        invalidateSessionLifecycle()
+        let generation = sessionLifecycleGeneration
+        hasBootstrapped = true
+        errorMessage = nil
+        state = .checking
+
+        let cancelledSyncTask = cancelGardenSyncTask()
+        _ = await cancelledSyncTask?.value
+        guard isCurrentSessionLifecycle(generation) else { return nil }
+        return (activeRecoverySession, generation)
+    }
+
+    private func finishPasswordRecoveryValidation(
+        _ operation: PasswordRecoveryValidationOperation,
+        gardenStore: GardenStore
+    ) async {
+        let result = await operation.task.result
+        guard passwordRecoveryValidationOperation?.id == operation.id else { return }
+        // Only one waiter applies the shared result. A distinct callback clears
+        // this slot before beginning its own newest-wins lifecycle.
+        passwordRecoveryValidationOperation = nil
+        guard isCurrentSessionLifecycle(operation.generation) else { return }
+
+        switch result {
+        case let .success(recoverySession):
+            validatedPasswordRecovery = ValidatedPasswordRecovery(
+                id: UUID(),
+                callback: operation.callback,
+                session: recoverySession
+            )
+            state = .recoveringPassword(recoverySession)
+        case let .failure(error):
+            await finishPasswordRecoveryFailure(
+                error,
+                activeRecoverySession: validatedPasswordRecovery?.session
+                    ?? operation.activeRecoverySession,
+                generation: operation.generation,
+                gardenStore: gardenStore
+            )
+        }
+    }
+
+    private func updateValidatedPasswordRecoverySession(
+        _ session: AuthSession,
+        lineageID: UUID
+    ) {
+        guard var validatedRecovery = validatedPasswordRecovery,
+              validatedRecovery.id == lineageID,
+              validatedRecovery.session.user.id == session.user.id else { return }
+        validatedRecovery.session = session
+        validatedPasswordRecovery = validatedRecovery
+    }
+
+    private func clearValidatedPasswordRecovery(lineageID: UUID?) {
+        guard let lineageID else {
+            validatedPasswordRecovery = nil
+            return
+        }
+        guard validatedPasswordRecovery?.id == lineageID else { return }
+        validatedPasswordRecovery = nil
+    }
+
+    private func finishPasswordRecoveryFailure(
+        _ error: Error,
+        activeRecoverySession: AuthSession?,
+        generation: UInt,
+        gardenStore: GardenStore
+    ) async {
+        guard isCurrentSessionLifecycle(generation) else { return }
+        errorMessage = passwordRecoveryMessage(for: error)
+        if let activeRecoverySession {
+            // A recovery authorization code is single-use. If a duplicate or
+            // newer callback is invalid, keep the already validated memory-only
+            // recovery session instead of restoring the pre-recovery account.
+            state = .recoveringPassword(activeRecoverySession)
+        } else {
+            await restoreStateAfterRecovery(gardenStore: gardenStore, generation: generation)
+        }
+    }
+
+    private func restoreStateAfterRecovery(gardenStore: GardenStore, generation: UInt) async {
+        guard isCurrentSessionLifecycle(generation) else { return }
+        let destination = recoveryReturnState ?? (client == nil ? .unconfigured : .signedOut)
+        recoveryReturnState = nil
+
+        switch destination {
+        case .unconfigured:
+            gardenSyncStatus = .local
+            state = .unconfigured
+        case .signedOut:
+            gardenSyncStatus = .local
+            state = .signedOut
+        case let .signedIn(saved):
+            let restoreGeneration = beginSessionPreparation(saved)
+            do {
+                let active = try await activeSession(from: saved)
+                guard isCurrentSessionLifecycle(restoreGeneration) else { return }
+                sessionBeingPrepared = active
+                guard let prepared = completeSessionPreparation(generation: restoreGeneration) else { return }
+                state = .signedIn(prepared)
+                await refreshGarden(gardenStore: gardenStore)
+            } catch {
+                guard isCurrentSessionLifecycle(restoreGeneration) else { return }
+                if error.invalidatesSavedSession {
+                    invalidateSessionLifecycle()
+                    sessionPersistence.clear()
+                    gardenStore.clearLocalCache()
+                    gardenSyncStatus = .local
+                    state = .signedOut
+                } else {
+                    sessionBeingPrepared = saved
+                    guard let prepared = completeSessionPreparation(generation: restoreGeneration) else { return }
+                    state = .signedIn(prepared)
+                    gardenSyncStatus = .pending
+                }
+            }
+#if DEBUG
+        case .demo:
+            gardenSyncStatus = .demo
+            state = .demo
+#endif
+        }
+    }
+
+    private func passwordRecoveryMessage(for error: Error, requestingEmail: Bool = false) -> String {
+        if let backendError = error as? BackendError {
+            if case let .server(code, _) = backendError {
+                if [
+                    "http_429", "over_email_send_rate_limit", "email_rate_limit_exceeded",
+                    "over_request_rate_limit",
+                ].contains(code) {
+                    return L10n.text(
+                        "error.auth.recovery_rate",
+                        fallback: "Too many reset emails were requested. Wait a few minutes and try again."
+                    )
+                }
+                if !requestingEmail,
+                   [
+                       "http_401", "invalid_session", "session_expired", "otp_expired",
+                       "invalid_token", "bad_jwt", "token_expired", "bad_code_verifier",
+                       "flow_state_expired", "flow_state_not_found",
+                   ].contains(code) {
+                    return L10n.text(
+                        "error.auth.recovery_link",
+                        fallback: "This password reset link is invalid or expired. Request a new one."
+                    )
+                }
+            }
+            return backendError.errorDescription
+                ?? L10n.text("error.cloud.generic", fallback: "Rocio Cloud is temporarily unavailable. Try again.")
+        }
+        if error is URLError {
+            return L10n.text("error.network", fallback: "Check your internet connection and try again.")
+        }
+        return L10n.text("error.generic", fallback: "Something went wrong. Try again.")
     }
 
     private func authenticate(
@@ -318,7 +807,7 @@ final class SessionStore: ObservableObject {
         defer {
             isPreparingGardenSync = false
         }
-        syncMessage = L10n.text("cloud.syncing", fallback: "Syncing")
+        gardenSyncStatus = .syncing
         do {
             guard isCurrentSessionLifecycle(expectedLifecycleGeneration) else { throw CancellationError() }
             let session = try await activeSession(from: startingSession)
@@ -354,7 +843,7 @@ final class SessionStore: ObservableObject {
             }
 
             guard let initialMutationEpoch else {
-                syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+                gardenSyncStatus = .pending
                 return false
             }
 
@@ -363,6 +852,14 @@ final class SessionStore: ObservableObject {
             let eligibleChangeIDs = Set(pendingBeforeFlush.compactMap { change -> UUID? in
                 if startsWithIdempotentReset { return change.id }
                 if change.gardenEpoch == initialMutationEpoch { return change.id }
+                // A newly created UUID from this lifecycle is safe to authorize
+                // after the guarded preflight. Updates to existing local plants
+                // remain quarantined because they may predate a remote reset.
+                if change.isCreation == true,
+                   change.gardenEpoch == nil,
+                   change.lifecycleID == expectedLifecycleID {
+                    return change.id
+                }
                 if change.gardenEpoch == nil, canAdoptUnscopedPending { return change.id }
                 return nil
             })
@@ -387,7 +884,7 @@ final class SessionStore: ObservableObject {
                 lifecycleGeneration: expectedLifecycleGeneration,
                 eligibleChangeIDs: eligibleChangeIDs
             ) else {
-                syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+                gardenSyncStatus = .pending
                 return false
             }
             guard isCurrentSessionLifecycle(expectedLifecycleGeneration) else { throw CancellationError() }
@@ -463,13 +960,11 @@ final class SessionStore: ObservableObject {
             clearProvisionalGardenEpoch(userID: expectedUserID)
             gardenHandshakeUserID = expectedUserID
             let hasRemainingPending = !loadPendingChanges(userID: expectedUserID).isEmpty
-            syncMessage = hasRemainingPending
-                ? L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
-                : L10n.text("cloud.synced", fallback: "Synced")
+            gardenSyncStatus = hasRemainingPending ? .pending : .synced
             return !hasRemainingPending
         } catch {
             if isCurrentSessionLifecycle(expectedLifecycleGeneration) {
-                syncMessage = L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+                gardenSyncStatus = .pending
             }
             return false
         }
@@ -611,9 +1106,7 @@ final class SessionStore: ObservableObject {
         gardenSyncTask = nil
         let needsFollowUp = gardenSyncNeedsFollowUp
         gardenSyncNeedsFollowUp = false
-        syncMessage = completed
-            ? L10n.text("cloud.synced", fallback: "Synced")
-            : L10n.text("cloud.pending", fallback: "Saved on this device; cloud sync pending")
+        gardenSyncStatus = completed ? .synced : .pending
         guard
             needsFollowUp,
             let gardenStore,
@@ -698,6 +1191,10 @@ final class SessionStore: ObservableObject {
         return (try? JSONDecoder().decode([PendingCloudChange].self, from: data)) ?? []
     }
 
+    func hasPendingGardenReset(for userID: UUID) -> Bool {
+        loadPendingChanges(userID: userID).contains { $0.kind == .reset }
+    }
+
     private func savePendingChanges(_ changes: [PendingCloudChange], userID: UUID) {
         let key = pendingKey(userID)
         guard !changes.isEmpty else {
@@ -752,6 +1249,110 @@ final class SessionStore: ObservableObject {
 
     private func provisionalGardenEpochKey(_ userID: UUID) -> String {
         "rocio.cloud.garden-epoch.provisional.\(userID.uuidString.lowercased())"
+    }
+}
+
+private enum RecoveryReturnState {
+    case unconfigured
+    case signedOut
+    case signedIn(AuthSession)
+#if DEBUG
+    case demo
+#endif
+
+    var userID: UUID? {
+        guard case let .signedIn(session) = self else { return nil }
+        return session.user.id
+    }
+}
+
+struct PasswordRecoveryActions {
+    let requestReset: (String) async throws -> Void
+    let validate: (PasswordRecoveryCallback) async throws -> AuthSession
+    let updatePassword: (String, AuthSession) async throws -> Void
+
+    static func live(
+        client: RocioBackendClient?,
+        codeVerifierPersistence: PasswordRecoveryCodeVerifierPersistence = .keychain
+    ) -> PasswordRecoveryActions {
+        PasswordRecoveryActions(
+            requestReset: { email in
+                guard let client else { throw BackendError.unavailable }
+                let pkce = try PasswordRecoveryPKCE.generate()
+                let previousCodeVerifier = try codeVerifierPersistence.replace(pkce.codeVerifier)
+                do {
+                    try await client.requestPasswordReset(email: email, codeChallenge: pkce.codeChallenge)
+                } catch {
+                    // Roll back only when the provider definitively rejected the
+                    // request. A 5xx or transport failure may arrive after the
+                    // email was accepted, so its new verifier must stay current.
+                    if PasswordRecoveryActions.isDefinitiveResetRejection(error) {
+                        _ = try? codeVerifierPersistence.restorePreviousIfCurrent(
+                            pkce.codeVerifier,
+                            previousCodeVerifier
+                        )
+                    }
+                    throw error
+                }
+            },
+            validate: { callback in
+                guard let client else { throw BackendError.unavailable }
+                guard let codeVerifier = codeVerifierPersistence.load() else {
+                    throw BackendError.server(
+                        code: "recovery_link_invalid",
+                        message: "The password recovery link is invalid or expired."
+                    )
+                }
+                let session = try await client.recoverySession(
+                    from: callback,
+                    codeVerifier: codeVerifier
+                )
+                // Consumption is atomic with respect to a newer reset request:
+                // it clears only the verifier it validated, and records it so a
+                // later rollback cannot resurrect the single-use verifier.
+                codeVerifierPersistence.consume(codeVerifier)
+                return session
+            },
+            updatePassword: { password, session in
+                guard let client else { throw BackendError.unavailable }
+                try await client.updatePassword(password, session: session)
+            }
+        )
+    }
+
+    private static func isDefinitiveResetRejection(_ error: Error) -> Bool {
+        guard let backendError = error as? BackendError,
+              case let .server(code, _) = backendError else {
+            return false
+        }
+        if code.hasPrefix("http_"),
+           let status = Int(code.dropFirst("http_".count)) {
+            return (400..<500).contains(status)
+        }
+        return [
+            "bad_json",
+            "captcha_failed",
+            "email_address_invalid",
+            "email_address_not_authorized",
+            "email_rate_limit_exceeded",
+            "over_email_send_rate_limit",
+            "over_request_rate_limit",
+            "validation_failed",
+        ].contains(code)
+    }
+}
+
+enum AuthInputValidator {
+    static func isValidEmail(_ email: String) -> Bool {
+        let parts = email.split(separator: "@", omittingEmptySubsequences: false)
+        return parts.count == 2
+            && !parts[0].isEmpty
+            && parts[1].contains(".")
+            && !email.contains(where: { $0.isWhitespace })
+    }
+
+    static func isValidNewPassword(_ password: String, confirmation: String) -> Bool {
+        password.count >= 8 && password == confirmation
     }
 }
 
@@ -815,6 +1416,7 @@ struct PendingCloudChange: Codable {
     let occurredAt: Date?
     var gardenEpoch: UUID?
     let lifecycleID: UUID?
+    var isCreation: Bool?
 
     init(
         _ change: GardenChange,
@@ -825,21 +1427,30 @@ struct PendingCloudChange: Codable {
         self.gardenEpoch = gardenEpoch
         self.lifecycleID = lifecycleID
         switch change {
+        case let .create(plant):
+            kind = .upsert
+            self.plant = plant
+            plantID = nil
+            occurredAt = nil
+            isCreation = true
         case let .upsert(plant):
             kind = .upsert
             self.plant = plant
             plantID = nil
             occurredAt = nil
+            isCreation = false
         case let .delete(id, at: date):
             kind = .delete
             plant = nil
             plantID = id
             occurredAt = date
+            isCreation = nil
         case let .reset(at: date):
             kind = .reset
             plant = nil
             plantID = nil
             occurredAt = date
+            isCreation = nil
         }
     }
 

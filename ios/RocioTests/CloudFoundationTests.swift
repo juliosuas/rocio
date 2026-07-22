@@ -139,6 +139,21 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertEqual(change.occurredAt, occurredAt)
     }
 
+    @MainActor
+    func testPendingGardenResetRemainsDiscoverableAfterSessionStoreRecreation() throws {
+        let userID = UUID()
+        let pendingKey = "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+        defer { UserDefaults.standard.removeObject(forKey: pendingKey) }
+        let reset = PendingCloudChange(.reset(at: Date(timeIntervalSince1970: 1_800_000_250)))
+        UserDefaults.standard.set(try JSONEncoder().encode([reset]), forKey: pendingKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertTrue(recreatedStore.hasPendingGardenReset(for: userID))
+        UserDefaults.standard.removeObject(forKey: pendingKey)
+        XCTAssertFalse(recreatedStore.hasPendingGardenReset(for: userID))
+    }
+
     func testBackendSendsGardenDeletionPatchAndResetRPC() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [BackendURLProtocolStub.self]
@@ -236,6 +251,1397 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertEqual(configuration.baseURL, url)
         XCTAssertEqual(configuration.anonymousKey, "public-anon-key")
+    }
+
+    func testPasswordRecoveryCallbackStrictlyAcceptsOnlyThePKCECodeRoute() throws {
+        let validURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=one-time-code"
+        ))
+
+        XCTAssertEqual(
+            try PasswordRecoveryCallback.parse(validURL),
+            PasswordRecoveryCallback(authorizationCode: "one-time-code")
+        )
+
+        let invalidURLs = [
+            "rocio://auth/recovery?code=one-time-code",
+            "com.juliosuas.rocio://auth/other?code=one-time-code",
+            "com.juliosuas.rocio://auth/recovery#access_token=secret&refresh_token=secret&type=recovery",
+            "com.juliosuas.rocio://auth/recovery#code=one-time-code",
+            "com.juliosuas.rocio://auth/recovery?code=one-time-code&next=catalog",
+            "com.juliosuas.rocio://auth/recovery?error=access_denied&error_description=secret-detail",
+            "com.juliosuas.rocio://auth/recovery?code=first&code=second",
+            "com.juliosuas.rocio://auth/recovery",
+        ]
+
+        for rawURL in invalidURLs {
+            let url = try XCTUnwrap(URL(string: rawURL))
+            XCTAssertThrowsError(try PasswordRecoveryCallback.parse(url), rawURL) { error in
+                XCTAssertEqual(
+                    (error as? BackendError)?.errorDescription,
+                    L10n.text(
+                        "error.auth.recovery_link",
+                        fallback: "This password reset link is invalid or expired. Request a new one."
+                    )
+                )
+                XCTAssertFalse((error as? BackendError)?.errorDescription?.contains("secret-detail") ?? true)
+            }
+        }
+    }
+
+    func testPasswordRecoveryPKCEUsesRFC7636S256Challenge() {
+        let verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+
+        XCTAssertEqual(
+            PasswordRecoveryPKCE.challenge(for: verifier),
+            "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM"
+        )
+    }
+
+    func testBackendUsesThePKCERecoveryHTTPContractWithoutURLTokens() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        let recorder = BackendRequestRecorder()
+        let userID = UUID()
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let isUnexpectedPostExchangeRefetch =
+                request.httpMethod == "GET" && request.url?.path == "/auth/v1/user"
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: isUnexpectedPostExchangeRefetch ? 503 : 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let data: Data
+            switch (request.httpMethod, request.url?.path) {
+            case ("POST", "/auth/v1/token"):
+                data = try JSONSerialization.data(withJSONObject: [
+                    "access_token": "recovery-access-token",
+                    "refresh_token": "recovery-refresh-token",
+                    "expires_in": 3_600,
+                    "user": [
+                        "id": userID.uuidString.lowercased(),
+                        "email": "gardener@example.com",
+                    ],
+                ])
+            case ("PUT", "/auth/v1/user"):
+                data = try JSONSerialization.data(withJSONObject: [
+                    "id": userID.uuidString.lowercased(),
+                    "email": "gardener@example.com",
+                ])
+            case ("GET", "/auth/v1/user"):
+                data = try JSONSerialization.data(withJSONObject: [
+                    "error_code": "temporary_failure",
+                    "msg": "The post-exchange user lookup must not run",
+                ])
+            default:
+                data = Data("{}".utf8)
+            }
+            return (response, data)
+        }
+
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession
+        )
+        let callback = PasswordRecoveryCallback(authorizationCode: "one-time-code")
+
+        try await client.requestPasswordReset(email: "gardener@example.com", codeChallenge: "code-challenge")
+        let recoverySession = try await client.recoverySession(
+            from: callback,
+            codeVerifier: "code-verifier"
+        )
+        try await client.updatePassword("new-password", session: recoverySession)
+
+        let requests = recorder.requests
+        XCTAssertEqual(requests.count, 3)
+        XCTAssertEqual(requests[0].httpMethod, "POST")
+        XCTAssertEqual(requests[0].url?.path, "/auth/v1/recover")
+        XCTAssertEqual(
+            URLComponents(url: try XCTUnwrap(requests[0].url), resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "redirect_to" })?.value,
+            PasswordRecoveryCallback.redirectURL.absoluteString
+        )
+        XCTAssertNil(requests[0].value(forHTTPHeaderField: "Authorization"))
+        XCTAssertEqual(requests[0].value(forHTTPHeaderField: "apikey"), "public-anon-key")
+        XCTAssertEqual(requests[1].httpMethod, "POST")
+        XCTAssertEqual(requests[1].url?.path, "/auth/v1/token")
+        XCTAssertEqual(requests[1].url?.query, "grant_type=pkce")
+        XCTAssertNil(requests[1].value(forHTTPHeaderField: "Authorization"))
+        XCTAssertFalse(requests.contains {
+            $0.httpMethod == "GET" && $0.url?.path == "/auth/v1/user"
+        })
+        XCTAssertEqual(requests[2].httpMethod, "PUT")
+        XCTAssertEqual(requests[2].url?.path, "/auth/v1/user")
+        XCTAssertEqual(requests[2].value(forHTTPHeaderField: "Authorization"), "Bearer recovery-access-token")
+        XCTAssertEqual(recoverySession.user.id, userID)
+
+        XCTAssertEqual(
+            try XCTUnwrap(JSONSerialization.jsonObject(
+                with: try XCTUnwrap(requests[0].httpBody)
+            ) as? [String: String]),
+            [
+                "email": "gardener@example.com",
+                "code_challenge": "code-challenge",
+                "code_challenge_method": "s256",
+            ]
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(JSONSerialization.jsonObject(
+                with: try XCTUnwrap(requests[1].httpBody)
+            ) as? [String: String]),
+            ["auth_code": "one-time-code", "code_verifier": "code-verifier"]
+        )
+        XCTAssertEqual(
+            try XCTUnwrap(JSONSerialization.jsonObject(
+                with: try XCTUnwrap(requests[2].httpBody)
+            ) as? [String: String]),
+            ["password": "new-password"]
+        )
+    }
+
+    func testRejectedSecondPasswordResetPreservesTheFirstAcceptedVerifier() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        let recorder = BackendRequestRecorder()
+        let verifierStore = PasswordRecoveryVerifierStoreSpy()
+        let userID = UUID()
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let recoverRequestCount = recorder.requests.filter {
+                $0.url?.path == "/auth/v1/recover"
+            }.count
+            let statusCode = request.url?.path == "/auth/v1/recover" && recoverRequestCount == 2
+                ? 429
+                : 200
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            let data: Data
+            switch request.url?.path {
+            case "/auth/v1/recover" where statusCode == 429:
+                data = try JSONSerialization.data(withJSONObject: [
+                    "error_code": "over_email_send_rate_limit",
+                    "msg": "Too many reset requests",
+                ])
+            case "/auth/v1/token":
+                data = try JSONSerialization.data(withJSONObject: [
+                    "access_token": "recovery-access-token",
+                    "refresh_token": "recovery-refresh-token",
+                    "expires_in": 3_600,
+                    "user": [
+                        "id": userID.uuidString.lowercased(),
+                        "email": "gardener@example.com",
+                    ],
+                ])
+            case "/auth/v1/user":
+                data = try JSONSerialization.data(withJSONObject: [
+                    "id": userID.uuidString.lowercased(),
+                    "email": "gardener@example.com",
+                ])
+            default:
+                data = Data("{}".utf8)
+            }
+            return (response, data)
+        }
+
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession
+        )
+        let actions = PasswordRecoveryActions.live(
+            client: client,
+            codeVerifierPersistence: PasswordRecoveryCodeVerifierPersistence(
+                load: { verifierStore.load() },
+                save: { try verifierStore.save($0) },
+                clear: { try verifierStore.clear() }
+            )
+        )
+
+        try await actions.requestReset("gardener@example.com")
+        let firstVerifier = try XCTUnwrap(verifierStore.load())
+
+        do {
+            try await actions.requestReset("gardener@example.com")
+            XCTFail("The rate-limited reset request must fail")
+        } catch {
+            XCTAssertEqual(
+                error as? BackendError,
+                .server(code: "over_email_send_rate_limit", message: "Too many reset requests")
+            )
+        }
+        XCTAssertEqual(verifierStore.load(), firstVerifier)
+
+        let session = try await actions.validate(
+            PasswordRecoveryCallback(authorizationCode: "first-email-code")
+        )
+
+        XCTAssertEqual(session.user.id, userID)
+        XCTAssertNil(verifierStore.load())
+        XCTAssertNotNil(recorder.requests.first { $0.url?.path == "/auth/v1/token" })
+    }
+
+    func testSuccessfulValidationCannotClearANewerVerifierAndRejectedNewRequestCannotRestoreConsumedVerifier() throws {
+        let verifierStore = PasswordRecoveryVerifierStoreSpy()
+        let persistence = PasswordRecoveryCodeVerifierPersistence(
+            load: { verifierStore.load() },
+            save: { try verifierStore.save($0) },
+            clear: { try verifierStore.clear() }
+        )
+        let firstVerifier = "first-verifier"
+        let secondVerifier = "second-verifier"
+
+        XCTAssertNil(try persistence.replace(firstVerifier))
+        let previousVerifier = try persistence.replace(secondVerifier)
+        XCTAssertEqual(previousVerifier, firstVerifier)
+
+        // Validation A completes after request B installed its verifier.
+        persistence.consume(firstVerifier)
+        XCTAssertEqual(
+            persistence.load(),
+            secondVerifier,
+            "Consuming verifier A must not clear verifier B while request B is in flight"
+        )
+
+        // Request B is then definitively rejected. Its CAS rollback sees that
+        // verifier A was consumed and clears B instead of resurrecting A.
+        XCTAssertTrue(try persistence.restorePreviousIfCurrent(secondVerifier, previousVerifier))
+        XCTAssertNil(
+            persistence.load(),
+            "A rejected request must not restore verifier A after A was consumed"
+        )
+
+        // Reinstalling an identical value represents a new request and must
+        // remove the old consumed tombstone instead of hiding the new verifier.
+        XCTAssertNil(try persistence.replace(firstVerifier))
+        persistence.consume(firstVerifier)
+        XCTAssertNil(persistence.load())
+        XCTAssertNil(try persistence.replace(firstVerifier))
+        XCTAssertEqual(persistence.load(), firstVerifier)
+        persistence.consume(firstVerifier)
+    }
+
+    func testAmbiguousServerFailureKeepsTheNewPasswordRecoveryVerifier() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        let verifierStore = PasswordRecoveryVerifierStoreSpy()
+        var requestCount = 0
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        BackendURLProtocolStub.handler = { request in
+            requestCount += 1
+            let statusCode = requestCount == 1 ? 200 : 500
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: statusCode,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (response, statusCode == 200 ? Data("{}".utf8) : Data())
+        }
+
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession
+        )
+        let actions = PasswordRecoveryActions.live(
+            client: client,
+            codeVerifierPersistence: PasswordRecoveryCodeVerifierPersistence(
+                load: { verifierStore.load() },
+                save: { try verifierStore.save($0) },
+                clear: { try verifierStore.clear() }
+            )
+        )
+
+        try await actions.requestReset("gardener@example.com")
+        let firstVerifier = try XCTUnwrap(verifierStore.load())
+
+        do {
+            try await actions.requestReset("gardener@example.com")
+            XCTFail("The ambiguous server failure must be reported")
+        } catch {
+            XCTAssertEqual(
+                error as? BackendError,
+                .server(code: "http_500", message: "Rocio Cloud is temporarily unavailable.")
+            )
+        }
+
+        let secondVerifier = try XCTUnwrap(verifierStore.load())
+        XCTAssertNotEqual(
+            secondVerifier,
+            firstVerifier,
+            "A 5xx response may arrive after the provider accepted the email, so its verifier must remain current"
+        )
+    }
+
+    func testOfficialPKCEErrorsUseTheExpiredRecoveryLinkMessage() {
+        for code in ["bad_code_verifier", "flow_state_expired", "flow_state_not_found"] {
+            let error = BackendError.server(code: code, message: "Provider detail")
+
+            XCTAssertEqual(
+                error.errorDescription,
+                L10n.text(
+                    "error.auth.recovery_link",
+                    fallback: "This password reset link is invalid or expired. Request a new one."
+                ),
+                "code: \(code)"
+            )
+        }
+    }
+
+    @MainActor
+    func testRouterIgnoresRecoveryAndUnknownHostsWithoutLosingItsPendingDestination() {
+        let router = AppRouter()
+        router.selectedTab = .garden
+
+        XCTAssertFalse(router.route(URL(string: "rocio://auth/recovery")!, authenticatedIdentity: nil))
+        XCTAssertEqual(router.selectedTab, .garden)
+        XCTAssertFalse(router.route(URL(string: "com.juliosuas.rocio://auth/recovery")!, authenticatedIdentity: nil))
+        XCTAssertEqual(router.selectedTab, .garden)
+        XCTAssertTrue(router.route(URL(string: "rocio://scanner")!, authenticatedIdentity: nil))
+        XCTAssertEqual(router.selectedTab, .scanner)
+
+        router.prepareForAuthenticatedSession(.user(UUID()), hasSeenOnboarding: true)
+        XCTAssertEqual(router.selectedTab, .scanner)
+    }
+
+    func testPasswordRecoveryInputValidation() {
+        XCTAssertTrue(AuthInputValidator.isValidEmail("gardener@example.com"))
+        XCTAssertFalse(AuthInputValidator.isValidEmail("gardener @example.com"))
+        XCTAssertFalse(AuthInputValidator.isValidEmail("gardener@example"))
+        XCTAssertTrue(AuthInputValidator.isValidNewPassword("new-pass", confirmation: "new-pass"))
+        XCTAssertFalse(AuthInputValidator.isValidNewPassword("short", confirmation: "short"))
+        XCTAssertFalse(AuthInputValidator.isValidNewPassword("new-pass", confirmation: "different"))
+    }
+
+    @MainActor
+    func testStalePasswordResetRequestCannotOverwriteANewerSheetState() async {
+        let firstRequestStarted = AsyncLatch()
+        let releaseFirstRequest = AsyncLatch()
+        var requestCount = 0
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in
+                    requestCount += 1
+                    if requestCount == 1 {
+                        await firstRequestStarted.open()
+                        await releaseFirstRequest.wait()
+                    }
+                },
+                validate: { _ in throw BackendError.invalidResponse },
+                updatePassword: { _, _ in }
+            )
+        )
+
+        let firstRequest = Task {
+            await sessionStore.requestPasswordReset(email: "first@example.com")
+        }
+        await firstRequestStarted.wait()
+        sessionStore.preparePasswordResetRequest()
+        await sessionStore.requestPasswordReset(email: "second@example.com")
+        XCTAssertEqual(sessionStore.passwordResetRequestState, .sent)
+
+        sessionStore.preparePasswordResetRequest()
+        await releaseFirstRequest.open()
+        await firstRequest.value
+
+        XCTAssertEqual(sessionStore.passwordResetRequestState, .idle)
+    }
+
+    @MainActor
+    func testPasswordRecoveryKeepsTokensInMemoryAndClearsAnotherAccountsGardenBeforeSaving() async throws {
+        let oldSession = AuthSession(
+            accessToken: "old-access",
+            refreshToken: "old-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "old@example.com")
+        )
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "new@example.com")
+        )
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Old account rose")
+        let gardenStore = GardenStore(plants: [plant])
+        var savedSessions: [AuthSession] = []
+        UserDefaults.standard.set(true, forKey: "rocio.cloud.photoConsent")
+        defer { UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent") }
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(
+                load: { oldSession },
+                save: { session in
+                    XCTAssertTrue(gardenStore.plants.isEmpty)
+                    XCTAssertNil(UserDefaults.standard.object(forKey: "rocio.cloud.photoConsent"))
+                    savedSessions.append(session)
+                },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in recoveredSession },
+                updatePassword: { _, _ in }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+        XCTAssertNil(sessionStore.session)
+        XCTAssertEqual(gardenStore.plants, [plant])
+        XCTAssertTrue(savedSessions.isEmpty)
+
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(recoveredSession))
+        XCTAssertNil(sessionStore.session)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+        XCTAssertEqual(savedSessions, [recoveredSession])
+    }
+
+    @MainActor
+    func testPasswordRecoveryRetryRetainsARefreshedRecoverySession() async throws {
+        let user = AuthUser(id: UUID(), email: "gardener@example.com")
+        let expiredRecoverySession = AuthSession(
+            accessToken: "expired-recovery-access",
+            refreshToken: "single-use-recovery-refresh",
+            expiresAt: .distantPast,
+            user: user
+        )
+        let refreshedRecoverySession = AuthSession(
+            accessToken: "refreshed-recovery-access",
+            refreshToken: "rotated-recovery-refresh",
+            expiresAt: .distantFuture,
+            user: user
+        )
+        let gardenStore = GardenStore(plants: [])
+        var refreshCount = 0
+        var updateSessions: [AuthSession] = []
+        var savedSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(
+                load: { nil },
+                save: { savedSessions.append($0) },
+                clear: {}
+            ),
+            refreshSession: { _ in
+                refreshCount += 1
+                return refreshedRecoverySession
+            },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in expiredRecoverySession },
+                updatePassword: { _, session in
+                    updateSessions.append(session)
+                    if updateSessions.count == 1 {
+                        throw BackendError.server(code: "http_503", message: "Temporarily unavailable")
+                    }
+                }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(refreshedRecoverySession))
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertEqual(updateSessions, [refreshedRecoverySession])
+        XCTAssertTrue(savedSessions.isEmpty)
+
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(refreshedRecoverySession))
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertEqual(updateSessions, [refreshedRecoverySession, refreshedRecoverySession])
+        XCTAssertEqual(savedSessions, [refreshedRecoverySession])
+    }
+
+    @MainActor
+    func testInvalidSecondRecoveryCallbackPreservesTheActiveRecoveryBeforePasswordChange() async throws {
+        let originalSession = AuthSession(
+            accessToken: "original-access",
+            refreshToken: "original-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "original@example.com")
+        )
+        let recoverySession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "recovery@example.com")
+        )
+        let gardenStore = GardenStore(
+            plants: [GardenPlant(flowerId: "rosa", nickname: "Original account rose")]
+        )
+        var validationCount = 0
+        var updatedSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(
+                load: { originalSession },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    if validationCount == 1 { return recoverySession }
+                    throw BackendError.server(
+                        code: "flow_state_not_found",
+                        message: "Flow state not found"
+                    )
+                },
+                updatePassword: { _, session in updatedSessions.append(session) }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let invalidSecondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=invalid-second-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoverySession))
+
+        await sessionStore.handlePasswordRecoveryURL(invalidSecondURL, gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoverySession))
+        XCTAssertNil(sessionStore.session)
+        XCTAssertEqual(gardenStore.plants.map(\.nickname), ["Original account rose"])
+
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        XCTAssertEqual(updatedSessions, [recoverySession])
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(recoverySession))
+    }
+
+    @MainActor
+    func testInvalidSecondRecoveryCallbackReturnsToTheNewSession() async throws {
+        let oldSession = AuthSession(
+            accessToken: "old-access",
+            refreshToken: "old-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "old@example.com")
+        )
+        let recoveredSession = AuthSession(
+            accessToken: "recovered-access",
+            refreshToken: "recovered-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "new@example.com")
+        )
+        let gardenStore = GardenStore(
+            plants: [GardenPlant(flowerId: "rosa", nickname: "Old account rose")]
+        )
+        var storedSession = oldSession
+        var validationCount = 0
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(
+                load: { storedSession },
+                save: { storedSession = $0 },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    if validationCount == 1 { return recoveredSession }
+                    throw BackendError.server(code: "flow_state_not_found", message: "Flow state not found")
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let invalidSecondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=invalid-second-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(recoveredSession))
+
+        await sessionStore.handlePasswordRecoveryURL(invalidSecondURL, gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedIn(recoveredSession))
+        XCTAssertEqual(sessionStore.session, recoveredSession)
+        XCTAssertEqual(storedSession, recoveredSession)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+    }
+
+    @MainActor
+    func testInvalidSecondRecoveryCallbackCannotRestoreTheOldSessionAfterPersistenceFailure() async throws {
+        let oldSession = AuthSession(
+            accessToken: "old-access",
+            refreshToken: "old-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "old@example.com")
+        )
+        let recoveredSession = AuthSession(
+            accessToken: "recovered-access",
+            refreshToken: "recovered-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "new@example.com")
+        )
+        let gardenStore = GardenStore(
+            plants: [GardenPlant(flowerId: "rosa", nickname: "Old account rose")]
+        )
+        var validationCount = 0
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { oldSession },
+                save: { _ in throw BackendError.invalidResponse },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    if validationCount == 1 { return recoveredSession }
+                    throw BackendError.server(code: "bad_code_verifier", message: "Bad code verifier")
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let invalidSecondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=invalid-second-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .passwordUpdatedRequiresSignIn)
+
+        await sessionStore.handlePasswordRecoveryURL(invalidSecondURL, gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedOut)
+        XCTAssertNil(sessionStore.session)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+    }
+
+    @MainActor
+    func testFailedThirdRecoveryCallbackPreservesSessionWhileSecondCallbackIsValidating() async throws {
+        let secondValidationStarted = AsyncLatch()
+        let releaseSecondValidation = AsyncLatch()
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "recovered@example.com")
+        )
+        let replacementSession = AuthSession(
+            accessToken: "replacement-access",
+            refreshToken: "replacement-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "replacement@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { callback in
+                    switch callback.authorizationCode {
+                    case "first-code":
+                        return recoveredSession
+                    case "second-code":
+                        await secondValidationStarted.open()
+                        await releaseSecondValidation.wait()
+                        return replacementSession
+                    default:
+                        throw BackendError.server(code: "bad_code_verifier", message: "Bad code verifier")
+                    }
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let secondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=second-code"
+        ))
+        let thirdURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=third-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+
+        let secondCallback = Task {
+            await sessionStore.handlePasswordRecoveryURL(secondURL, gardenStore: gardenStore)
+        }
+        await secondValidationStarted.wait()
+        await sessionStore.handlePasswordRecoveryURL(thirdURL, gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+
+        await releaseSecondValidation.open()
+        await secondCallback.value
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+    }
+
+    @MainActor
+    func testSequentialDuplicateRecoveryCallbackReusesValidatedSession() async throws {
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "recovered@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        var validationCount = 0
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    if validationCount == 1 { return recoveredSession }
+                    throw BackendError.server(code: "bad_code_verifier", message: "Code already consumed")
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=shared-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+
+        XCTAssertEqual(validationCount, 1)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+    }
+
+    @MainActor
+    func testSequentialDuplicateRecoveryCallbackDoesNotInterruptPasswordUpdate() async throws {
+        let passwordUpdateStarted = AsyncLatch()
+        let releasePasswordUpdate = AsyncLatch()
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "recovered@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        var validationCount = 0
+        var passwordUpdateCount = 0
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    return recoveredSession
+                },
+                updatePassword: { _, _ in
+                    passwordUpdateCount += 1
+                    await passwordUpdateStarted.open()
+                    await releasePasswordUpdate.wait()
+                }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=shared-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        let passwordUpdate = Task {
+            await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        }
+        await passwordUpdateStarted.wait()
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        await releasePasswordUpdate.open()
+        await passwordUpdate.value
+
+        XCTAssertEqual(validationCount, 1)
+        XCTAssertEqual(passwordUpdateCount, 1)
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(recoveredSession))
+    }
+
+    @MainActor
+    func testConcurrentRecoveredPasswordUpdatesRunOnlyOnce() async throws {
+        let refreshStarted = AsyncLatch()
+        let releaseRefresh = AsyncLatch()
+        let user = AuthUser(id: UUID(), email: "recovered@example.com")
+        let staleSession = AuthSession(
+            accessToken: "stale-access",
+            refreshToken: "single-use-refresh",
+            expiresAt: .distantPast,
+            user: user
+        )
+        let refreshedSession = AuthSession(
+            accessToken: "refreshed-access",
+            refreshToken: "rotated-refresh",
+            expiresAt: .distantFuture,
+            user: user
+        )
+        let gardenStore = GardenStore(plants: [])
+        var refreshCount = 0
+        var updatedPasswords: [String] = []
+        var savedSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(
+                load: { nil },
+                save: { savedSessions.append($0) },
+                clear: {}
+            ),
+            refreshSession: { session in
+                refreshCount += 1
+                XCTAssertEqual(session, staleSession)
+                if refreshCount == 1 {
+                    await refreshStarted.open()
+                    await releaseRefresh.wait()
+                }
+                return refreshedSession
+            },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in staleSession },
+                updatePassword: { password, session in
+                    updatedPasswords.append(password)
+                    XCTAssertEqual(session, refreshedSession)
+                }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        let firstUpdate = Task {
+            await sessionStore.updateRecoveredPassword("first-password", gardenStore: gardenStore)
+        }
+        await refreshStarted.wait()
+
+        let duplicateUpdate = Task {
+            await sessionStore.updateRecoveredPassword("second-password", gardenStore: gardenStore)
+        }
+        await duplicateUpdate.value
+
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertTrue(updatedPasswords.isEmpty)
+        XCTAssertTrue(savedSessions.isEmpty)
+
+        await releaseRefresh.open()
+        await firstUpdate.value
+
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertEqual(updatedPasswords, ["first-password"])
+        XCTAssertEqual(savedSessions, [refreshedSession])
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(refreshedSession))
+    }
+
+    @MainActor
+    func testRotatedRecoveryRefreshSurvivesInvalidCallbackAndIsUsedByRetry() async throws {
+        let refreshStarted = AsyncLatch()
+        let releaseRefresh = AsyncLatch()
+        let user = AuthUser(id: UUID(), email: "recovered@example.com")
+        let staleSession = AuthSession(
+            accessToken: "stale-access",
+            refreshToken: "consumed-refresh",
+            expiresAt: .distantPast,
+            user: user
+        )
+        let rotatedSession = AuthSession(
+            accessToken: "rotated-access",
+            refreshToken: "rotated-refresh",
+            expiresAt: .distantFuture,
+            user: user
+        )
+        let gardenStore = GardenStore(plants: [])
+        var refreshCount = 0
+        var passwordUpdateSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { session in
+                refreshCount += 1
+                guard refreshCount == 1, session == staleSession else {
+                    throw BackendError.server(code: "refresh_token_already_used", message: "Refresh token already used")
+                }
+                await refreshStarted.open()
+                await releaseRefresh.wait()
+                return rotatedSession
+            },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { callback in
+                    guard callback.authorizationCode == "valid-code" else {
+                        throw BackendError.server(code: "bad_code_verifier", message: "Bad code verifier")
+                    }
+                    return staleSession
+                },
+                updatePassword: { _, session in
+                    passwordUpdateSessions.append(session)
+                }
+            )
+        )
+        let validURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=valid-code"
+        ))
+        let invalidURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=invalid-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(validURL, gardenStore: gardenStore)
+        let firstUpdate = Task {
+            await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        }
+        await refreshStarted.wait()
+
+        await sessionStore.handlePasswordRecoveryURL(invalidURL, gardenStore: gardenStore)
+        await releaseRefresh.open()
+        await firstUpdate.value
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(refreshCount, 1)
+        XCTAssertEqual(passwordUpdateSessions, [rotatedSession])
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(rotatedSession))
+    }
+
+    @MainActor
+    func testRotatedRefreshFromOlderRecoveryCannotOverwriteNewCallbackSession() async throws {
+        let refreshStarted = AsyncLatch()
+        let releaseRefresh = AsyncLatch()
+        let firstUser = AuthUser(id: UUID(), email: "first@example.com")
+        let firstSession = AuthSession(
+            accessToken: "first-stale-access",
+            refreshToken: "first-consumed-refresh",
+            expiresAt: .distantPast,
+            user: firstUser
+        )
+        let firstRotatedSession = AuthSession(
+            accessToken: "first-rotated-access",
+            refreshToken: "first-rotated-refresh",
+            expiresAt: .distantFuture,
+            user: firstUser
+        )
+        let secondSession = AuthSession(
+            accessToken: "second-access",
+            refreshToken: "second-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "second@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        var passwordUpdateSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { session in
+                XCTAssertEqual(session, firstSession)
+                await refreshStarted.open()
+                await releaseRefresh.wait()
+                return firstRotatedSession
+            },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { callback in
+                    callback.authorizationCode == "first-code" ? firstSession : secondSession
+                },
+                updatePassword: { _, session in
+                    passwordUpdateSessions.append(session)
+                }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let secondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=second-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        let firstUpdate = Task {
+            await sessionStore.updateRecoveredPassword("first-password", gardenStore: gardenStore)
+        }
+        await refreshStarted.wait()
+
+        await sessionStore.handlePasswordRecoveryURL(secondURL, gardenStore: gardenStore)
+        await releaseRefresh.open()
+        await firstUpdate.value
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(secondSession))
+
+        await sessionStore.updateRecoveredPassword("second-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(passwordUpdateSessions, [secondSession])
+        XCTAssertEqual(sessionStore.state, .passwordUpdated(secondSession))
+    }
+
+    @MainActor
+    func testConcurrentDuplicateRecoveryCallbacksShareOnePKCEValidation() async throws {
+        let validationStarted = AsyncLatch()
+        let releaseValidation = AsyncLatch()
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "recovered@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        var validationCount = 0
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { callback in
+                    validationCount += 1
+                    XCTAssertEqual(callback.authorizationCode, "shared-code")
+                    await validationStarted.open()
+                    await releaseValidation.wait()
+                    return recoveredSession
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=shared-code"
+        ))
+
+        let firstCallback = Task {
+            await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        }
+        await validationStarted.wait()
+        let duplicateCallback = Task {
+            await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        }
+        for _ in 0..<20 { await Task.yield() }
+
+        XCTAssertEqual(validationCount, 1)
+        await releaseValidation.open()
+        await firstCallback.value
+        await duplicateCallback.value
+
+        XCTAssertEqual(validationCount, 1)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+    }
+
+    @MainActor
+    func testOlderRecoveryCallbackCannotOverwriteANewerRecoverySession() async throws {
+        let firstValidationStarted = AsyncLatch()
+        let releaseFirstValidation = AsyncLatch()
+        let firstSession = AuthSession(
+            accessToken: "first-access",
+            refreshToken: "first-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "first@example.com")
+        )
+        let secondSession = AuthSession(
+            accessToken: "second-access",
+            refreshToken: "second-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "second@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { nil }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { callback in
+                    if callback.authorizationCode == "first-code" {
+                        await firstValidationStarted.open()
+                        await releaseFirstValidation.wait()
+                        return firstSession
+                    }
+                    return secondSession
+                },
+                updatePassword: { _, _ in }
+            )
+        )
+        let firstURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=first-code"
+        ))
+        let secondURL = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=second-code"
+        ))
+
+        let firstCallback = Task {
+            await sessionStore.handlePasswordRecoveryURL(firstURL, gardenStore: gardenStore)
+        }
+        await firstValidationStarted.wait()
+        await sessionStore.handlePasswordRecoveryURL(secondURL, gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(secondSession))
+
+        await releaseFirstValidation.open()
+        await firstCallback.value
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(secondSession))
+    }
+
+    @MainActor
+    func testPasswordRecoveryPreservesTheSameAccountsGardenAndCanBeCancelled() async throws {
+        let session = AuthSession(
+            accessToken: "access",
+            refreshToken: "refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "same@example.com")
+        )
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Same account rose")
+        let gardenStore = GardenStore(plants: [plant])
+        let sessionStore = SessionStore(
+            configuration: nil,
+            sessionPersistence: SessionPersistence(load: { session }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in session },
+                updatePassword: { _, _ in }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        await sessionStore.cancelPasswordRecovery(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedIn(session))
+        XCTAssertEqual(gardenStore.plants, [plant])
+    }
+
+    @MainActor
+    func testRecoveryCallbackWinsAgainstAnInFlightBootstrapRefresh() async throws {
+        let refreshStarted = AsyncLatch()
+        let releaseRefresh = AsyncLatch()
+        let oldSession = AuthSession(
+            accessToken: "expired",
+            refreshToken: "old-refresh",
+            expiresAt: .distantPast,
+            user: AuthUser(id: UUID(), email: "old@example.com")
+        )
+        let refreshedOldSession = AuthSession(
+            accessToken: "refreshed-old",
+            refreshToken: "refreshed-old-refresh",
+            expiresAt: .distantFuture,
+            user: oldSession.user
+        )
+        let recoveredSession = AuthSession(
+            accessToken: "recovery",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "new@example.com")
+        )
+        var savedSessions: [AuthSession] = []
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { oldSession },
+                save: { savedSessions.append($0) },
+                clear: {}
+            ),
+            refreshSession: { _ in
+                await refreshStarted.open()
+                await releaseRefresh.wait()
+                return refreshedOldSession
+            },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in recoveredSession },
+                updatePassword: { _, _ in }
+            )
+        )
+        let bootstrapTask = Task { await sessionStore.bootstrap(gardenStore: gardenStore) }
+        await refreshStarted.wait()
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        await releaseRefresh.open()
+        await bootstrapTask.value
+
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+        XCTAssertTrue(savedSessions.isEmpty)
+    }
+
+    @MainActor
+    func testRecoveryCallbackWaitsForAnEndingSessionBeforeValidation() async throws {
+        let logoutScenario = BlockingLogoutScenario(gardenEpoch: UUID())
+        let urlSession = makeStubbedURLSession(handler: logoutScenario.response)
+        let oldSession = AuthSession(
+            accessToken: "old-access",
+            refreshToken: "old-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "old@example.com")
+        )
+        let recoveredSession = AuthSession(
+            accessToken: "recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "new@example.com")
+        )
+        let gardenStore = GardenStore(plants: [])
+        var validationCount = 0
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(load: { oldSession }, save: { _ in }, clear: {}),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in
+                    validationCount += 1
+                    return recoveredSession
+                },
+                updatePassword: { _, _ in }
+            ),
+            urlSession: urlSession
+        )
+        defer {
+            logoutScenario.releaseLogout()
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            clearGardenSyncTestState(userID: oldSession.user.id)
+        }
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        let signOutTask = Task { await sessionStore.signOut(gardenStore: gardenStore) }
+        await logoutScenario.waitUntilLogoutIsBlocked()
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=recovery-code"
+        ))
+
+        let recoveryTask = Task {
+            await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        }
+        for _ in 0..<20 { await Task.yield() }
+
+        XCTAssertEqual(validationCount, 0)
+        XCTAssertEqual(sessionStore.state, .signedOut)
+
+        logoutScenario.releaseLogout()
+        await signOutTask.value
+        await recoveryTask.value
+
+        XCTAssertEqual(validationCount, 1)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(recoveredSession))
+    }
+
+    @MainActor
+    func testInFlightAccountAFlushCannotUseAccountBRecoverySession() async throws {
+        let scenario = CrossAccountRecoveryScenario(gardenEpoch: UUID())
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let accountA = AuthSession(
+            accessToken: "account-a-access",
+            refreshToken: "account-a-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "a@example.com")
+        )
+        let accountB = AuthSession(
+            accessToken: "account-b-access",
+            refreshToken: "account-b-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: UUID(), email: "b@example.com")
+        )
+        let pendingKey = pendingGardenKey(accountA.user.id)
+        var storedSession = accountA
+        let gardenStore = GardenStore(plants: [])
+        UserDefaults.standard.set(false, forKey: "rocio.analytics.enabled")
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { storedSession },
+                save: { storedSession = $0 },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in accountB },
+                updatePassword: { _, _ in }
+            ),
+            urlSession: urlSession
+        )
+        defer {
+            scenario.releaseFirstMutation()
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            UserDefaults.standard.removeObject(forKey: "rocio.analytics.enabled")
+            clearGardenSyncTestState(userID: accountA.user.id)
+            clearGardenSyncTestState(userID: accountB.user.id)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        sessionStore.enqueueGardenChange(
+            .upsert(GardenPlant(flowerId: "rosa", nickname: "A rose")),
+            gardenStore: gardenStore
+        )
+        sessionStore.enqueueGardenChange(
+            .upsert(GardenPlant(flowerId: "lavanda", nickname: "A lavender")),
+            gardenStore: gardenStore
+        )
+        await scenario.waitUntilFirstMutationIsBlocked()
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=account-b-code"
+        ))
+
+        let recoveryTask = Task {
+            await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        }
+        for _ in 0..<20 { await Task.yield() }
+        scenario.releaseFirstMutation()
+        await recoveryTask.value
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+        await sessionStore.completePasswordRecovery(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.session?.user.id, accountB.user.id)
+        XCTAssertEqual(scenario.mutationAuthorizationHeaders, ["Bearer account-a-access"])
+        let remaining = try XCTUnwrap(UserDefaults.standard.data(forKey: pendingKey))
+        XCTAssertEqual(try JSONDecoder().decode([PendingCloudChange].self, from: remaining).count, 2)
     }
 
     func testIdentificationProviderLabelsFallbackHonestly() {
@@ -641,7 +2047,7 @@ final class CloudFoundationTests: XCTestCase {
     }
 
     @MainActor
-    func testSignInPublishesSessionBeforeHandshakeAndQuarantinesPreflightWrite() async throws {
+    func testSignInPublishesSessionBeforeHandshakeAndUploadsCurrentLifecyclePreflightWrite() async throws {
         let userID = UUID()
         let serverEpoch = UUID()
         let scenario = AuthLifecycleRaceScenario(
@@ -691,6 +2097,8 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertFalse(sessionStore.isGardenCloudReady)
         let rose = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
         gardenStore.add(rose)
+        let newlyCreatedRose = try XCTUnwrap(gardenStore.plants.first)
+        gardenStore.water(newlyCreatedRose, at: Date(timeIntervalSince1970: 1_750_000_000))
         XCTAssertEqual(scenario.gardenPostCount, 0)
         XCTAssertNotNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
 
@@ -705,21 +2113,6 @@ final class CloudFoundationTests: XCTestCase {
             ),
             serverEpoch.uuidString.lowercased()
         )
-        XCTAssertEqual(scenario.gardenPostCount, 0)
-        let quarantinedData = try XCTUnwrap(
-            UserDefaults.standard.data(forKey: pendingGardenKey(userID))
-        )
-        let quarantinedPending = try JSONDecoder().decode([PendingCloudChange].self, from: quarantinedData)
-        XCTAssertEqual(quarantinedPending.count, 1)
-        XCTAssertNil(quarantinedPending[0].gardenEpoch)
-        XCTAssertEqual(gardenStore.plants.map(\.flowerId), ["rosa"])
-
-        // A deliberate edit after the epoch snapshot replaces the ambiguous
-        // preflight-era intent and is safe to stamp and upload.
-        let localRose = try XCTUnwrap(gardenStore.plants.first)
-        gardenStore.water(localRose, at: Date(timeIntervalSince1970: 1_750_000_000))
-        await sessionStore.waitForGardenSync()
-
         XCTAssertGreaterThanOrEqual(scenario.gardenPostCount, 1)
         XCTAssertFalse(scenario.postedGardenEpochs.isEmpty)
         XCTAssertTrue(scenario.postedGardenEpochs.allSatisfy { $0 == serverEpoch })
@@ -850,17 +2243,88 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertGreaterThan(scenario.profileFetchCount, failedProfileFetchCount)
         XCTAssertTrue(sessionStore.isGardenCloudReady)
-        XCTAssertEqual(scenario.gardenPostCount, 0)
-        XCTAssertNotNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
-
-        let localRose = try XCTUnwrap(gardenStore.plants.first)
-        gardenStore.water(localRose, at: Date(timeIntervalSince1970: 1_750_000_000))
-        await sessionStore.waitForGardenSync()
-
         XCTAssertGreaterThanOrEqual(scenario.gardenPostCount, 1)
         XCTAssertTrue(scenario.postedGardenEpochs.allSatisfy { $0 == serverEpoch })
         XCTAssertEqual(gardenStore.plants.map(\.flowerId), ["rosa"])
         XCTAssertNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
+    }
+
+    @MainActor
+    func testWateringOfflinePlantDuringPreflightCannotUndoRemoteReset() async throws {
+        let userID = UUID()
+        let serverEpoch = UUID()
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Offline rose")
+        let inheritedChange = PendingCloudChange(
+            .create(plant),
+            lifecycleID: UUID()
+        )
+        let session = validSession(userID: userID)
+        let scenario = AuthLifecycleRaceScenario(
+            userID: userID,
+            gardenEpoch: serverEpoch,
+            gardenResetAt: "2026-07-21T10:00:00Z"
+        )
+        scenario.blockNextProfileFetch()
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let gardenStore = GardenStore(plants: [plant])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { session },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        GardenPersistence.savePlants([plant])
+        UserDefaults.standard.set(
+            try JSONEncoder().encode([inheritedChange]),
+            forKey: pendingGardenKey(userID)
+        )
+        gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
+            guard let gardenStore, let sessionStore else { return }
+            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+        }
+        defer {
+            scenario.releaseProfileFetch()
+            gardenStore.cloudChangeHandler = nil
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        let bootstrapTask = Task {
+            await sessionStore.bootstrap(gardenStore: gardenStore)
+        }
+        await scenario.waitUntilProfileFetchIsBlocked()
+
+        gardenStore.water(plant, at: Date(timeIntervalSince1970: 1_750_000_000))
+
+        let pendingData = try XCTUnwrap(
+            UserDefaults.standard.data(forKey: pendingGardenKey(userID))
+        )
+        let pending = try JSONDecoder().decode([PendingCloudChange].self, from: pendingData)
+        XCTAssertEqual(pending.count, 1)
+        XCTAssertNotEqual(pending[0].id, inheritedChange.id)
+        XCTAssertNotNil(pending[0].lifecycleID)
+        XCTAssertNil(pending[0].gardenEpoch)
+        XCTAssertEqual(pending[0].isCreation, false)
+
+        scenario.releaseProfileFetch()
+        await bootstrapTask.value
+
+        XCTAssertTrue(sessionStore.isGardenCloudReady)
+        XCTAssertEqual(scenario.gardenPostCount, 0)
+        let quarantinedData = try XCTUnwrap(
+            UserDefaults.standard.data(forKey: pendingGardenKey(userID))
+        )
+        let quarantined = try JSONDecoder().decode([PendingCloudChange].self, from: quarantinedData)
+        XCTAssertEqual(quarantined.map(\.id), pending.map(\.id))
+        XCTAssertNil(quarantined[0].gardenEpoch)
+        XCTAssertEqual(quarantined[0].isCreation, false)
+        XCTAssertEqual(gardenStore.plants.map(\.flowerId), ["rosa"])
     }
 
     @MainActor
@@ -1189,8 +2653,9 @@ final class CloudFoundationTests: XCTestCase {
         let orchid = try XCTUnwrap(FlowerCatalog.flower(id: "orquidea"))
         gardenStore.add(orchid)
         scenario.releaseGardenResetRequest()
-        await sessionStore.waitForGardenSync()
+        let completed = await sessionStore.waitForGardenSync()
 
+        XCTAssertTrue(completed)
         XCTAssertEqual(scenario.gardenResetCount, 1)
         XCTAssertGreaterThanOrEqual(scenario.gardenPostCount, 1)
         XCTAssertTrue(scenario.postedGardenEpochs.allSatisfy { $0 == resetEpoch })
@@ -1566,6 +3031,206 @@ final class CloudFoundationTests: XCTestCase {
         )
     }
 }
+
+private actor AsyncLatch {
+    private var isOpen = false
+    private var waiters: [CheckedContinuation<Void, Never>] = []
+
+    func wait() async {
+        guard !isOpen else { return }
+        await withCheckedContinuation { continuation in
+            waiters.append(continuation)
+        }
+    }
+
+    func open() {
+        guard !isOpen else { return }
+        isOpen = true
+        let continuations = waiters
+        waiters.removeAll()
+        continuations.forEach { $0.resume() }
+    }
+}
+
+private final class BlockingLogoutScenario: @unchecked Sendable {
+    private let condition = NSCondition()
+    private let gardenEpoch: UUID
+    private var logoutIsBlocked = false
+    private var logoutIsReleased = false
+
+    init(gardenEpoch: UUID) {
+        self.gardenEpoch = gardenEpoch
+    }
+
+    func waitUntilLogoutIsBlocked() async {
+        let clock = ContinuousClock()
+        let deadline = clock.now + .seconds(5)
+        while clock.now < deadline {
+            if isLogoutBlocked() { return }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        XCTFail("Timed out waiting for sign-out to reach the backend")
+    }
+
+    private func isLogoutBlocked() -> Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return logoutIsBlocked
+    }
+
+    func releaseLogout() {
+        condition.lock()
+        logoutIsReleased = true
+        condition.broadcast()
+        condition.unlock()
+    }
+
+    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
+        guard let url = request.url else { throw URLError(.badURL) }
+        let status: Int
+        let data: Data
+        switch (request.httpMethod, url.path) {
+        case ("GET", "/rest/v1/profiles"):
+            status = 200
+            data = try JSONSerialization.data(withJSONObject: [[
+                "garden_epoch": gardenEpoch.uuidString.lowercased(),
+                "garden_reset_at": NSNull(),
+            ]])
+        case ("GET", "/rest/v1/garden_plants"):
+            status = 200
+            data = Data("[]".utf8)
+        case ("POST", "/auth/v1/logout"):
+            condition.lock()
+            logoutIsBlocked = true
+            condition.broadcast()
+            while !logoutIsReleased {
+                condition.wait()
+            }
+            condition.unlock()
+            status = 204
+            data = Data()
+        default:
+            throw URLError(.unsupportedURL)
+        }
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, data)
+    }
+}
+
+private final class CrossAccountRecoveryScenario: @unchecked Sendable {
+    private let lock = NSLock()
+    private let condition = NSCondition()
+    private let gardenEpoch: UUID
+    private var firstMutationIsBlocked = false
+    private var firstMutationIsReleased = false
+    private var recordedMutationAuthorizationHeaders: [String] = []
+
+    init(gardenEpoch: UUID) {
+        self.gardenEpoch = gardenEpoch
+    }
+
+    var mutationAuthorizationHeaders: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedMutationAuthorizationHeaders
+    }
+
+    func waitUntilFirstMutationIsBlocked() async {
+        let clock = ContinuousClock()
+        let deadline = clock.now + .seconds(5)
+        while clock.now < deadline {
+            if isFirstMutationBlocked() { return }
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        XCTFail("Timed out waiting for account A's first mutation")
+    }
+
+    private func isFirstMutationBlocked() -> Bool {
+        condition.lock()
+        defer { condition.unlock() }
+        return firstMutationIsBlocked
+    }
+
+    func releaseFirstMutation() {
+        condition.lock()
+        firstMutationIsReleased = true
+        condition.broadcast()
+        condition.unlock()
+    }
+
+    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
+        guard let url = request.url else { throw URLError(.badURL) }
+        let status: Int
+        let data: Data
+        switch (request.httpMethod, url.path) {
+        case ("GET", "/rest/v1/profiles"):
+            status = 200
+            data = try JSONSerialization.data(withJSONObject: [[
+                "garden_epoch": gardenEpoch.uuidString.lowercased(),
+                "garden_reset_at": NSNull(),
+            ]])
+        case ("GET", "/rest/v1/garden_plants"):
+            status = 200
+            data = Data("[]".utf8)
+        case ("POST", "/rest/v1/garden_plants"):
+            lock.lock()
+            recordedMutationAuthorizationHeaders.append(
+                request.value(forHTTPHeaderField: "Authorization") ?? ""
+            )
+            let shouldBlock = recordedMutationAuthorizationHeaders.count == 1
+            lock.unlock()
+            if shouldBlock {
+                condition.lock()
+                firstMutationIsBlocked = true
+                condition.broadcast()
+                while !firstMutationIsReleased {
+                    condition.wait()
+                }
+                condition.unlock()
+            }
+            status = 201
+            data = Data()
+        default:
+            throw URLError(.unsupportedURL)
+        }
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, data)
+    }
+}
+
+private final class PasswordRecoveryVerifierStoreSpy: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: String?
+
+    func load() -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
+    }
+
+    func save(_ verifier: String) throws {
+        lock.lock()
+        defer { lock.unlock() }
+        value = verifier
+    }
+
+    func clear() throws {
+        lock.lock()
+        defer { lock.unlock() }
+        value = nil
+    }
+}
+
 private struct LegacyGardenPlant: Codable {
     let id: UUID
     let flowerId: String
@@ -1611,9 +3276,33 @@ private final class BackendRequestRecorder {
     }
 
     func append(_ request: URLRequest) {
+        var snapshot = request
+        if snapshot.httpBody == nil,
+           let stream = snapshot.httpBodyStream,
+           let body = Self.readBody(from: stream) {
+            snapshot.httpBodyStream = nil
+            snapshot.httpBody = body
+        }
         lock.lock()
         defer { lock.unlock() }
-        recorded.append(request)
+        recorded.append(snapshot)
+    }
+
+    private static func readBody(from stream: InputStream) -> Data? {
+        stream.open()
+        defer { stream.close() }
+        let capacity = 4_096
+        var buffer = [UInt8](repeating: 0, count: capacity)
+        var body = Data()
+        while true {
+            let count = buffer.withUnsafeMutableBytes { bytes -> Int in
+                guard let base = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return -1 }
+                return stream.read(base, maxLength: capacity)
+            }
+            guard count > 0 else { break }
+            body.append(contentsOf: buffer.prefix(count))
+        }
+        return body.isEmpty ? nil : body
     }
 }
 

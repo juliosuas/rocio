@@ -12,13 +12,13 @@ Reason: Rocio's commercial path is recurring plant care, reminders, trust, and h
 
 | Area | Planta | PictureThis | Plantum | Rocio v1 target |
 | --- | --- | --- | --- | --- |
-| Core job | Ongoing plant care | Identify plants fast | AI diagnosis and plant care | Bilingual flower care with Mexico/LatAm context |
+| Core job | Ongoing plant care | Identify plants fast | AI diagnosis and plant care | Bilingual plant care with Mexico/LatAm context |
 | Revenue signal | Annual subscription | Subscription / premium ID | IAP premium tiers | Free v1, StoreKit v1.1 |
 | Onboarding | Strong habit setup | Scanner-first | AI-first | 3-step native onboarding |
 | Scanner claims | Secondary | Aggressive identification | AI plant doctor | Honest cloud candidates with local fallback |
 | Privacy angle | Not primary | Not primary | Not primary | Consent, account deletion, analytics opt-out, no cross-app tracking |
 | Language angle | Broad/localized | Broad/localized | Broad/localized | Native English/Spanish with Mexico/LatAm flower context |
-| Differentiation | Full care platform | Massive database | AI diagnosis | Simple private flower companion |
+| Differentiation | Full care platform | Massive database | AI diagnosis | Simple, private plant-care companion |
 
 ## Pricing Strategy
 
@@ -35,7 +35,7 @@ Recommended v1.1 pricing after acceptance:
 
 - Build retention around saved garden, watering cadence, calendar, reminders, and App Intents.
 - Use scanner as an assistive entry point, not the main promise.
-- Keep App Store copy conservative: "candidatos", "experimental", "verifica la ficha".
+- Keep App Store copy conservative: "candidates", "experimental", and "verify the result".
 - Make screenshots show daily care and privacy, not just flowers.
 
 ## Open Checks Before Submission

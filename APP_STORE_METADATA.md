@@ -1,6 +1,6 @@
 # Rocio App Store Metadata
 
-Date: 2026-07-09
+Date: 2026-07-21
 
 ## English (Primary)
 
@@ -64,9 +64,9 @@ Secondary: Education
 
 Rocio is a bilingual English/Spanish native flower-care app and follows the user's iOS language. A required email account provides cross-device garden sync, scan quota/history, and in-app account deletion. App Review credentials will be supplied in the review information.
 
-After explicit disclosure and consent, scanner photos are sent through an authenticated Supabase Edge Function to Plant.id. Raw photos are not stored in the Rocio database. The scanner is experimental and falls back to a basic on-device visual match if the provider is unavailable. Limited first-party product analytics can be disabled in Settings. Rocio has no advertising or cross-app tracking.
+For every selected scanner photo, the user chooses either on-device analysis or “Send this photo.” Only the second choice transfers a compressed copy through an authenticated Supabase Edge Function to Plant.id. Raw photos are not stored in the Rocio database. The scanner is experimental and falls back to a basic on-device visual match if the provider is unavailable. Limited first-party product analytics can be disabled in Settings. Rocio has no advertising or cross-app tracking.
 
-Notification permission is requested only in Settings after the user taps Enable Watering Reminders. Settings also provides data export and a destructive delete action that clears the garden and cancels pending reminders.
+Notification permission is requested only after an explicit tap on the first-care card in Garden or Enable Watering Reminders in Settings. Settings also provides data export and a destructive delete action that immediately clears the local garden and reminders, then reports cloud deletion as pending until Rocio confirms synchronization.
 
 ## Screenshots To Capture
 

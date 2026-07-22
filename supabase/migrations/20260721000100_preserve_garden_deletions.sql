@@ -262,6 +262,7 @@ revoke delete on table public.garden_plants from authenticated;
 -- Watering events are append-only. Preventing UPDATE also keeps every writer
 -- on the plant-then-event lock order used by deletion/reset.
 revoke update on table public.watering_events from authenticated;
+revoke delete on table public.watering_events from authenticated;
 revoke all on table public.garden_reset_requests from public, anon, authenticated;
 
 revoke all on function public.reject_stale_garden_update() from public, anon, authenticated;
