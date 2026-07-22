@@ -10,6 +10,10 @@ The unsigned iOS archive workflow should also run on iOS PRs and pushes so archi
 
 An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, seeded garden, bundled photos, and the local scanner disclosure. Real-device camera/photo and notification permission/delivery testing is still required before external TestFlight or App Store submission.
 
+The remote Supabase foundation and `identify-flower` v5 are active and fail closed for unauthenticated callers. Migration `20260721000100_preserve_garden_deletions` remains pending by design until the matching iOS tombstone/epoch clients are integrated; see `SUPABASE_DIAGNOSTIC_2026-07-21.md`.
+
+The matching client now treats Auth and garden readiness separately: pre-migration `profiles.garden_epoch` failures keep the valid session and local garden available, queue edits without cloud writes, and retry through the same guarded preflight. Only causally authorized edits adopt a fetched epoch; ambiguous/inherited conflicts stay quarantined without blocking safe edits, validated queue provenance survives relaunch, post-reset edits adopt the returned epoch, and sign-out uses Supabase `scope=local` so one Mac/iPhone does not revoke the user's other devices.
+
 ## Tomorrow Publish Gate
 
 Rocio can move to TestFlight tomorrow only if these are true:
@@ -24,7 +28,7 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - Signed archive upload succeeds.
 - Privacy policy URL and support URL are live and entered in App Store Connect.
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
-- Supabase migration and authenticated Edge Function are deployed.
+- The deletion-preserving Supabase migration and authenticated Edge Function are deployed from the integrated release commit.
 - Production anonymous key is injected through release configuration; Plant.id secret exists only in Supabase.
 - Account creation, login, sync, analytics opt-out, photo consent, quota, sign out, and in-app account deletion pass on a device.
 - App Review demo account is active and included in Review Information.

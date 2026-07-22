@@ -41,7 +41,7 @@ actor RocioBackendClient {
     }
 
     func signOut(session: AuthSession) async {
-        guard let request = try? request(path: "/auth/v1/logout", method: "POST", token: session.accessToken) else { return }
+        guard let request = try? request(path: "/auth/v1/logout?scope=local", method: "POST", token: session.accessToken) else { return }
         _ = try? await urlSession.data(for: request)
     }
 

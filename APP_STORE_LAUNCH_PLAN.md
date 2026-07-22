@@ -33,9 +33,9 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Su
 5. Reminder reliability needs device testing.
    - Native local notifications exist, but permission flow and scheduled delivery must be tested on a real simulator/device before TestFlight.
 
-6. Cloud deployment is not complete.
-   - The native app caches garden data in `UserDefaults` and syncs authenticated account data through Supabase.
-   - Deploy the migration and Edge Function, set the public Supabase release key, configure `PLANT_ID_API_KEY`, and verify RLS, quotas, sync, analytics opt-out, and account deletion against production.
+6. Cloud deployment is partially complete.
+   - The foundation migration, six RLS-protected tables, production public client configuration, and `identify-flower` v5 are active remotely.
+   - Deploy `20260721000100_preserve_garden_deletions` only after its client PRs are integrated, then verify two-account delete-wins/reset convergence, quota, analytics opt-out, and account deletion against production.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
@@ -144,10 +144,12 @@ Acceptance criteria:
 
 ## Current Smallest Shippable PR
 
-Harden native session and cloud queue reliability:
+Finish active garden convergence:
 
-- Cancel and release the active queue task before sign-out, account deletion, or Debug demo entry.
-- Ignore stale completion callbacks from cancelled tasks after a replacement task starts.
-- Keep failed changes pending without an immediate retry loop that can hammer the backend.
-- Cover the queue task generation state with focused unit tests.
-- Remove the Swift concurrency warning from the backend date decoder.
+- Run the complete flush/readback/reconciliation path after every queued mutation.
+- Pull the authoritative garden when the app returns to the foreground.
+- Prevent cancelled or cross-account work from applying a stale snapshot.
+- Keep valid authentication usable when garden REST is offline or awaiting migration, while requiring a causally observed current-session epoch before any garden write.
+- Revoke only the current device on sign-out and publish the local signed-out state without waiting for the remote request.
+- Preserve the conflict timestamp of watering logged through Siri/App Intents.
+- Cover server no-op/tombstone readback, foreground deletion, handshake recovery, preflight/reset races, inherited/current mixed queues, relaunch-safe epoch provenance, and sign-out cancellation with deterministic tests.
