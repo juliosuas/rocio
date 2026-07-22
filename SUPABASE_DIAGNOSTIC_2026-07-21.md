@@ -18,6 +18,14 @@ The remaining backend change is the deletion-preserving migration
 It must remain pending until the client code that understands tombstones and
 garden epochs is integrated. Do not run the SQL manually or apply it twice.
 
+Password recovery has a separate configuration blocker. Authentication → URL
+Configuration currently uses `http://localhost:3000` as Site URL and has no
+additional redirect URLs, so Supabase does not allow Rocio's exact callback
+`com.juliosuas.rocio://auth/recovery`. Custom SMTP is also disabled. The reset
+template itself is correct and uses `{{ .ConfirmationURL }}`. These settings do
+not explain ordinary sign-in failures, but they prevent a reliable end-to-end
+password reset until they are changed deliberately.
+
 The matching iOS client is backward-compatible with this deployment order.
 Authentication is published independently of garden readiness; if the epoch
 columns are still absent, the app keeps the valid session and local garden,
@@ -52,6 +60,11 @@ adopt the epoch returned by that reset.
   bearer token with `auth.getUser`.
 - A public POST without a bearer token returns HTTP 401 with
   `{"error":"authentication_required"}`.
+- All six anonymous PostgREST probes now return HTTP 401/SQLSTATE 42501
+  `permission denied`, rather than 404, confirming that the relations exist and
+  the table ACL boundary is active.
+- The authenticated Dashboard confirms no allowed password-recovery redirect
+  and custom SMTP disabled; no settings were changed during this audit.
 
 ## Log Timeline
 
@@ -93,6 +106,9 @@ fails before it reaches Supabase; server login is not the crash cause.
   `reject_stale_garden_update` trigger. The pending deletion-preserving
   migration replaces it with an empty `search_path` and is already covered by
   the PostgreSQL 16 migration harness.
+- The pending migration now also revokes `DELETE` as well as `UPDATE` on
+  `watering_events`, making its advertised append-only ACL real. The static and
+  PostgreSQL catalog audits both assert SELECT+INSERT only.
 - Advisor also reports the three intentional authenticated `SECURITY DEFINER`
   RPCs. They are public product operations, not accidental grants; each is
   constrained to `auth.uid()`.
@@ -106,8 +122,13 @@ fails before it reaches Supabase; server login is not the crash cause.
 3. Run the PostgreSQL 16 harness and cloud audit from the exact commit to ship.
 4. Run `supabase db push --linked --dry-run` and review that only the canonical
    pending migration is selected.
-5. Apply once with `supabase db push --linked`.
-6. Re-run the catalog/RLS/ACL checks and authenticated two-account tests.
+5. In Auth URL Configuration, add exactly
+   `com.juliosuas.rocio://auth/recovery`; replace the localhost Site URL only
+   with the chosen stable HTTPS product URL. Configure custom SMTP before an
+   external beta. These are explicit Dashboard changes and require separate
+   approval/credentials.
+6. Apply the migration once with `supabase db push --linked`.
+7. Re-run the catalog/RLS/ACL checks and authenticated two-account tests.
 
 Before commit, migration failure rolls back transactionally. After commit, do
 not use `DROP`, `TRUNCATE`, migration repair, or a raw rerun as rollback. Keep
@@ -117,10 +138,16 @@ so it is not an acceptable rollback.
 
 ## Final Proofs
 
-Local release evidence for the client/migration pair: 63/63 XCTest cases on an
-iPhone 17 iOS 26.3.1 simulator, 11/11 release gates, 37/37 cloud security
-checks, 12/12 strict classifier cases, and the PostgreSQL 16 migration harness
-passing both ordered migrations in a rolled-back disposable database.
+Integrated local evidence refreshed on 2026-07-22: 115/115 XCTest cases passed on an
+iPhone 17 iOS 26.3.1 simulator; the unsigned Release simulator build passed;
+the release gate passed 11/11, cloud security 41/41, App Store readiness 20/20,
+and the strict classifier 12/12. The PostgreSQL 16 harness also passed the
+foundation migration, a pre-upgrade data fixture, the pending migration,
+effective RLS/ACL checks, direct client quota-forgery rejection,
+cross-account quota isolation, reset/account-purge checks, and a final
+rollback. These are
+dated snapshots, not perpetual release guarantees; rerun them from the exact
+commit selected for deployment.
 
 Unauthenticated Edge Function request (no secret required):
 
