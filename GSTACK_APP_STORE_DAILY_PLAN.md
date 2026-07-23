@@ -1,232 +1,141 @@
-# Rocío: 12-Hour Production Completion Plan
+# Rocío: 12-Hour Production Completion Ledger
 
-Last updated: 2026-07-22
+Last updated: July 23, 2026
 
-Branch: `fsociaty/rocio-beta-first-care`
+Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
-Current PR: [#20](https://github.com/juliosuas/rocio/pull/20)
+Base commit: `649293e`
 
-Operating mode: resume-ready; the long-running CTO goal remains paused until the user resumes it.
+Upstream integration PR: [#20](https://github.com/juliosuas/rocio/pull/20)
+
+Operating mode: active implementation and release hardening. Do not restart the original 12-hour plan from Hour 0; continue from the remaining runtime, integration, deployment, and device work below.
 
 ## Mission
 
-Turn Rocío 1.0 from a polished 15-flower beta into a production-capable plant-care app that can accept, save, sync, and care for arbitrary plants returned by the configured provider or entered manually.
+Ship one production-capable native care loop in which a Plant.id result or manually entered plant can be saved without being replaced by a bundled flower, remain useful offline, receive optional user-confirmed care, synchronize under the existing security model, and render everywhere the user expects.
 
-"All plants" means the app is no longer hard-coded to `FlowerCatalog.all`. It does not mean perfect recognition or authoritative care instructions for every known species. The current Plant.id product advertises coverage for more than 35,000 taxa, but identification remains probabilistic and provider coverage can change.
+"All plants" means the runtime is no longer hard-coded to `FlowerCatalog.all`. It does not mean perfect identification, authoritative care instructions for every taxon, or a reviewed editorial article for every species. The 15 bundled flower guides remain the curated catalog and local matcher dataset.
 
-## Ship Standard
+## Current Outcome
 
-The sprint is complete only when a plant outside the bundled 15-flower catalog can:
+The arbitrary-plant vertical is implemented in the current worktree and passes the full iOS test suite. The additive database migrations and Edge Function update exist locally and the four-migration PostgreSQL 16 harness passes, but those backend changes have not been deployed. The branch is a feature candidate, not an App Store release candidate.
 
-1. Be returned by a consented cloud scan or entered manually when the provider is unavailable.
-2. Be selected without being replaced by the closest bundled flower.
-3. Be saved to the garden with a stable provider taxon identifier.
-4. Retain a local care profile and remain useful offline.
-5. Use an editable watering schedule and local reminders.
-6. Sync between accounts/devices under the same RLS and deletion rules as bundled plants.
-7. Render safely in Garden, Calendar, Scanner, Settings, App Intents, export, and delete flows.
-8. Preserve source, language, and freshness metadata for provider-derived identity data.
-9. Avoid presenting uncertain identification, toxicity, edibility, disease, or treatment text as fact.
-10. Pass the complete release gate, migration harness, XCTest suite, and physical-device smoke.
+## Ship Standard Ledger
 
-## Current Constraint
+| Requirement | State | Evidence or remaining proof |
+|---|---|---|
+| Preserve a Plant.id result without substituting a bundled flower | Implemented and simulator-tested | The scanner response carries provider identity, names, locale, rank, taxonomy, confidence, and `is_plant`; the saved garden identity retains the stable ID, names, rank, locale, and freshness. |
+| Manual provider-free entry | Implemented and simulator-tested | Manual plants use durable manual identity and enter the same garden model. |
+| Durable identity and offline care snapshot | Implemented and simulator-tested | `PlantIdentity`, `PlantCareProfile`, and backward-compatible `GardenPlant` decoding round-trip arbitrary and bundled plants. |
+| Crash-safe local garden | Implemented and simulator-tested | Versioned primary and backup snapshots recover valid data and surface unrecoverable corruption instead of silently returning an empty garden. |
+| Optional editable watering schedule | Implemented and simulator-tested | Dry, medium, and wet preferences can map to app-default reminder intervals; unscheduled plants remain unscheduled until the user chooses. Exact water amounts stay optional. |
+| Generic product rendering | Implemented and simulator-tested | Garden, Calendar, notifications, App Intents, export, watering, and deletion no longer require a bundled catalog match. |
+| Duplicate specimens | Implemented and simulator-tested | Multiple plants of the same species retain independent identifiers, nicknames, care state, and schedules. |
+| Additive account-sync contract | Implemented and PostgreSQL-tested | Identity, care, bounds, legacy compatibility, RLS, delete-wins, reset, purge, and tombstone scrubbing pass the disposable PostgreSQL 16 harness. |
+| Provider privacy and metadata contract | Implemented and runtime-tested locally | The Edge update preserves bounded provider metadata, atomically claims quota once per stable request UUID, recovers ambiguous Plant.id work through `custom_id`, replays bounded results, and deletes provider-side identification best-effort. The executable runtime suite passes 28/28. |
+| Two-session production behavior | Pending | Requires an authenticated staging/production smoke after the matching backend deployment. |
+| Physical-device camera and notifications | Pending | Requires a real iPhone with the release configuration. |
+| Distribution-signed archive and TestFlight | Externally blocked | Requires a paid Apple Developer membership, `DEVELOPMENT_TEAM`, signing assets, and App Store Connect. |
 
-Plant.id results outside the local catalog are displayed, but the app still requires a bundled `Flower` value for its primary result and garden model. The following runtime paths depend on `FlowerCatalog.flower(id:)` and therefore cannot represent an arbitrary species correctly:
+## Completed Engineering
 
-- `ios/Rocio/Services/FlowerIdentifier.swift`
-- `ios/Rocio/Models/GardenPlant.swift`
-- `ios/Rocio/Stores/GardenStore.swift`
-- `ios/Rocio/Services/WateringNotificationScheduler.swift`
-- `ios/Rocio/Intents/RocioIntents.swift`
-- `ios/Rocio/Views/Garden/GardenView.swift`
-- `ios/Rocio/Views/Scanner/ScannerView.swift`
+### 1. Versioned domain and offline persistence
 
-The first production change must remove that dependency from saved plants without breaking existing users.
+- Added durable `PlantIdentity` sources for bundled, Plant.id, and manual plants.
+- Added optional `PlantCareProfile` data without inventing exact intervals or milliliter amounts.
+- Kept legacy `flowerId` decoding and deterministic bundled-guide migration.
+- Added versioned primary and backup garden snapshots with a surfaced recovery state.
+- Added durable sync-outbox recovery so valid queued changes are not silently discarded.
+- Added fixtures for bundled, external, manual, duplicate, legacy, and corrupt records.
 
-## Confirmed P0 Implementation Blockers
+### 2. Additive cloud contract
 
-1. `GardenPlant` persists only `flowerId`; an unknown plant has no durable identity or care state.
-2. Garden, Calendar, notifications, and App Intents omit plants that cannot be resolved through `FlowerCatalog`.
-3. The scanner overlays an external name on a local color match, so the external species cannot be selected or saved honestly.
-4. The Edge Function and iOS DTO discard the provider's persistent suggestion ID, `is_plant`, rank, and locale.
-5. The current `Flower` model requires exact care fields that the provider does not reliably supply.
-6. Persistence decode failures return an empty array, which can turn a migration mistake into silent garden loss.
-7. The Supabase garden contract cannot sync arbitrary identity/care fields, and deletion tombstones do not yet scrub them.
-8. `GardenStore.add` currently prevents two specimens of the same species.
-9. The Edge request asks for `health: "auto"` but discards health output, adding provider-cost and privacy risk without product value.
+- Added bounded identity, locale, care, and schema-version garden payloads; taxonomy remains bounded in the transient scanner response.
+- Preserved backward compatibility for older clients while making saved identity authoritative.
+- Added deletion-tombstone scrubbing for the new metadata.
+- Enforced row and payload bounds and rejected unsafe future timestamps.
+- Extended the PostgreSQL 16 upgrade fixture across all four ordered migrations, including expiry, reclaim, recompletion, replay, and account-purge coverage for the scan ledger.
 
-Treat these as the first acceptance tests, not as a separate discovery phase.
+Deployment status: **not deployed**. Review the backup and linked dry run before applying the deletion-preserving, arbitrary-plant, and idempotent-scan migrations in timestamp order.
 
-## Target Data Model
+### 3. Catalog-independent consumers
 
-### `PlantIdentity`
+- Garden and Calendar use saved identity and care rather than requiring `FlowerCatalog`.
+- Notifications and App Intents support arbitrary plants and omit false water-volume precision.
+- Export includes generic saved plants.
+- Non-catalog plants use a generic botanical presentation when bundled art is unavailable.
+- Duplicate specimens are allowed.
 
-Stable identity independent of display copy:
+### 4. Honest scanner and manual entry
 
-- `source`: `bundled`, `plant_id`, or `manual`
-- `sourceID`: persistent provider class ID when available
-- `scientificName`
-- localized `commonName`
-- optional rank and taxonomy identifiers when the provider returns them
+- External suggestions remain external suggestions and keep their provider identity.
+- Results marked as not a plant cannot be saved.
+- Rank, locale, freshness, and stable provider ID survive into the saved model when available. Taxonomy and confidence remain transient scan evidence rather than durable garden claims.
+- Manual entry supplies an offline/provider-free path.
+- User care remains optional and editable after save.
 
-Never use a mutable scientific/common-name string as the database primary key. Kindwise documents its class `id` as persistent and recommends it for internal mapping.
+### 5. Edge privacy and cost changes
 
-### `PlantCareProfile`
+- Removed the unused provider health request.
+- Preserved `is_plant`, stable ID, names, locale, rank, taxonomy, and confidence.
+- Normalized optional provider strings rather than persisting empty identifiers.
+- Kept `PLANT_ID_API_KEY` server-side.
+- Continued to avoid storing raw user photographs.
+- Added best-effort provider-side identification deletion after response normalization.
+- Added stable request UUIDs, atomic quota claims, bounded seven-day replay, Plant.id `custom_id` recovery, body timeouts, and executable failure-path coverage.
 
-An offline snapshot attached to the saved plant:
+Deployment status: **not deployed**. Runtime integration tests pass locally; authenticated deployment canaries remain required.
 
-- optional provider watering preference and a user-selected reminder interval
-- optional user-confirmed water amount
-- optional light preference
-- safety fields only when explicitly known; unknown stays unknown
-- `source`, `language`, `fetchedAt`, and `schemaVersion`
-- a user-editable override layer that is never overwritten by refresh
+## Verified Evidence
 
-Provider data must not be converted into false precision. Plant.id's watering detail is a dry/medium/wet preference range, not an exact number of milliliters or days. Rocío must ask the user to confirm the reminder interval.
+Evidence recorded from the current work:
 
-### `GardenPlant`
+- **170/170 XCTest cases pass** on an iPhone 17 simulator with iOS 26.3.1.
+- **Edge runtime tests pass 28/28**.
+- **Static cloud/security audit passes 50/50**.
+- **PostgreSQL 16 four-migration harness passes** with ordered upgrade, RLS, ACL, idempotent quota/replay lifecycle, tombstone, reset, purge, and rollback checks.
+- **Release gate passes 12/12**.
+- **Strict local classifier passes 12/12**.
+- **Unsigned App Store audit passes 20/20** with `unsignedReady=true`.
+- **Unsigned Release build passes** with signing disabled.
+- **Six real iOS screenshots** are featured in `docs/screenshots/ios/`. Five show the bundled catalog, garden, calendar, scanner, and settings from a running Debug build; the July 23 manual Swiss cheese plant capture is real Debug-build evidence of the newer arbitrary-plant flow. None is final App Store art.
 
-Persist the plant's identity and care snapshot instead of only `flowerId`:
+## Fastest Remaining Execution Path
 
-- keep `flowerId` temporarily for backward decoding and bundled-asset lookup
-- add `identity`, `careProfile`, and optional `imageReference`
-- migrate old records deterministically from the bundled catalog
-- encode a schema version and test decoding every previous fixture
+Follow this order. Do not spend time rediscovering or rebuilding completed domain work.
 
-## Cloud Contract
+### R1. Close integration review — completed locally
 
-The client must never call Plant.id directly.
+1. Resolve every actionable code-review finding in the current worktree.
+2. Run `git diff --check`.
+3. Run focused persistence, cloud-contract, scanner, garden, calendar, notification, App Intent, export, and localization tests.
 
-1. Keep `PLANT_ID_API_KEY` only in Supabase secrets.
-2. Extend the authenticated Edge Function response with the persistent class ID, `is_plant`, common/scientific names, locale, rank, and confidence.
-3. Remove the unused `health: "auto"` request so identification cannot consume a second provider credit without delivering health results.
-4. Add an idempotent request ID, strict body/response validation, timeout handling, per-user quotas, and global budget protection.
-5. Delete the provider-side identification after Rocío normalizes the response, unless a reviewed retention contract explicitly requires otherwise.
-6. Do not store raw user photos. Continue storing only bounded operational scan metadata.
-7. Apply the same RLS, account deletion, analytics opt-out, and audit boundaries used by the current scanner.
+Exit evidence: no open P0/P1 review finding and focused tests green.
 
-Useful provider references:
-
-- [Plant.id API documentation](https://plant.id/docs)
-- [Kindwise API handbook](https://www.kindwise.com/handbook)
-- [Knowledge-base name search and detail endpoints](https://www.kindwise.com/post/api-search-for-plant-insect-mushroom-details-by-its-name)
-
-## 12-Hour Execution Order
-
-This sprint targets one complete production vertical: **any scanned or manually entered plant can be saved, scheduled, used offline, synced, and rendered everywhere**. Remote name search, external images, encyclopedia content, diagnosis, and new recommendation systems are explicitly post-sprint work.
-
-### Hour 0:00-0:30 — Freeze scope and establish one base
-
-- Merge or rebase the stacked PR chain in order: PR18, PR19, then PR20.
-- Record the exact release SHA and re-run CI from it.
-- Freeze unrelated PWA, StoreKit, content, and visual-polish work.
-- Keep production migrations unapplied until their matching client contract is integrated.
-
-Exit evidence: clean branch, one base SHA, existing 115 XCTest passing, release gate 11/11.
-
-### Hour 0:30-2:15 — Versioned domain and crash-safe persistence
-
-- Add `PlantIdentity` and `PlantCareProfile` as `Codable`, `Equatable`, and `Sendable` values.
-- Add backward-compatible `GardenPlant` decoding from `flowerId` and keep the 15 bundled entries as editorial guides.
-- Add an explicit `.unscheduled` state; never invent a three-day interval for an unknown plant.
-- Replace decode-to-empty behavior with a versioned snapshot, backup, and surfaced recovery path.
-- Make the garden snapshot and sync outbox durable as one logical write.
-- Add fixtures for a bundled rose, an external monstera, a manual plant, and a corrupt legacy snapshot.
-
-Exit evidence: old gardens decode unchanged; corruption cannot silently erase a garden; arbitrary plants round-trip locally and through export.
-
-### Hour 2:15-3:45 — Additive cloud contract
-
-- Add identity, locale, optional care, and schema-version fields to the garden contract.
-- Backfill the 15 bundled flowers deterministically.
-- Update fetch/upsert DTOs and deletion-tombstone scrubbing for every new field.
-- Reject or normalize implausible client `updated_at` values and enforce payload/row limits.
-- Extend the PostgreSQL 16 upgrade fixture before applying any production migration.
-
-Exit evidence: legacy and arbitrary plants round-trip through the disposable database with RLS, delete-wins, reset, and purge intact.
-
-### Hour 3:45-5:15 — Remove catalog assumptions from consumers
-
-- Garden, Calendar, notification scheduling, App Intents, and export read the saved identity/profile instead of requiring `FlowerCatalog`.
-- Render a generic botanical placeholder when no bundled art exists.
-- Support optional intervals and amounts without misleading copy.
-- Allow multiple specimens of the same species, each with its own schedule and nickname.
-
-Exit evidence: a manual non-catalog plant appears everywhere, survives relaunch, can be watered/deleted, and never disappears from a failed catalog lookup.
-
-### Hour 5:15-6:45 — Make the scanner save real provider results
-
-- Decouple `IdentificationResult` from `Flower`.
-- Preserve the provider's stable ID, `is_plant`, localized/common name, scientific name, rank, locale, and confidence.
-- Make external candidates selectable and stop substituting the closest local flower.
-- Add a confirmation step for nickname and optional watering interval.
-- Add manual offline entry as the provider-free fallback.
-
-Exit evidence: an external monstera and a manual unknown plant both reach Garden without being relabeled as a bundled flower.
-
-### Hour 6:45-8:15 — Edge runtime, budget, and privacy safety
-
-- Remove unused `health: "auto"` provider work.
-- Add strict request/response validation, response-size bounds, timeouts, idempotent request IDs, per-user quotas, and global budget protection.
-- Count quota according to the agreed successful-result rule so retries do not double-charge the user.
-- Normalize `is_plant`, stable ID, locale, rank, and names into the iOS DTO.
-- Delete provider-side identification data after normalization unless a reviewed retention policy says otherwise.
-- Add runtime tests for valid, no-plant, malformed, timeout, retry, quota, locale, and unauthenticated cases.
-
-Exit evidence: the runtime—not only a static source audit—proves the security and failure contract.
-
-### Hour 8:15-10:00 — Product, migration, and two-session QA
-
-- Test legacy decode, corrupt snapshot recovery, offline add/edit/water/relaunch/export, two roses, and a plant with no schedule.
-- Test two sessions, future timestamps, delete-wins, account switch, reset, purge, and tombstone scrubbing.
-- Verify every provider failure leaves the existing garden usable.
-- Verify accessibility labels, Dynamic Type, dark appearance, and English/Spanish fallback behavior.
-- Keep toxicity, edibility, health, disease, and treatment fields out of this sprint.
-
-Exit evidence: focused XCTest and the disposable PostgreSQL matrix pass with recorded simulator/device evidence.
-
-### Hour 10:00-12:00 — Integrate one release candidate
-
-- Run the complete XCTest suite, unsigned Release build, release gate, cloud/security audit, App Store audit, and PostgreSQL harness.
-- Complete physical camera, photo-picker, consent, notification-permission, offline, and delivery smoke.
-- Capture English screenshots from the exact release-candidate build and repeat a focused Spanish localization smoke.
-- Update README, privacy, support, metadata, review notes, and PR evidence.
-- Leave only owner actions: production migration/Edge deployment, paid distribution, App Store Connect, SMTP/redirect configuration, and TestFlight upload.
-
-Exit evidence: one reviewed release-candidate commit, a precise deploy order, and no known P0/P1 defect in the arbitrary-plant vertical.
-
-## Explicit Post-Sprint Work
-
-- remote name search and provider profile caching;
-- external images and license presentation;
-- enriched taxonomy and encyclopedia descriptions;
-- toxicity, edibility, disease, diagnosis, and treatment content;
-- generated recommendations or a new local classifier;
-- StoreKit, PWA expansion, and full watering history.
-
-These are product extensions, not prerequisites for the arbitrary-plant care loop above.
-
-## Parallel Agent Allocation
-
-Run at most three implementation tracks against separate files, with one integration owner:
-
-1. Domain/client: Swift models, persistence, scanner selection, UI.
-2. Cloud/security: Edge Function, migration, RLS, PostgreSQL tests.
-3. QA/release: fixtures, screenshots, docs, audits, physical-device checklist.
-
-The integration owner rebases each track onto the same release SHA, resolves model/contract changes, runs the full suite, and is the only agent allowed to push the release branch.
-
-## External Blockers That Must Not Stall Local Work
-
-- Paid Apple Developer Program and distribution team.
-- App Store Connect app record and TestFlight upload.
-- Supabase Auth redirect allowlist, stable HTTPS Site URL, and custom SMTP.
-- Approval to deploy the pending production migration.
-- Plant.id production pricing/credit tier and confirmation that the requested detail fields are included.
-
-Build and test every contract locally with fixtures while these owner actions remain pending.
-
-## Final Validation Commands
+### R2. Prove the Edge runtime — completed locally
+
+Add executable runtime tests for:
+
+- valid arbitrary-plant response;
+- provider response with no plant;
+- absent and empty optional provider identifiers;
+- malformed and oversized provider responses;
+- timeout and network failure;
+- idempotent retry and quota behavior, including Plant.id `custom_id`
+  recovery without a second provider POST;
+- locale and taxonomy normalization;
+- unauthenticated request rejection;
+- provider-side deletion success and failure.
+
+Exit evidence: runtime tests prove the failure contract, not only source-shape
+assertions. A stable iOS request UUID must atomically claim quota once, completed
+responses must replay from a bounded ledger with a seven-day replay window, and an uncertain provider
+call must recover with Plant.id `custom_id` (or safely terminate after the
+documented 404 grace period) without issuing a second provider POST.
+
+### R3. Cut one local release candidate — completed locally
+
+Run from one reviewed commit:
 
 ```sh
 node qa/release-gate.mjs
@@ -240,23 +149,107 @@ ROCIO_SECURITY_DATABASE_URL='postgresql://postgres:postgres@127.0.0.1:5432/postg
 xcodebuild \
   -project ios/Rocio.xcodeproj \
   -scheme Rocio \
-  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3' \
+  -destination 'platform=iOS Simulator,name=iPhone 17,OS=26.3.1' \
   test
 ```
 
+Also produce an unsigned Release build and archive validation from the same commit.
+
+Exit evidence: current, not inherited, results for XCTest, release gate, cloud/security, App Store audit, PostgreSQL, and unsigned Release.
+
+### R4. Commit, push, and review — current checkpoint
+
+1. Commit the arbitrary-plant vertical as one reviewable unit.
+2. Push `fsociaty/rocio-arbitrary-plants`.
+3. Open a stacked pull request against `fsociaty/rocio-beta-first-care`.
+4. Attach exact commands, result counts, migration order, deployment warning, and screenshot provenance.
+5. Merge the stacked chain in order only after CI is green.
+
+Exit evidence: reviewed commit, green CI, and no unresolved P0/P1 comment.
+
+### R5. Deploy matching backend changes
+
+Owner-controlled sequence:
+
+1. Confirm a database backup and target project.
+2. Run `supabase db push --linked --dry-run`.
+3. Confirm the remote still has only the foundation migration, then review that the three expected incremental migrations are pending.
+4. Apply `20260721000100_preserve_garden_deletions.sql` once.
+5. Apply `20260722000100_support_arbitrary_plants.sql` once.
+6. Apply `20260723000100_idempotent_scan_requests.sql` once.
+7. Deploy the matching `identify-flower` Edge Function.
+8. Confirm `PLANT_ID_API_KEY` is a server secret and no secret exists in the client or repository.
+9. Run authenticated canaries for legacy bundled plants, arbitrary plants, scan replay, tombstones, reset, purge, quota, and account isolation.
+
+Exit evidence: production schema and Edge version match the reviewed client contract.
+
+### R6. Complete two-session and real-device smoke
+
+Two authenticated sessions:
+
+- add an arbitrary plant on session A and observe it on session B;
+- edit care and water it from both sessions;
+- verify delete-wins, relaunch, offline queue recovery, reset, purge, and account switching;
+- verify provider failures never block access to the existing garden.
+
+Physical iPhone:
+
+- camera, photo picker, local analysis, and one-time cloud consent;
+- manual entry and a duplicate specimen;
+- offline add/edit/water/relaunch/export;
+- notification permission, scheduling, delivery, and cancellation;
+- Dynamic Type, VoiceOver labels, dark appearance, English, and focused Spanish localization.
+
+Exit evidence: recorded device, OS, build SHA, account isolation result, and every smoke result.
+
+### R7. Sign and distribute
+
+Owner actions:
+
+1. Activate the paid Apple Developer Program.
+2. Configure `DEVELOPMENT_TEAM` and distribution signing.
+3. Create the exact Release archive used for submission.
+4. Capture final English App Store screenshots from that archive and repeat the focused Spanish smoke.
+5. Configure App Store Connect, privacy answers, support URL, recovery redirects, and SMTP.
+6. Upload to TestFlight and run one final install/update smoke.
+
+Exit evidence: signed TestFlight build with no known P0/P1 defect.
+
+## Explicit Post-Release Work
+
+These are product extensions, not blockers for the arbitrary-plant care loop:
+
+- remote name search and provider profile caching;
+- external images and license presentation;
+- enriched taxonomy and encyclopedia descriptions;
+- toxicity, edibility, disease, diagnosis, and treatment content;
+- generated recommendations or a new local classifier;
+- family sharing, StoreKit, PWA expansion, weather integration, and full watering history.
+
+## External Blockers That Must Not Stall Local Work
+
+- Paid Apple Developer Program and distribution team.
+- App Store Connect app record and TestFlight upload.
+- Supabase Auth redirect allowlist, stable HTTPS Site URL, and custom SMTP.
+- Owner approval to deploy the pending production migrations and Edge Function.
+- Plant.id production credit tier and provider contract confirmation.
+
+Complete code review, runtime tests, simulator QA, static audits, documentation, and the deployment runbook while these owner actions remain pending.
+
 ## Stop Conditions
 
-Do not claim production readiness when any of these is true:
+Do not claim production readiness while any of these is true:
 
-- an external result is still replaced by a bundled flower;
-- a saved plant loses its profile offline;
-- any displayed provider copy or image lacks its required source/license metadata;
+- an external result is replaced by a bundled flower;
+- a saved plant or queued change can disappear after a recoverable write failure;
+- an unscheduled plant receives invented reminder or water-amount precision;
 - a provider failure blocks access to an existing garden;
-- arbitrary plants break notifications, App Intents, export, sync, or deletion;
-- the migration has not passed the disposable PostgreSQL upgrade harness;
-- the physical permission and notification smoke remains incomplete;
-- distribution signing is still unavailable.
+- arbitrary plants break notifications, App Intents, export, sync, reset, purge, or deletion;
+- the Edge runtime suite or release gate is failing;
+- the matching migrations or Edge Function are not deployed;
+- two-session and physical permission/notification smoke tests are incomplete;
+- distribution signing is unavailable.
 
-## Resume Command
+## Resume Point
 
-When the user resumes the paused 12-hour goal, start at **Hour 0:00**, verify the PR chain and current SHA, then assign the three parallel tracks above. Do not spend the first hour reinstalling tools or re-auditing facts already recorded in this plan unless the branch or remote state changed.
+Resume at **R4: Commit, push, and review**. R1 through R3 are complete locally. Move to R5 only after the stacked pull request is green, reviewed, and merged; the backend deployment, two-session/device smoke, and signing steps remain deliberately separate owner-controlled gates.

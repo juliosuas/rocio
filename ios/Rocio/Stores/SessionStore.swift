@@ -94,6 +94,7 @@ final class SessionStore: ObservableObject {
     private var gardenSyncNeedsFollowUp = false
     private var gardenSyncTask: Task<Bool, Never>?
     private var gardenSyncTaskGeneration = GardenSyncTaskGeneration()
+    private var corruptedPendingOutboxUsers: Set<UUID> = []
 
     init(configuration: BackendConfiguration? = .bundled) {
         let client = configuration.map { RocioBackendClient(configuration: $0) }
@@ -482,9 +483,15 @@ final class SessionStore: ObservableObject {
     }
 #endif
 
-    func enqueueGardenChange(_ change: GardenChange, gardenStore: GardenStore) {
-        guard let session else { return }
+    @discardableResult
+    func enqueueGardenChange(_ change: GardenChange, gardenStore: GardenStore) -> Bool {
+        // Signed-out/local-only operation has no cloud journal to maintain.
+        guard let session else { return true }
         var pending = loadPendingChanges(userID: session.user.id)
+        guard !corruptedPendingOutboxUsers.contains(session.user.id) else {
+            gardenSyncStatus = .pending
+            return false
+        }
         var queuedChange = PendingCloudChange(
             change,
             gardenEpoch: authorizedGardenEpoch(userID: session.user.id),
@@ -516,6 +523,10 @@ final class SessionStore: ObservableObject {
             pending.append(queuedChange)
         }
         savePendingChanges(pending, userID: session.user.id)
+        guard !corruptedPendingOutboxUsers.contains(session.user.id) else {
+            gardenSyncStatus = .pending
+            return false
+        }
         // A retry is safe even before readiness because syncGarden always
         // performs and validates the current lifecycle's epoch preflight
         // before it can reach any mutation request.
@@ -523,6 +534,7 @@ final class SessionStore: ObservableObject {
             gardenSyncNeedsFollowUp = true
         }
         startGardenSync(gardenStore)
+        return true
     }
 
     func refreshGarden(gardenStore: GardenStore) async {
@@ -551,7 +563,10 @@ final class SessionStore: ObservableObject {
 
     func identify(image: UIImage) async throws -> RemoteIdentificationResponse {
         guard let client, let session else { throw BackendError.unavailable }
-        let active = try await activeSession(from: session)
+        // A scan can poll one idempotent provider operation for up to 125
+        // seconds. Refresh before starting unless the JWT safely outlives the
+        // complete recovery window and normal request skew.
+        let active = try await activeSession(from: session, minimumValidity: 180)
         let response = try await client.identify(image: image, session: active)
         if analyticsEnabled {
             await client.track(name: "flower_scan_completed", properties: ["provider": response.provider], session: active)
@@ -848,6 +863,10 @@ final class SessionStore: ObservableObject {
             }
 
             var pendingBeforeFlush = loadPendingChanges(userID: expectedUserID)
+            guard !corruptedPendingOutboxUsers.contains(expectedUserID) else {
+                gardenSyncStatus = .pending
+                return false
+            }
             let startsWithIdempotentReset = pendingBeforeFlush.first?.kind == .reset
             let eligibleChangeIDs = Set(pendingBeforeFlush.compactMap { change -> UUID? in
                 if startsWithIdempotentReset { return change.id }
@@ -912,7 +931,7 @@ final class SessionStore: ObservableObject {
             if mayUploadLocalBaseline {
                 let merged = GardenSyncResolver.resolve(local: localBaseline, remote: remote)
                 try await client.upsertGarden(
-                    merged,
+                    merged.filter { !GardenSyncResolver.isDegradedLegacyArbitrary($0) },
                     gardenEpoch: syncState.gardenEpoch,
                     session: readSession
                 )
@@ -941,6 +960,10 @@ final class SessionStore: ObservableObject {
                 remote: authoritativeRemote
             )
             let remainingPendingIDs = Set(loadPendingChanges(userID: expectedUserID).map(\.id))
+            guard !corruptedPendingOutboxUsers.contains(expectedUserID) else {
+                gardenSyncStatus = .pending
+                return false
+            }
             let protectedPlantIDs = Set(quarantinedPending.compactMap { change -> UUID? in
                 guard remainingPendingIDs.contains(change.id) else { return nil }
                 return change.plant?.id
@@ -960,6 +983,10 @@ final class SessionStore: ObservableObject {
             clearProvisionalGardenEpoch(userID: expectedUserID)
             gardenHandshakeUserID = expectedUserID
             let hasRemainingPending = !loadPendingChanges(userID: expectedUserID).isEmpty
+            guard !corruptedPendingOutboxUsers.contains(expectedUserID) else {
+                gardenSyncStatus = .pending
+                return false
+            }
             gardenSyncStatus = hasRemainingPending ? .pending : .synced
             return !hasRemainingPending
         } catch {
@@ -970,8 +997,11 @@ final class SessionStore: ObservableObject {
         }
     }
 
-    private func activeSession(from session: AuthSession) async throws -> AuthSession {
-        guard session.needsRefresh else { return session }
+    private func activeSession(
+        from session: AuthSession,
+        minimumValidity: TimeInterval = 60
+    ) async throws -> AuthSession {
+        guard session.needsRefresh(within: minimumValidity) else { return session }
         let refreshed = try await refreshSession(session)
         try Task.checkCancellation()
         guard sessionForOperations == session else { throw CancellationError() }
@@ -1126,7 +1156,9 @@ final class SessionStore: ObservableObject {
         var activeEpoch = initialEpoch
         while !Task.isCancelled {
             guard isCurrentSessionLifecycle(lifecycleGeneration) else { return false }
-            guard let next = loadPendingChanges(userID: session.user.id).first(where: {
+            let pendingSnapshot = loadPendingChanges(userID: session.user.id)
+            guard !corruptedPendingOutboxUsers.contains(session.user.id) else { return false }
+            guard let next = pendingSnapshot.first(where: {
                 eligibleChangeIDs.contains($0.id)
             }) else { return true }
             do {
@@ -1135,11 +1167,30 @@ final class SessionStore: ObservableObject {
                 switch next.kind {
                 case .upsert:
                     guard let plant = next.plant else { throw BackendError.invalidResponse }
-                    try await client.upsertGarden(
-                        [plant],
-                        gardenEpoch: activeEpoch,
-                        session: active
-                    )
+                    let uploadPlant: GardenPlant?
+                    if GardenSyncResolver.isDegradedLegacyArbitrary(plant) {
+                        // Rocio 1.0 could queue only the non-null cloud
+                        // sentinel, losing the authoritative v2 identity/care
+                        // snapshot locally. Fetch before writing so an upgrade
+                        // cannot erase Plant.id data. Missing, tombstoned, or
+                        // equally degraded remote rows are retired without a
+                        // write, preventing resurrection and retry loops.
+                        let remote = try await client.fetchGarden(session: active)
+                        guard isCurrentSessionLifecycle(lifecycleGeneration) else { return false }
+                        uploadPlant = GardenSyncResolver.recoverLegacyPendingUpsert(
+                            plant,
+                            remote: remote
+                        )
+                    } else {
+                        uploadPlant = plant
+                    }
+                    if let uploadPlant {
+                        try await client.upsertGarden(
+                            [uploadPlant],
+                            gardenEpoch: activeEpoch,
+                            session: active
+                        )
+                    }
                 case .delete:
                     guard let id = next.plantID else { throw BackendError.invalidResponse }
                     try await client.deletePlant(
@@ -1159,6 +1210,7 @@ final class SessionStore: ObservableObject {
                     // local garden. It is not used to bless a stale baseline.
                     saveProvisionalGardenEpoch(activeEpoch, userID: session.user.id)
                     var postResetPending = loadPendingChanges(userID: session.user.id)
+                    guard !corruptedPendingOutboxUsers.contains(session.user.id) else { return false }
                     if let resetIndex = postResetPending.firstIndex(where: { $0.id == next.id }) {
                         for index in postResetPending.indices where index > resetIndex {
                             // Reset is an explicit local ordering boundary:
@@ -1177,6 +1229,7 @@ final class SessionStore: ObservableObject {
                 }
                 guard !Task.isCancelled else { return false }
                 var latest = loadPendingChanges(userID: session.user.id)
+                guard !corruptedPendingOutboxUsers.contains(session.user.id) else { return false }
                 latest.removeAll { $0.id == next.id }
                 savePendingChanges(latest, userID: session.user.id)
             } catch {
@@ -1187,8 +1240,56 @@ final class SessionStore: ObservableObject {
     }
 
     private func loadPendingChanges(userID: UUID) -> [PendingCloudChange] {
-        guard let data = UserDefaults.standard.data(forKey: pendingKey(userID)) else { return [] }
-        return (try? JSONDecoder().decode([PendingCloudChange].self, from: data)) ?? []
+        let defaults = UserDefaults.standard
+        let primaryKey = pendingKey(userID)
+        let backupKey = pendingBackupKey(userID)
+        let primaryData = defaults.data(forKey: primaryKey)
+        let backupData = defaults.data(forKey: backupKey)
+        guard primaryData != nil || backupData != nil else {
+            corruptedPendingOutboxUsers.remove(userID)
+            return []
+        }
+
+        let primary = primaryData.flatMap(decodePendingJournal)
+        let backup = backupData.flatMap(decodePendingJournal)
+        if primary?.format == .future || backup?.format == .future {
+            // Preserve bytes written by a newer app instead of repairing over
+            // them with an older journal this build happens to understand.
+            markPendingJournalCorrupt(userID)
+            return []
+        }
+        if let primary, primary.format == .legacy {
+            // Rocio 1.0 wrote only the live primary raw array. If a newer build
+            // left a versioned backup before a downgrade, the legacy primary
+            // contains the user's newer offline intent and must win.
+            return migrateLegacyPendingJournal(primary, userID: userID)
+        }
+        if primary == nil, let backup, backup.format == .legacy {
+            return migrateLegacyPendingJournal(backup, userID: userID)
+        }
+        if let selected = newestPendingJournal(primary: primary, backup: backup) {
+            // Repair both copies to the newest valid generation. A crash can
+            // interrupt either write, but a stale upsert must never win over a
+            // newer delete or reset merely because one copy was damaged.
+            defaults.set(selected.data, forKey: primaryKey)
+            defaults.set(selected.data, forKey: backupKey)
+            corruptedPendingOutboxUsers.remove(userID)
+            return selected.changes
+        }
+
+        // Never reinterpret a corrupt mutation journal as an empty one: doing
+        // so can upload an incomplete snapshot and silently lose offline edits
+        // or deletions. Keep both byte copies untouched and fail cloud sync
+        // closed until a valid app update or explicit recovery can read them.
+        corruptedPendingOutboxUsers.insert(userID)
+        gardenSyncStatus = .pending
+        if errorMessage == nil {
+            errorMessage = L10n.text(
+                "cloud.pending.corrupt",
+                fallback: "Rocio kept your local garden, but its pending cloud-change journal needs recovery."
+            )
+        }
+        return []
     }
 
     func hasPendingGardenReset(for userID: UUID) -> Bool {
@@ -1196,18 +1297,133 @@ final class SessionStore: ObservableObject {
     }
 
     private func savePendingChanges(_ changes: [PendingCloudChange], userID: UUID) {
+        let defaults = UserDefaults.standard
         let key = pendingKey(userID)
+        let backupKey = pendingBackupKey(userID)
         guard !changes.isEmpty else {
-            UserDefaults.standard.removeObject(forKey: key)
+            defaults.removeObject(forKey: key)
+            defaults.removeObject(forKey: backupKey)
+            corruptedPendingOutboxUsers.remove(userID)
             return
         }
-        if let data = try? JSONEncoder().encode(changes) {
-            UserDefaults.standard.set(data, forKey: key)
+        guard !corruptedPendingOutboxUsers.contains(userID) else {
+            gardenSyncStatus = .pending
+            return
+        }
+
+        let decodedPrimary = defaults.data(forKey: key).flatMap(decodePendingJournal)
+        let decodedBackup = defaults.data(forKey: backupKey).flatMap(decodePendingJournal)
+        guard decodedPrimary?.format != .future, decodedBackup?.format != .future else {
+            markPendingJournalCorrupt(userID)
+            return
+        }
+        let currentGeneration = [
+            decodedPrimary?.generation,
+            decodedBackup?.generation,
+        ].compactMap { $0 }.max() ?? 0
+        let journal = PendingCloudChangeJournal(
+            schemaVersion: PendingCloudChangeJournal.currentSchemaVersion,
+            generation: currentGeneration == UInt64.max ? UInt64.max : currentGeneration + 1,
+            changes: changes
+        )
+        guard let data = try? JSONEncoder().encode(journal),
+              let verified = decodePendingJournal(data),
+              verified.generation == journal.generation,
+              verified.changes.map(\.id) == changes.map(\.id) else {
+            markPendingJournalCorrupt(userID)
+            return
+        }
+
+        // Store the same newest generation in both slots. The generation lets
+        // recovery choose correctly if the process stops between these writes.
+        defaults.set(data, forKey: backupKey)
+        guard defaults.data(forKey: backupKey) == data else {
+            markPendingJournalCorrupt(userID)
+            return
+        }
+        defaults.set(data, forKey: key)
+        guard defaults.data(forKey: key) == data else {
+            markPendingJournalCorrupt(userID)
+            return
+        }
+        corruptedPendingOutboxUsers.remove(userID)
+    }
+
+    private func decodePendingJournal(_ data: Data) -> DecodedPendingJournal? {
+        let decoder = JSONDecoder()
+        if let journal = try? decoder.decode(PendingCloudChangeJournal.self, from: data),
+           journal.schemaVersion == PendingCloudChangeJournal.currentSchemaVersion {
+            return DecodedPendingJournal(
+                data: data,
+                generation: journal.generation,
+                changes: journal.changes,
+                format: .current
+            )
+        }
+        if let header = try? decoder.decode(PendingCloudChangeJournalHeader.self, from: data),
+           header.schemaVersion > PendingCloudChangeJournal.currentSchemaVersion {
+            return DecodedPendingJournal(
+                data: data,
+                generation: 0,
+                changes: [],
+                format: .future
+            )
+        }
+        // One-time compatibility with journals written by Rocio 1.0.
+        if let changes = try? decoder.decode([PendingCloudChange].self, from: data) {
+            return DecodedPendingJournal(
+                data: data,
+                generation: 0,
+                changes: changes,
+                format: .legacy
+            )
+        }
+        return nil
+    }
+
+    private func migrateLegacyPendingJournal(
+        _ legacy: DecodedPendingJournal,
+        userID: UUID
+    ) -> [PendingCloudChange] {
+        corruptedPendingOutboxUsers.remove(userID)
+        savePendingChanges(legacy.changes, userID: userID)
+        guard !corruptedPendingOutboxUsers.contains(userID) else { return [] }
+        return legacy.changes
+    }
+
+    private func newestPendingJournal(
+        primary: DecodedPendingJournal?,
+        backup: DecodedPendingJournal?
+    ) -> DecodedPendingJournal? {
+        switch (primary, backup) {
+        case let (primary?, backup?):
+            return backup.generation > primary.generation ? backup : primary
+        case let (primary?, nil):
+            return primary
+        case let (nil, backup?):
+            return backup
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    private func markPendingJournalCorrupt(_ userID: UUID) {
+        corruptedPendingOutboxUsers.insert(userID)
+        gardenSyncStatus = .pending
+        if errorMessage == nil {
+            errorMessage = L10n.text(
+                "cloud.pending.corrupt",
+                fallback: "Rocio kept your local garden, but its pending cloud-change journal needs recovery."
+            )
         }
     }
 
     private func pendingKey(_ userID: UUID) -> String {
         "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+    }
+
+    private func pendingBackupKey(_ userID: UUID) -> String {
+        "\(pendingKey(userID)).backup"
     }
 
     private func loadMutationGardenEpoch(userID: UUID) -> UUID? {
@@ -1459,7 +1675,52 @@ struct PendingCloudChange: Codable {
     }
 }
 
+struct PendingCloudChangeJournal: Codable {
+    static let currentSchemaVersion = 1
+
+    let schemaVersion: Int
+    let generation: UInt64
+    let changes: [PendingCloudChange]
+}
+
+private struct PendingCloudChangeJournalHeader: Decodable {
+    let schemaVersion: Int
+}
+
+private enum PendingCloudChangeJournalFormat: Equatable {
+    case current
+    case legacy
+    case future
+}
+
+private struct DecodedPendingJournal {
+    let data: Data
+    let generation: UInt64
+    let changes: [PendingCloudChange]
+    let format: PendingCloudChangeJournalFormat
+}
+
 struct GardenSyncResolver {
+    static func isDegradedLegacyArbitrary(_ plant: GardenPlant) -> Bool {
+        plant.flowerId == GardenPlant.arbitraryCloudFlowerID &&
+            plant.identity.source == .bundled &&
+            plant.identity.sourceID == GardenPlant.arbitraryCloudFlowerID
+    }
+
+    static func recoverLegacyPendingUpsert(
+        _ local: GardenPlant,
+        remote: [CloudGardenRecord]
+    ) -> GardenPlant? {
+        guard isDegradedLegacyArbitrary(local) else { return local }
+        guard
+            let record = remote.first(where: { $0.id == local.id }),
+            record.deletedAt == nil
+        else { return nil }
+        let remotePlant = record.gardenPlant
+        guard !isDegradedLegacyArbitrary(remotePlant) else { return nil }
+        return preservingRicherProfile(local: local, remote: remotePlant)
+    }
+
     static func resolve(local: [GardenPlant], remote: [CloudGardenRecord]) -> [GardenPlant] {
         let remoteByID = Dictionary(uniqueKeysWithValues: remote.map { ($0.id, $0) })
         var activeByID = Dictionary(
@@ -1478,9 +1739,16 @@ struct GardenSyncResolver {
                 }
 
                 if plant.updatedAt >= remoteRecord.updatedAt {
-                    activeByID[plant.id] = plant
+                    activeByID[plant.id] = preservingRicherProfile(
+                        local: plant,
+                        remote: remoteRecord.gardenPlant
+                    )
                 }
-            } else {
+            } else if !isDegradedLegacyArbitrary(plant) {
+                // A sentinel-only v1 row has no stable identity to create from
+                // after upgrade. Without an authoritative remote match, treat
+                // it as rejected rather than resurrecting a deleted/missing
+                // cloud row.
                 activeByID[plant.id] = plant
             }
         }
@@ -1513,11 +1781,17 @@ struct GardenSyncResolver {
         for plant in current {
             let changedDuringSync = baselineByID[plant.id].map { $0 != plant } ?? true
             guard changedDuringSync, !tombstonedIDs.contains(plant.id) else { continue }
+            if activeByID[plant.id] == nil, isDegradedLegacyArbitrary(plant) {
+                continue
+            }
 
             if let remotePlant = activeByID[plant.id], remotePlant.updatedAt > plant.updatedAt {
                 continue
             }
-            activeByID[plant.id] = plant
+            activeByID[plant.id] = preservingRicherProfile(
+                local: plant,
+                remote: activeByID[plant.id]
+            )
         }
 
         return sorted(activeByID.values)
@@ -1528,5 +1802,27 @@ struct GardenSyncResolver {
             if $0.addedAt != $1.addedAt { return $0.addedAt < $1.addedAt }
             return $0.id.uuidString < $1.id.uuidString
         }
+    }
+
+    private static func preservingRicherProfile(
+        local: GardenPlant,
+        remote: GardenPlant?
+    ) -> GardenPlant {
+        guard
+            isDegradedLegacyArbitrary(local),
+            let remote,
+            !isDegradedLegacyArbitrary(remote)
+        else {
+            return local
+        }
+
+        // A v1 client can round-trip only the non-null sentinel and editable
+        // fields. Preserve those edits while restoring the authoritative v2
+        // provider/manual identity and care snapshot.
+        var merged = local
+        merged.flowerId = remote.flowerId
+        merged.identity = remote.identity
+        merged.careProfile = remote.careProfile
+        return merged
     }
 }

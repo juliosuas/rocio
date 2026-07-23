@@ -29,7 +29,14 @@ const config = read('supabase/config.toml');
 const migrations = migrationSources();
 const foundationMigrationFile = '20260709000100_rocio_cloud_foundation.sql';
 const tombstoneMigrationFile = '20260721000100_preserve_garden_deletions.sql';
-const canonicalMigrationFiles = [foundationMigrationFile, tombstoneMigrationFile];
+const arbitraryPlantMigrationFile = '20260722000100_support_arbitrary_plants.sql';
+const idempotentScanMigrationFile = '20260723000100_idempotent_scan_requests.sql';
+const canonicalMigrationFiles = [
+  foundationMigrationFile,
+  tombstoneMigrationFile,
+  arbitraryPlantMigrationFile,
+  idempotentScanMigrationFile,
+];
 const migrationFiles = migrations.map(({ file }) => file);
 const canonicalMigrationHistory =
   JSON.stringify(migrationFiles) === JSON.stringify(canonicalMigrationFiles);
@@ -37,7 +44,13 @@ const foundationMigration =
   migrations.find(({ file }) => file === foundationMigrationFile)?.sql ?? '';
 const tombstoneMigration =
   migrations.find(({ file }) => file === tombstoneMigrationFile)?.sql ?? '';
-const edge = read('supabase/functions/identify-flower/index.ts');
+const arbitraryPlantMigration =
+  migrations.find(({ file }) => file === arbitraryPlantMigrationFile)?.sql ?? '';
+const idempotentScanMigration =
+  migrations.find(({ file }) => file === idempotentScanMigrationFile)?.sql ?? '';
+const edgeEntry = read('supabase/functions/identify-flower/index.ts');
+const edgeHandler = read('supabase/functions/identify-flower/handler.ts');
+const edge = `${edgeEntry}\n${edgeHandler}`;
 const project = read('ios/Rocio.xcodeproj/project.pbxproj');
 const clientSource = `${read('index.html')}\n${clientSourceUnder('ios')}`;
 const sharedXcconfig = read('ios/Config/Rocio.xcconfig');
@@ -138,13 +151,13 @@ function identifierUsageIsLimitedTo(contents, identifier, allowedLinePatterns) {
 }
 
 const serviceRoleKeyUsageIsConstrained = identifierUsageIsLimitedTo(edge, 'serviceRoleKey', [
-  /const\s+serviceRoleKey\s*=\s*Deno\.env\.get\("SUPABASE_SERVICE_ROLE_KEY"\)/,
+  /const\s+serviceRoleKey\s*=\s*env\("SUPABASE_SERVICE_ROLE_KEY"\)/,
   /createClient\(supabaseUrl,\s*serviceRoleKey\b/,
   /!serviceRoleKey\b/,
 ]);
 const adminClientUsageIsConstrained = identifierUsageIsLimitedTo(edge, 'adminClient', [
   /const\s+adminClient\s*=\s*createClient\(/,
-  /adminClient\.from\("scan_results"\)\.insert\(/,
+  /adminClient\.rpc\("complete_scan_request"/,
 ]);
 
 function appBuildConfigurations(contents) {
@@ -179,14 +192,16 @@ const requiredSecurityDefinerFunctions = [
   ['public.set_analytics_enabled', foundationMigration],
   ['public.handle_new_user', foundationMigration],
   ['public.consume_scan_quota', foundationMigration],
+  ['public.begin_scan_request', idempotentScanMigration],
+  ['public.complete_scan_request', idempotentScanMigration],
   ['public.delete_my_account', foundationMigration],
   ['public.reject_stale_garden_update', tombstoneMigration],
   ['public.reject_watering_for_deleted_plant', tombstoneMigration],
   ['public.reset_my_garden', tombstoneMigration],
 ];
 const allSecurityDefinersHaveEmptySearchPath =
-  [foundationMigration, tombstoneMigration].every((source) =>
-    !/\bsecurity\s+definer\b(?!\s+set\s+search_path\s*=\s*'')/i.test(source));
+  migrations.every(({ sql }) =>
+    !/\bsecurity\s+definer\b(?!\s+set\s+search_path\s*=\s*'')/i.test(sql));
 
 const oldTombstoneGuard = tombstoneMigration.search(/if\s+old\.deleted_at\s+is\s+not\s+null\s+then/i);
 const incomingTombstoneHandler = tombstoneMigration.indexOf(
@@ -202,9 +217,32 @@ const tombstoneMigrationDoesNotWeakenFoundation =
   !/\b(?:create|alter|drop)\s+policy\b/i.test(tombstoneMigration) &&
   !/\bdisable\s+row\s+level\s+security\b/i.test(tombstoneMigration) &&
   !/\b(?:consume_scan_quota|scan_usage|scan_results|analytics_events)\b/i.test(tombstoneMigration);
+const arbitraryPlantGrantStatements =
+  arbitraryPlantMigration.match(/grant[\s\S]*?;/gi) || [];
+const normalizedArbitraryPlantGrants = arbitraryPlantGrantStatements.map(
+  (statement) => statement.replace(/\s+/g, ' ').trim().toLowerCase(),
+);
+const arbitraryPlantPrivateValidatorGrantsAreNarrow =
+  normalizedArbitraryPlantGrants.length === 2 &&
+  normalizedArbitraryPlantGrants.includes(
+    'grant usage on schema rocio_private to authenticated, service_role;',
+  ) &&
+  normalizedArbitraryPlantGrants.includes(
+    'grant execute on function rocio_private.is_swift_iso8601_timestamp(text) to authenticated, service_role;',
+  );
+const arbitraryPlantMigrationDoesNotWeakenFoundation =
+  !/\b(?:create|alter|drop)\s+policy\b/i.test(arbitraryPlantMigration) &&
+  !/\bdisable\s+row\s+level\s+security\b/i.test(arbitraryPlantMigration) &&
+  arbitraryPlantPrivateValidatorGrantsAreNarrow &&
+  !/\b(?:consume_scan_quota|scan_usage|scan_results|analytics_events)\b/i.test(arbitraryPlantMigration);
 
 const checks = [
-  ['canonical-migration-history', canonicalMigrationHistory && foundationMigration.length > 0 && tombstoneMigration.length > 0],
+  ['canonical-migration-history',
+    canonicalMigrationHistory &&
+    foundationMigration.length > 0 &&
+    tombstoneMigration.length > 0 &&
+    arbitraryPlantMigration.length > 0 &&
+    idempotentScanMigration.length > 0],
   ['manual-jwt-configured', config.includes('verify_jwt = false') && config.includes('validates it with auth.getUser')],
   ['preflight-allowed', edge.includes('if (req.method === "OPTIONS")')],
   ['row-level-security', foundationMigration.includes('enable row level security') && foundationMigration.includes('auth.uid() = user_id')],
@@ -270,24 +308,129 @@ const checks = [
     tombstoneMigration.includes('new.garden_epoch is distinct from current_epoch') &&
     tombstoneMigration.includes('revoke all on table public.garden_reset_requests from public, anon, authenticated')],
   ['tombstone-migration-preserves-security-boundaries', tombstoneMigrationDoesNotWeakenFoundation],
+  ['arbitrary-plant-versioned-storage',
+    foundationMigration.includes('flower_id text not null') &&
+    !/alter\s+column\s+flower_id\s+drop\s+not\s+null/i.test(arbitraryPlantMigration) &&
+    arbitraryPlantMigration.includes('add column if not exists identity jsonb') &&
+    arbitraryPlantMigration.includes('add column if not exists care_profile jsonb') &&
+    arbitraryPlantMigration.includes('add column if not exists schema_version smallint not null default 1') &&
+    arbitraryPlantMigration.includes('garden_plants_live_identity_present') &&
+    arbitraryPlantMigration.includes("flower_id <> '__arbitrary__'") &&
+    arbitraryPlantMigration.includes('garden_plants_identity_shape') &&
+    arbitraryPlantMigration.includes('garden_plants_care_profile_shape') &&
+    arbitraryPlantMigration.includes('create or replace function public.retain_garden_plant_schema()') &&
+    arbitraryPlantMigration.includes('new.schema_version < old.schema_version') &&
+    /create\s+trigger\s+retain_garden_plant_schema\s+before\s+update/i.test(arbitraryPlantMigration) &&
+    arbitraryPlantMigration.includes("identity ->> 'source' in ('bundled', 'plant_id', 'manual')") &&
+    arbitraryPlantMigration.includes("care_profile ->> 'source' in ('bundled', 'plant_id', 'manual')") &&
+    arbitraryPlantMigration.includes("care_profile ->> 'watering_preference' in ('dry', 'medium', 'wet')") &&
+    arbitraryPlantMigration.includes("care_profile ->> 'light_preference' in ('fullSun', 'partial', 'shade')") &&
+    arbitraryPlantMigration.includes(
+      'create or replace function rocio_private.is_swift_iso8601_timestamp(value text)',
+    ) &&
+    arbitraryPlantMigration.includes('immutable\nstrict\nset search_path = \'\'') &&
+    arbitraryPlantMigration.includes('perform value::pg_catalog.timestamptz') &&
+    arbitraryPlantMigration.includes(
+      'rocio_private.is_swift_iso8601_timestamp(',
+    ) &&
+    arbitraryPlantMigration.includes(
+      'revoke all on function rocio_private.is_swift_iso8601_timestamp(text)',
+    ) &&
+    arbitraryPlantPrivateValidatorGrantsAreNarrow &&
+    (arbitraryPlantMigration.match(/octet_length\([^)]*::text\) <= 4096/g) || []).length === 2],
+  ['arbitrary-plant-tombstone-scrubbing',
+    arbitraryPlantMigration.includes('create or replace function public.scrub_garden_plant_profile()') &&
+    /before\s+insert\s+or\s+update\s+on\s+public\.garden_plants/i.test(arbitraryPlantMigration) &&
+    arbitraryPlantMigration.includes('new.identity := null') &&
+    arbitraryPlantMigration.includes('new.care_profile := null') &&
+    arbitraryPlantMigration.includes('where deleted_at is not null') &&
+    /disable\s+trigger\s+reject_stale_garden_update/i.test(arbitraryPlantMigration) &&
+    /enable\s+trigger\s+reject_stale_garden_update/i.test(arbitraryPlantMigration) &&
+    arbitraryPlantMigration.indexOf('disable trigger reject_stale_garden_update') <
+      arbitraryPlantMigration.indexOf('where deleted_at is not null') &&
+    arbitraryPlantMigration.indexOf('where deleted_at is not null') <
+      arbitraryPlantMigration.indexOf('enable trigger reject_stale_garden_update')],
+  ['garden-future-clock-skew-rejected',
+    arbitraryPlantMigration.includes('create or replace function public.validate_garden_plant_sync_time()') &&
+    arbitraryPlantMigration.includes("new.updated_at > pg_catalog.clock_timestamp() + interval '24 hours'") &&
+    arbitraryPlantMigration.includes('garden_updated_at_too_far_in_future')],
+  ['arbitrary-plant-migration-preserves-security-boundaries',
+    arbitraryPlantMigrationDoesNotWeakenFoundation],
+  ['idempotent-scan-ledger-bounded-and-private',
+    idempotentScanMigration.includes('create table if not exists public.scan_requests') &&
+    idempotentScanMigration.includes('primary key (user_id, request_id)') &&
+    idempotentScanMigration.includes('provider_custom_id bigint generated always as identity') &&
+    idempotentScanMigration.includes('unique (provider_custom_id)') &&
+    idempotentScanMigration.includes("state in ('pending', 'completed')") &&
+    idempotentScanMigration.includes('octet_length(response_payload::text) <= 131072') &&
+    idempotentScanMigration.includes("expires_at <= created_at + interval '7 days'") &&
+    idempotentScanMigration.includes('alter table public.scan_requests enable row level security') &&
+    idempotentScanMigration.includes(
+      'revoke all on table public.scan_requests\n  from public, anon, authenticated, service_role',
+    ) &&
+    !/\b(?:image|photo|access_token)\b/i.test(
+      idempotentScanMigration.replace(/^--.*$/gm, ''),
+    )],
+  ['idempotent-scan-rpcs-locked-down',
+    idempotentScanMigration.includes('create or replace function public.begin_scan_request(p_request_id uuid)') &&
+    idempotentScanMigration.includes('from public.consume_scan_quota()') &&
+    idempotentScanMigration.includes('on conflict (user_id, request_id) do nothing') &&
+    idempotentScanMigration.includes("'recover'::text") &&
+    idempotentScanMigration.includes("pg_catalog.now() - interval '2 minutes'") &&
+    idempotentScanMigration.includes('create or replace function public.complete_scan_request(') &&
+    idempotentScanMigration.includes("if p_http_status = 200 then") &&
+    idempotentScanMigration.includes('grant execute on function public.begin_scan_request(uuid)\n  to authenticated') &&
+    idempotentScanMigration.includes(') to service_role')],
   ['server-only-secrets-loaded',
-    edge.includes('Deno.env.get("PLANT_ID_API_KEY")') &&
-    edge.includes('Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")')],
+    edgeEntry.includes('env: (name) => Deno.env.get(name)') &&
+    edgeHandler.includes('env("PLANT_ID_API_KEY")') &&
+    edgeHandler.includes('env("SUPABASE_SERVICE_ROLE_KEY")')],
   ['no-client-secret-leakage', !clientSecretPattern.test(clientSource)],
   ['service-role-key-not-leaked', serviceRoleKeyUsageIsConstrained && adminClientUsageIsConstrained],
   ['separate-user-admin-clients',
     edge.includes('createClient(supabaseUrl, anonKey') &&
     edge.includes('createClient(supabaseUrl, serviceRoleKey') &&
-    edge.includes('userClient.rpc("consume_scan_quota")') &&
-    edge.includes('adminClient.from("scan_results").insert')],
+    edge.includes('userClient.rpc("begin_scan_request"') &&
+    edge.includes('adminClient.rpc("complete_scan_request"')],
   ['edge-auth-validation',
     edge.includes('authorization?.startsWith("Bearer ")') &&
     edge.includes('userClient.auth.getUser(authorization.slice(7))') &&
     edge.indexOf('authorization?.startsWith("Bearer ")') < edge.indexOf('userClient.auth.getUser(authorization.slice(7))') &&
     edge.indexOf('userClient.auth.getUser(authorization.slice(7))') < edge.indexOf('!serviceRoleKey || !apiKey') &&
     edge.includes('photo_consent_required')],
+  ['edge-preserves-arbitrary-plant-identity',
+    edge.includes('function normalizedProviderResult(') &&
+    edge.includes('const providerID = safeIdentifier(item.id)') &&
+    edge.includes('const rank = safeText(item.details?.rank || item.rank') &&
+    edge.includes('...(providerID ? { id: providerID } : {})') &&
+    edge.includes('...(rank ? { rank } : {})') &&
+    !edge.includes('id: safeIdentifier(item.id)') &&
+    !edge.includes('rank: safeText(item.details?.rank || item.rank') &&
+    edge.includes('taxonomy: safeTextMap(item.details?.taxonomy)') &&
+    edge.includes('is_plant: normalized.isPlant') &&
+    edge.includes('suggestions: normalized.suggestions') &&
+    edge.includes('locale,') &&
+    edge.includes('"common_names,taxonomy,rank,synonyms"') &&
+    edge.includes('classification_level: "all"')],
+  ['edge-does-not-request-discarded-health',
+    !/\bhealth\s*:\s*["'](?:auto|all|only)["']/.test(edge)],
+  ['provider-result-retention-minimized',
+    edge.includes('await deleteProviderIdentification(cleanupIdentifier, apiKey)') &&
+    edge.includes('await deleteProviderIdentification(replayProviderCustomID, apiKey)') &&
+    edge.includes('method: "DELETE"') &&
+    !edge.includes('access_token: providerData')],
   ['service-role-fails-closed', edge.includes('!serviceRoleKey') && edge.includes('service_not_configured')],
-  ['quota-empty-result-guarded', edge.includes('if (!quota) return json(req, { error: "quota_unavailable" }, 503)')],
+  ['idempotent-provider-recovery',
+    edge.includes('custom_id: providerCustomID') &&
+    edge.includes('const maxReplayPayloadBytes = 112 * 1024') &&
+    edge.includes('function boundReplayPayload(') &&
+    edge.includes('new TextEncoder().encode(JSON.stringify(payload)).byteLength') &&
+    edge.includes('method: "GET"') &&
+    edge.includes('claim.claim_status === "recover"') &&
+    edge.includes('claim.can_abandon === true') &&
+    edge.includes('X-Rocio-Idempotent-Replay') &&
+    edge.indexOf('adminClient.rpc("complete_scan_request"') <
+      edge.indexOf('await deleteProviderIdentification(cleanupIdentifier, apiKey)')],
   ['client-photo-consent',
     !scanner.includes('@AppStorage("rocio.cloud.photoConsent")') &&
       scanner.includes('photoConsent.begin(image)') &&

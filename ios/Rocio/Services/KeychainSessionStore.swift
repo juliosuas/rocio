@@ -8,7 +8,11 @@ struct AuthSession: Codable, Equatable {
     let expiresAt: Date
     let user: AuthUser
 
-    var needsRefresh: Bool { expiresAt.timeIntervalSinceNow < 60 }
+    var needsRefresh: Bool { needsRefresh(within: 60) }
+
+    func needsRefresh(within minimumValidity: TimeInterval) -> Bool {
+        expiresAt.timeIntervalSinceNow < minimumValidity
+    }
 }
 struct AuthUser: Codable, Equatable {
     let id: UUID

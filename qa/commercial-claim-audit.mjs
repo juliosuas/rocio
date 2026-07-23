@@ -52,8 +52,8 @@ const checks = [
     pass: readme.includes('`index.html` is a framework-free demo and is not part of the iOS binary.') &&
       readme.includes('The published demo does not create accounts, sync with Supabase, or send images to Plant.id.') &&
       readme.includes('before a reduced copy is sent to Plant.id/Kindwise through Supabase.') &&
-      readme.includes('has not been deployed to the remote project.'),
-    evidence: 'README separates the local-only web demo from the authenticated native path and names the pending remote migration.',
+      readme.includes('its matching Supabase migrations and Edge Function update have not been deployed.'),
+    evidence: 'README separates the local-only web demo from the authenticated native path and names the pending backend deployment.',
   },
 ];
 

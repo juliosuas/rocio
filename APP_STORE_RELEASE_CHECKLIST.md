@@ -1,10 +1,10 @@
 # Rocio App Store Release Checklist
 
-Date: 2026-07-21
+Date: 2026-07-23
 
 ## Current Build Strategy
 
-Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-21, and 115/115 native tests passed on an iPhone 17 simulator running iOS 26.3.1 on 2026-07-22. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
+Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-23, and 170/170 native tests passed on an iPhone 17 simulator running iOS 26.3.1. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
 
 The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
 
@@ -12,7 +12,7 @@ An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, 
 
 A Personal Team Debug build for `com.juliosuas.rocio`, team `67QTYANL3F`, installed and launched successfully on the connected iPhone after the developer profile was trusted. Its provisioning profile expires on 2026-07-28. This confirms the earlier launch block was the iOS signing/trust boundary rather than a Supabase crash. The project-level `DEVELOPMENT_TEAM` remains blank, and paid membership is needed only for distribution/TestFlight signing.
 
-The read-only diagnostic on 2026-07-21 confirmed the remote Supabase foundation and `identify-flower` v5, including fail-closed unauthenticated responses. This is dated evidence, not a perpetual guarantee: revalidate the remote state against the exact release commit. Migration `20260721000100_preserve_garden_deletions` remains pending by design until the matching iOS tombstone/epoch clients are integrated; see `SUPABASE_DIAGNOSTIC_2026-07-21.md`.
+The read-only diagnostic on 2026-07-21 confirmed the remote Supabase foundation and `identify-flower` v5, including fail-closed unauthenticated responses. This is dated evidence, not a perpetual guarantee: revalidate the remote state against the exact release commit. The three incremental migrations remain pending by design: `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql`; see `SUPABASE_DIAGNOSTIC_2026-07-21.md`.
 
 The matching client now treats Auth and garden readiness separately: pre-migration `profiles.garden_epoch` failures keep the valid session and local garden available, queue edits without cloud writes, and retry through the same guarded preflight. Only causally authorized edits adopt a fetched epoch; ambiguous/inherited conflicts stay quarantined without blocking safe edits, validated queue provenance survives relaunch, post-reset edits adopt the returned epoch, and sign-out uses Supabase `scope=local` so one Mac/iPhone does not revoke the user's other devices.
 
@@ -32,7 +32,7 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
 - Supabase Auth allowlists exactly `com.juliosuas.rocio://auth/recovery` and uses the chosen stable HTTPS product URL instead of localhost as Site URL.
 - Custom SMTP is configured for external users, and a real reset email opens Rocio, exchanges the PKCE code, changes the password, and permits a fresh sign-in.
-- The deletion-preserving Supabase migration is applied once, and the active authenticated Edge Function/configuration is verified against the integrated release commit (redeployed only when changed).
+- After backup and linked dry-run review, the deletion-preserving, arbitrary-plant, and idempotent-scan migrations are applied once in timestamp order, then the matching authenticated Edge Function/configuration is deployed and verified against the integrated release commit.
 - Production anonymous key is injected through release configuration; Plant.id secret exists only in Supabase.
 - Account creation, login, sync, analytics opt-out, photo consent, quota, sign out, and in-app account deletion pass on a device.
 - App Review demo account is active and included in Review Information.
@@ -57,7 +57,7 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 
 ## App Store Notes Draft
 
-Rocio is a bilingual English/Spanish flower-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id flower identification after explicit consent for each transferred photo.
+Rocio is a bilingual English/Spanish plant-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules optional local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id plant identification after explicit consent for each transferred photo.
 
 Camera and photo access are used only after a scanner action. For every photo, the user chooses on-device analysis or cloud transfer. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. Notification permission is requested only after an explicit tap in Garden or Settings.
 

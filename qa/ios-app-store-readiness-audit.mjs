@@ -45,6 +45,10 @@ const appShortcutsCatalogPath = path.join(iosRoot, 'Resources', 'AppShortcuts.xc
 const appShortcutsCatalog = fs.existsSync(appShortcutsCatalogPath)
   ? JSON.parse(fs.readFileSync(appShortcutsCatalogPath, 'utf8'))
   : { strings: {} };
+const infoPlistCatalogPath = path.join(iosRoot, 'Resources', 'InfoPlist.xcstrings');
+const infoPlistCatalog = fs.existsSync(infoPlistCatalogPath)
+  ? JSON.parse(fs.readFileSync(infoPlistCatalogPath, 'utf8'))
+  : { strings: {} };
 const iconsDirectory = path.join(iosRoot, 'Resources', 'Assets.xcassets', 'AppIcon.appiconset');
 const iconFiles = fs.readdirSync(iconsDirectory).filter((name) => name.endsWith('.png'));
 
@@ -108,19 +112,38 @@ const requiredAppShortcutKeys = [
   'Show my garden in ${applicationName}',
   'Water a plant in ${applicationName}',
   'Log watering in ${applicationName}',
-  'Scan a flower with ${applicationName}',
-  'Identify a flower in ${applicationName}',
+  'Scan a plant with ${applicationName}',
+  'Identify a plant in ${applicationName}',
 ];
 const incompleteAppShortcutKeys = requiredAppShortcutKeys.filter((key) => {
   const localizations = appShortcutsCatalog.strings[key]?.localizations ?? {};
   return !localizations.en?.stringUnit?.value || !localizations.es?.stringUnit?.value;
 });
+const localizedPurposeStringIsComplete = (key) => {
+  const localizations = infoPlistCatalog.strings[key]?.localizations ?? {};
+  const english = localizations.en?.stringUnit?.value ?? '';
+  const spanish = localizations.es?.stringUnit?.value ?? '';
+  return english.toLowerCase().includes('plant')
+    && spanish.toLowerCase().includes('planta');
+};
 
 const checks = [
   ['bundle id', projectFile.includes('PRODUCT_BUNDLE_IDENTIFIER = com.juliosuas.rocio;')],
   ['marketing version', projectFile.includes('MARKETING_VERSION = 1.0;')],
-  ['camera purpose string', appInfoPlist.includes('<key>NSCameraUsageDescription</key>')],
-  ['photo purpose string', appInfoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>')],
+  [
+    'camera purpose string localized for plants',
+    appInfoPlist.includes('<key>NSCameraUsageDescription</key>')
+      && appInfoPlist.includes('Rocio uses the camera to photograph plants')
+      && projectFile.includes('InfoPlist.xcstrings')
+      && localizedPurposeStringIsComplete('NSCameraUsageDescription'),
+  ],
+  [
+    'photo purpose string localized for plants',
+    appInfoPlist.includes('<key>NSPhotoLibraryUsageDescription</key>')
+      && appInfoPlist.includes('Rocio uses photos you choose to identify plants')
+      && projectFile.includes('InfoPlist.xcstrings')
+      && localizedPurposeStringIsComplete('NSPhotoLibraryUsageDescription'),
+  ],
   [
     'password recovery URL scheme',
     appInfoPlist.includes('<key>CFBundleURLSchemes</key>')
@@ -173,6 +196,7 @@ console.log(JSON.stringify({
   missingUsedLocalizationKeys,
   incompleteUsedLocalizationKeys,
   incompleteAppShortcutKeys,
+  infoPlistLocalizationKeys: Object.keys(infoPlistCatalog.strings),
   privacyManifestErrors,
   unsignedReady: failed === 0,
   signedReady: failed === 0 && Boolean(configuredTeam),

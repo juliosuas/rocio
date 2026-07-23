@@ -1,17 +1,17 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-07-21
+Date: 2026-07-23
 
 This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 115 passing integrated simulator tests, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The first-plant-to-first-care loop, per-photo scanner choice, and password-recovery client are implemented locally. The remaining release path is integrating the client PR chain, applying the pending deletion migration, configuring and smoke-testing password-recovery delivery, authenticated two-session and real-device permission smoke, paid distribution signing, screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 170 passing integrated simulator tests, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging the stacked PRs, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
 1. Real-device permission smoke is not locally verified on this machine.
-   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 115/115 iPhone 17 simulator tests passed on 2026-07-22 with iOS 26.3.1. Re-run these gates from the exact release commit.
+   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 170/170 iPhone 17 simulator tests passed on 2026-07-23 with iOS 26.3.1. Re-run these gates from the exact release commit.
    - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
    - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
@@ -35,15 +35,15 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Su
    - Native local notifications exist, but permission flow and scheduled delivery must be tested on a physical iPhone before TestFlight.
 
 6. Cloud deployment is partially complete.
-   - The read-only production diagnostic on 2026-07-21 confirmed the foundation migration, six RLS-protected tables, public client configuration, and `identify-flower` v5. Revalidate this remote state from the exact release commit before deployment.
-   - Apply `20260721000100_preserve_garden_deletions` only after its client PRs are integrated, then verify two-account delete-wins/reset convergence, quota, analytics opt-out, and account deletion against production.
+   - The read-only production diagnostic on 2026-07-21 confirmed only the foundation migration, six RLS-protected tables, public client configuration, and `identify-flower` v5. Treat that as dated evidence and revalidate the exact remote state before deployment.
+   - After the matching client stack lands and a database backup plus dry run are reviewed, apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order, then deploy the matching Edge Function and verify account isolation, delete-wins/reset convergence, quota/replay, analytics opt-out, and account deletion.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
    - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
 8. QA must finish on hardware and production cloud state.
-   - Classifier, release, App Store, security, unsigned Release build, and 115/115 simulator tests pass locally on the integrated tree as of 2026-07-22. A verified simulator smoke covers core Debug demo screens and the signed app now launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
+   - Classifier, release, App Store, security, unsigned Release build, and 170/170 simulator tests pass locally on the feature candidate as of 2026-07-23. A verified simulator smoke covers core Debug screens and the Personal Team app launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
 
 ## Garry Tan Tooling Context
 
@@ -143,9 +143,9 @@ Acceptance criteria:
 - Marketing copy avoids overclaiming identification accuracy.
 - Release checklist is complete.
 
-## Current Smallest Shippable PR
+## Current Feature Candidate
 
-Ship `Rocio Beta 0.1 — first plant to first care` on top of the locally completed cloud client and migration hardening. The matching migration remains unapplied in production:
+Ship `Rocio 1.0 — arbitrary plants end to end` on top of the beta first-care foundation. All three incremental migrations and the matching Edge update remain unapplied in production:
 
 - Upload a first plant created during the authenticated epoch handshake without requiring a second edit.
 - Move directly to My Garden after adding a plant and show cloud sync state beside the action that created it.
@@ -155,5 +155,8 @@ Ship `Rocio Beta 0.1 — first plant to first care` on top of the locally comple
 - Require confirmation before the irreversible removal of one plant.
 - Report garden deletion as cloud-confirmed only after the reset RPC and authoritative reconciliation succeed; otherwise keep a visible pending state.
 - Include the locally integrated PKCE password-recovery client, while keeping it externally blocked until the callback allowlist, stable HTTPS Site URL, custom SMTP, and a real email-to-app password-change smoke test are complete.
+- Preserve arbitrary Plant.id and manual identity without inventing exact care, and keep those plants usable across Garden, Calendar, notifications, App Intents, export, sync, deletion, and recovery.
+- Make paid scans idempotent with one quota claim, bounded replay, provider recovery by `custom_id`, and best-effort provider cleanup.
+- Fail closed on future local or cloud schemas so an older build cannot overwrite fields it does not understand.
 
-Landing order is fixed: merge PR 18, retarget and merge PR 19, land this beta critical-path cut, then apply migration `20260721000100` exactly once and run the authenticated two-session smoke. Do not deploy the migration ahead of the matching client stack.
+Landing order is fixed: merge the beta-first-care base PR, then merge the stacked arbitrary-plant PR. After a production backup, linked dry run, and review, apply `20260721000100` → `20260722000100` → `20260723000100`, deploy the matching Edge Function, and run authenticated canaries plus the two-session smoke. Do not deploy backend changes from an unreviewed feature branch.

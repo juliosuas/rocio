@@ -5,7 +5,7 @@
 
 **Clear, private plant care in a native iPhone app.**
 
-Marketing version **1.0** · build **1** · iOS **17+** · Swift **5** · beta candidate in development
+Marketing version **1.0** · build **1** · iOS **17+** · Swift **5** · feature candidate in development
 
 [![QA](https://github.com/juliosuas/rocio/actions/workflows/qa.yml/badge.svg)](https://github.com/juliosuas/rocio/actions/workflows/qa.yml)
 [![iOS](https://github.com/juliosuas/rocio/actions/workflows/ios.yml/badge.svg)](https://github.com/juliosuas/rocio/actions/workflows/ios.yml)
@@ -15,28 +15,32 @@ Marketing version **1.0** · build **1** · iOS **17+** · Swift **5** · beta c
 </div>
 
 > [!IMPORTANT]
-> The native product is implemented and locally verified, but it is not yet available through TestFlight or the App Store. A paid Apple Developer membership, distribution signing, final account-recovery configuration, and physical-device smoke tests are still required.
+> The arbitrary-plant implementation is locally verified on the feature branch, but its matching Supabase migrations and Edge Function update have not been deployed. Rocío is not yet available through TestFlight or the App Store. A paid Apple Developer membership, distribution signing, final account-recovery configuration, and physical-device smoke tests are still required.
 
-Rocío supports the care cycle that matters: choose a plant, add it to the garden, understand the next care step, opt in to a reminder, and record the first watering. The current beta ships 15 editorial flower guides; the [12-hour production plan](GSTACK_APP_STORE_DAILY_PLAN.md) removes that runtime ceiling so scanned or manually entered plants can be saved, scheduled, used offline, synchronized, and rendered throughout the app. The iOS client is built with SwiftUI. The website hosts a separate interactive demo that stores its data locally; it is not the native client or an App Store download.
+Rocío supports the care cycle that matters: identify or enter a plant, save the individual specimen, choose an optional watering preference, receive an opt-in reminder, and record the first watering. The native runtime now supports arbitrary Plant.id results and manually entered plants without forcing them into the 15 bundled flower guides. Saved plants keep a durable identity and care snapshot, work offline, synchronize through the additive cloud contract, and render throughout Garden, Calendar, notifications, App Intents, and export. The iOS client is built with SwiftUI. The website hosts a separate 15-guide interactive demo that stores its data locally; it is not the native client or an App Store download.
 
 ## Real iOS build
 
-These are raw, privacy-safe screenshots captured on July 22, 2026 from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3. They are not mockups. Final App Store screenshots will be re-captured from the exact Release archive.
+These are raw, privacy-safe screenshots from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. They are not mockups. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23 from the current arbitrary-plant branch and provides real evidence of that flow. These are development records, not final App Store art; the submission set will be re-captured from the exact Release archive.
 
 <p align="center">
   <img src="docs/screenshots/ios/catalog.png" alt="Rocío native iOS catalog" width="180">
   <img src="docs/screenshots/ios/garden.png" alt="Rocío native iOS garden" width="180">
   <img src="docs/screenshots/ios/calendar.png" alt="Rocío native iOS watering calendar" width="180">
   <img src="docs/screenshots/ios/scanner.png" alt="Rocío native iOS experimental scanner" width="180">
+  <img src="docs/screenshots/ios/manual-plant.png" alt="Rocío native iOS manual Swiss cheese plant with moderate watering preference" width="180">
   <img src="docs/screenshots/ios/settings.png" alt="Rocío native iOS settings and privacy controls" width="180">
 </p>
 
 ## Native iOS app: what works today
 
-- **Catalog of exactly 15 flowers** with attributed photography, scientific names, difficulty, and care guidance.
+- **15 bundled editorial flower guides** with attributed photography, scientific names, difficulty, and care guidance.
+- **Arbitrary native plants** from Plant.id or manual entry, saved with durable source identity instead of being relabeled as the closest bundled flower.
 - **First plant to first care**: add a plant, return to My Garden, enable a reminder, and confirm watering.
-- **Resilient garden** with a local cache, retries, honest sync states, and account isolation.
-- **Seven-day calendar** and local notifications requested only after an explicit user action.
+- **Crash-safe offline garden** with versioned primary and backup snapshots, surfaced recovery state, retries, honest sync states, and account isolation.
+- **Editable care** with optional dry/medium/wet watering preferences, optional schedules, and no invented milliliter precision for unknown plants.
+- **Generic rendering and duplicate specimens** so non-catalog plants appear across the product and two plants of the same species keep independent names and care state.
+- **Seven-day calendar** and local notifications requested only after an explicit user action; unscheduled plants stay unscheduled until the user chooses a preference.
 - **Experimental scanner with per-photo privacy**: analyze on the iPhone, or grant fresh consent before a reduced copy is sent to Plant.id/Kindwise through Supabase.
 - **PKCE password recovery** without bearer tokens in URLs, with the verifier stored in Keychain and protection against cross-scene races.
 - **Data controls** to export data, clear the garden, opt out of analytics, and permanently delete the account.
@@ -54,26 +58,27 @@ Its cloud configuration is intentionally blank. The published demo does not crea
 | Surface | Status | What it means |
 |---|---|---|
 | Web demo | Available | Stores data only in the current browser and uses the local matcher. |
-| iOS app 1.0 (build 1) | Beta candidate | Debug and Release compile; 115/115 tests pass on iPhone 17 with iOS 26.3.1. |
-| Supabase | Foundation verified | Auth, RLS, ACLs, quota, sync, and deletion are tested; the new migration is not deployed yet. |
+| iOS app 1.0 (build 1) | Feature candidate | The full 170/170 XCTest suite passes on iPhone 17 with iOS 26.3.1; external device smoke remains. |
+| Supabase | Local contract verified | Auth, RLS, ACLs, idempotent quota, replay, sync, deletion, and the four-migration PostgreSQL 16 upgrade path pass locally. The three incremental migrations and matching Edge update are not deployed. |
 | Physical iPhone | Launch verified | Opens with a Personal Team; camera, photos, notifications, and the authenticated scanner still need end-to-end testing. |
 | TestFlight / App Store | Externally blocked | Requires paid Apple Developer membership, `DEVELOPMENT_TEAM`, distribution signing, and App Store Connect. |
 
 ## Known limitations
 
 - The scanner and care content are assistive. They do not replace a botanical or professional diagnosis.
-- Local care records cover exactly 15 flowers. An external candidate may not have a matching local record.
+- The bundled editorial catalog and local image matcher still cover 15 flowers. Arbitrary plants use their saved identity, a generic botanical presentation, and user-confirmed care instead of pretending that an editorial guide exists.
 - Disease and treatment content in the web demo still requires botanical review before it can be presented as validated guidance.
-- Migration `20260721000100_preserve_garden_deletions.sql` is verified against disposable PostgreSQL 16, but has not been deployed to the remote project.
+- The ordered four-migration PostgreSQL 16 upgrade harness passes. The deletion-preserving, arbitrary-plant, and idempotent-scan migrations plus the matching Edge Function update remain undeployed.
 - The PKCE client is implemented. A stable HTTPS Site URL, redirect allowlist, custom SMTP, and a real email → app → new-password test are still required.
-- Production smoke tests with two sessions and complete physical-device tests for camera, photos, and notification delivery remain outstanding.
+- Authenticated deployment canaries, production smoke tests with two sessions, and complete physical-device tests for camera, photos, consent, offline behavior, and notification delivery remain outstanding.
 - The icon passes automated checks; final screenshots and App Store visual review are still pending.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-    UI["SwiftUI iOS 1.0"] --> Cache["Local cache and Keychain"]
+    UI["SwiftUI iOS 1.0"] --> Cache["Versioned local snapshots and Keychain"]
+    UI --> Identity["Saved identity and care profile"]
     UI --> Notify["Notifications and App Intents"]
     UI --> Auth["Supabase Auth"]
     Auth --> API["PostgREST + RLS"]
@@ -138,14 +143,16 @@ ROCIO_SECURITY_DATABASE_URL='<disposable-postgres-16>' \
   node qa/run-cloud-ai-security-postgres.mjs
 ```
 
-Local evidence from July 22, 2026:
+Current local evidence from July 23, 2026:
 
-- **115/115 XCTest cases** on iPhone 17 with iOS 26.3.1.
-- **Unsigned Release** compiled with Xcode 26.3.
-- **Release gate: 11/11**.
-- **Cloud/security: 41/41**.
+- **170/170 XCTest cases** on iPhone 17 with iOS 26.3.1 for the current arbitrary-plant implementation.
+- **Edge runtime: 28/28** executable handler tests, including idempotent recovery and failure paths.
+- **Release gate: 12/12** on the current feature-candidate state.
+- **Static cloud/security: 50/50** on the current implementation.
+- **Strict local classifier: 12/12**.
 - **App Store audit: 20/20**, with `unsignedReady=true`.
-- **PostgreSQL 16**: ordered migrations, upgrade fixture, RLS, ACLs, quota, tombstones, reset, and purge verified with rollback.
+- **PostgreSQL 16**: all four ordered migrations, upgrade fixture, RLS, ACLs, quota, replay lifecycle, tombstones, reset, and purge verified with rollback.
+- **Unsigned Release build:** passes with signing disabled.
 
 `signedReady=false` remains correct until a distribution team is configured.
 
@@ -173,14 +180,14 @@ support.html          Public support center
 
 ## Path to distribution
 
-1. Integrate the pull-request chain in order and rerun CI from `main`.
-2. Run `supabase db push --linked --dry-run`, then apply the pending migration exactly once.
+1. Review and merge the stacked pull request only after its release gates and CI are green.
+2. Review `supabase db push --linked --dry-run`, then apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order before deploying the matching Edge Function.
 3. Configure the HTTPS Site URL, exact redirect allowlist, and SMTP; test email → PKCE → new password → login.
-4. Complete physical-device smoke tests for camera, photos, notifications, and two synchronized sessions.
+4. Complete real-device and two-session smoke tests for scanning, manual entry, offline persistence, sync, deletion, camera, photos, and notifications.
 5. Activate the Apple Developer Program, configure `DEVELOPMENT_TEAM`, sign the archive, and upload it to TestFlight.
-6. Capture final screenshots and complete App Store Connect.
+6. Capture final screenshots from that Release archive and complete App Store Connect.
 
-The immediate arbitrary-plant execution order is in [`GSTACK_APP_STORE_DAILY_PLAN.md`](GSTACK_APP_STORE_DAILY_PLAN.md). The broader launch plan is in [`APP_STORE_LAUNCH_PLAN.md`](APP_STORE_LAUNCH_PLAN.md), and the release checklist is in [`APP_STORE_RELEASE_CHECKLIST.md`](APP_STORE_RELEASE_CHECKLIST.md).
+The arbitrary-plant execution ledger and remaining release work are in [`GSTACK_APP_STORE_DAILY_PLAN.md`](GSTACK_APP_STORE_DAILY_PLAN.md). The broader launch plan is in [`APP_STORE_LAUNCH_PLAN.md`](APP_STORE_LAUNCH_PLAN.md), and the release checklist is in [`APP_STORE_RELEASE_CHECKLIST.md`](APP_STORE_RELEASE_CHECKLIST.md).
 
 ## Useful documentation
 

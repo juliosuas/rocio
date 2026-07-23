@@ -12,6 +12,7 @@ struct GardenView: View {
     @StateObject private var reminderController: FirstCareReminderController
     @State private var editingPlant: GardenPlant?
     @State private var recentlyWateredPlantID: UUID?
+    @State private var isAddingPlantManually = false
 
     init() {
         _reminderController = StateObject(wrappedValue: .live())
@@ -26,15 +27,22 @@ struct GardenView: View {
             ScrollView {
                 LazyVStack(spacing: 14) {
                     GardenSyncStatusView(status: sessionStore.gardenSyncStatus)
+                    GardenPersistenceStatusView(status: gardenStore.persistenceStatus)
 
                     if gardenStore.plants.isEmpty {
-                        EmptyGardenView {
-                            router.selectedTab = .catalog
-                        }
+                        EmptyGardenView(
+                            onOpenCatalog: { router.selectedTab = .catalog },
+                            onAddManually: {
+                                guard gardenStore.canAcceptLocalChanges else { return }
+                                isAddingPlantManually = true
+                            }
+                        )
                     } else {
                         GardenSummaryView(summary: gardenStore.summary())
 
-                        if gardenStore.plants.count == 1, !gardenStore.isDemoMode {
+                        if gardenStore.plants.count == 1,
+                           gardenStore.plants[0].resolvedWateringIntervalDays != nil,
+                           !gardenStore.isDemoMode {
                             FirstCareReminderCard(
                                 state: reminderController.state,
                                 onEnable: {
@@ -49,17 +57,15 @@ struct GardenView: View {
                         }
 
                         ForEach(gardenStore.plants) { plant in
-                            if let flower = gardenStore.flower(for: plant) {
-                                GardenRow(
-                                    plant: plant,
-                                    flower: flower,
-                                    urgency: gardenStore.urgency(for: plant),
-                                    nextWatering: gardenStore.nextWateringDate(for: plant),
-                                    isWateredConfirmationVisible: recentlyWateredPlantID == plant.id,
-                                    onWater: { water(plant) },
-                                    onEdit: { editingPlant = plant }
-                                )
-                            }
+                            GardenRow(
+                                plant: plant,
+                                flower: gardenStore.flower(for: plant),
+                                urgency: gardenStore.urgency(for: plant),
+                                nextWatering: gardenStore.nextWateringDate(for: plant),
+                                isWateredConfirmationVisible: recentlyWateredPlantID == plant.id,
+                                onWater: { water(plant) },
+                                onEdit: { editingPlant = plant }
+                            )
                         }
                     }
                 }
@@ -70,6 +76,25 @@ struct GardenView: View {
             .sheet(item: $editingPlant) { plant in
                 GardenEditView(plant: plant)
                     .environmentObject(gardenStore)
+            }
+            .sheet(isPresented: $isAddingPlantManually) {
+                ManualPlantEntryView { identity, careProfile in
+                    gardenStore.add(
+                        identity: identity,
+                        careProfile: careProfile,
+                        nickname: identity.commonName
+                    ) != nil
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isAddingPlantManually = true
+                    } label: {
+                        Label(L10n.text("garden.add", fallback: "Add plant"), systemImage: "plus")
+                    }
+                    .disabled(!gardenStore.canAcceptLocalChanges)
+                }
             }
             .task {
                 await refreshReminderAuthorization()
@@ -96,7 +121,7 @@ struct GardenView: View {
     }
 
     private func water(_ plant: GardenPlant) {
-        gardenStore.water(plant)
+        guard gardenStore.water(plant) else { return }
         withAnimation(.easeInOut(duration: 0.18)) {
             recentlyWateredPlantID = plant.id
         }
@@ -198,6 +223,7 @@ final class FirstCareReminderController: ObservableObject {
 
 private struct EmptyGardenView: View {
     let onOpenCatalog: () -> Void
+    let onAddManually: () -> Void
     private var flower: Flower? { FlowerCatalog.flower(id: "lavanda") }
 
     var body: some View {
@@ -209,7 +235,10 @@ private struct EmptyGardenView: View {
             VStack(alignment: .leading, spacing: 7) {
                 Text(L10n.text("garden.empty.title", fallback: "Your garden is ready to grow"))
                     .font(.rocioTitle)
-                Text(L10n.text("garden.empty.copy", fallback: "Add your first flower to unlock watering, calendar, and Siri shortcuts."))
+                Text(L10n.text(
+                    "garden.empty.copy",
+                    fallback: "Add your first plant to unlock care tracking, calendar, and Siri shortcuts."
+                ))
                     .foregroundStyle(.secondary)
             }
 
@@ -221,6 +250,18 @@ private struct EmptyGardenView: View {
                 }
             }
             .buttonStyle(RocioPrimaryButtonStyle())
+
+            Button(action: onAddManually) {
+                HStack {
+                    Label(
+                        L10n.text("garden.empty.manual", fallback: "Add a plant manually"),
+                        systemImage: "square.and.pencil"
+                    )
+                    Spacer()
+                    Image(systemName: "arrow.right")
+                }
+            }
+            .buttonStyle(RocioSecondaryButtonStyle())
         }
     }
 }
@@ -229,7 +270,15 @@ private struct GardenSummaryView: View {
     let summary: GardenSummary
 
     private var statusTint: Color {
-        summary.overdueCount > 0 ? .rocioRose : .rocioTeal
+        if summary.overdueCount > 0 { return .rocioRose }
+        if summary.unscheduledCount > 0 { return .rocioAmber }
+        return .rocioTeal
+    }
+
+    private var statusSystemImage: String {
+        if summary.overdueCount > 0 { return "drop.fill" }
+        if summary.unscheduledCount > 0 { return "calendar.badge.exclamationmark" }
+        return "checkmark.seal.fill"
     }
 
     var body: some View {
@@ -244,7 +293,7 @@ private struct GardenSummaryView: View {
                         .foregroundStyle(.white)
                 }
                 Spacer()
-                Image(systemName: summary.overdueCount > 0 ? "drop.fill" : "checkmark.seal.fill")
+                Image(systemName: statusSystemImage)
                     .font(.title2)
                     .foregroundStyle(statusTint)
                     .frame(width: 44, height: 44)
@@ -300,6 +349,43 @@ private struct GardenSyncStatusView: View {
             .padding(12)
             .background(tint.opacity(0.11), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             .accessibilityElement(children: .combine)
+    }
+}
+
+private struct GardenPersistenceStatusView: View {
+    let status: GardenPersistence.LoadStatus
+
+    var body: some View {
+        switch status {
+        case .recoveredFromBackup:
+            Label(
+                L10n.text(
+                    "garden.persistence.recovered",
+                    fallback: "Rocio recovered your local garden from its last known-good backup."
+                ),
+                systemImage: "externaldrive.badge.checkmark"
+            )
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.rocioTeal)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color.rocioTeal.opacity(0.11), in: RoundedRectangle(cornerRadius: 8))
+        case .unrecoverableCorruption:
+            Label(
+                L10n.text(
+                    "garden.persistence.corrupt",
+                    fallback: "Rocio could not read the local garden file. It has not been overwritten; cloud sync can still restore a valid copy."
+                ),
+                systemImage: "externaldrive.badge.exclamationmark"
+            )
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.rocioRose)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color.rocioRose.opacity(0.11), in: RoundedRectangle(cornerRadius: 8))
+        case .empty, .loaded, .migratedLegacy:
+            EmptyView()
+        }
     }
 }
 
@@ -413,35 +499,39 @@ private struct SummaryMetric: View {
 
 private struct GardenRow: View {
     let plant: GardenPlant
-    let flower: Flower
-    let urgency: WateringUrgency
-    let nextWatering: Date
+    let flower: Flower?
+    let urgency: WateringUrgency?
+    let nextWatering: Date?
     let isWateredConfirmationVisible: Bool
     let onWater: () -> Void
     let onEdit: () -> Void
 
     private var urgencyTint: Color {
         switch urgency {
-        case .overdue: .rocioRose
-        case .soon: .rocioAmber
-        case .good: .rocioTeal
+        case .overdue?: .rocioRose
+        case .soon?: .rocioAmber
+        case .good?: .rocioTeal
+        case nil: .rocioAmber
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
             HStack(spacing: 12) {
-                FlowerImage(flower: flower, size: 68)
+                GardenPlantArtwork(flower: flower, size: 68)
                 VStack(alignment: .leading, spacing: 5) {
-                    Text(plant.nickname)
+                    Text(plant.displayName)
                         .font(.headline)
                         .lineLimit(1)
-                    Text(flower.name)
+                    Text(plant.identity.commonName)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     RocioStatusBadge(
-                        title: urgency.label,
-                        systemImage: urgency == .overdue ? "exclamationmark.circle.fill" : "drop.fill",
+                        title: urgency?.label ?? L10n.text(
+                            "calendar.unscheduled",
+                            fallback: "Care schedule not set"
+                        ),
+                        systemImage: urgency == .overdue ? "exclamationmark.circle.fill" : urgency == nil ? "calendar.badge.exclamationmark" : "drop.fill",
                         tint: urgencyTint
                     )
                 }
@@ -475,7 +565,11 @@ private struct GardenRow: View {
     }
 
     private var nextWateringLabel: some View {
-        Label(nextWatering.formatted(date: .abbreviated, time: .omitted), systemImage: "calendar")
+        Label(
+            nextWatering?.formatted(date: .abbreviated, time: .omitted)
+                ?? L10n.text("garden.watering.no_date", fallback: "No watering date"),
+            systemImage: "calendar"
+        )
             .font(.caption)
             .foregroundStyle(.secondary)
     }
@@ -499,6 +593,133 @@ private struct GardenRow: View {
         .disabled(isWateredConfirmationVisible)
         .sensoryFeedback(.success, trigger: isWateredConfirmationVisible) { _, isVisible in
             isVisible
+        }
+    }
+}
+
+struct GardenPlantArtwork: View {
+    let flower: Flower?
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let flower {
+                FlowerImage(flower: flower, size: size)
+            } else {
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: size * 0.38, weight: .medium))
+                    .foregroundStyle(Color.rocioLeafDeep)
+                    .frame(width: size, height: size)
+                    .background(Color.rocioLeafSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+private struct ManualPlantEntryView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let onSave: (PlantIdentity, PlantCareProfile) -> Bool
+
+    @State private var commonName = ""
+    @State private var scientificName = ""
+    @State private var wateringSelection = ManualWateringSelection.notSet
+
+    private var normalizedCommonName: String {
+        commonName.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var normalizedScientificName: String? {
+        let value = scientificName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return value.isEmpty ? nil : value
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(L10n.text("garden.manual.identity", fallback: "Plant identity")) {
+                    TextField(L10n.text("garden.manual.common_name", fallback: "Common name"), text: $commonName)
+                        .textInputAutocapitalization(.words)
+                    TextField(
+                        L10n.text("garden.manual.scientific_name", fallback: "Scientific name (optional)"),
+                        text: $scientificName
+                    )
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+
+                Section {
+                    Picker(
+                        L10n.text("garden.edit.watering.preference", fallback: "Watering preference"),
+                        selection: $wateringSelection
+                    ) {
+                        ForEach(ManualWateringSelection.allCases) { selection in
+                            Text(selection.label).tag(selection)
+                        }
+                    }
+                } header: {
+                    Text(L10n.text("garden.manual.care", fallback: "Care (optional)"))
+                } footer: {
+                    Text(L10n.text(
+                        "garden.manual.care.help",
+                        fallback: "Choose only what you know. Leave this as Not sure to avoid creating a watering schedule."
+                    ))
+                }
+            }
+            .navigationTitle(L10n.text("garden.add", fallback: "Add plant"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.text("action.cancel", fallback: "Cancel")) { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.text("action.save", fallback: "Save")) {
+                        let identity = PlantIdentity(
+                            source: .manual,
+                            commonName: normalizedCommonName,
+                            scientificName: normalizedScientificName,
+                            nameLocale: Locale.current.identifier
+                        )
+                        let careProfile = PlantCareProfile(
+                            wateringPreference: wateringSelection.preference,
+                            source: .manual,
+                            fetchedAt: Date()
+                        )
+                        if onSave(identity, careProfile) {
+                            dismiss()
+                        }
+                    }
+                    .disabled(normalizedCommonName.isEmpty)
+                }
+            }
+        }
+    }
+}
+
+private enum ManualWateringSelection: String, CaseIterable, Identifiable {
+    case notSet
+    case dry
+    case medium
+    case wet
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .notSet: L10n.text("watering.preference.not_set", fallback: "Not sure")
+        case .dry: L10n.text("watering.preference.dry.short", fallback: "Let soil dry")
+        case .medium: L10n.text("watering.preference.medium.short", fallback: "Keep moderately moist")
+        case .wet: L10n.text("watering.preference.wet.short", fallback: "Keep moist")
+        }
+    }
+
+    var preference: PlantWateringPreference? {
+        switch self {
+        case .notSet: nil
+        case .dry: .dry
+        case .medium: .medium
+        case .wet: .wet
         }
     }
 }

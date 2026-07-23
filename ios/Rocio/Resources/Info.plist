@@ -37,9 +37,9 @@
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.lifestyle</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Rocio usa la camara para tomar fotos de flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.</string>
+	<string>Rocio uses the camera to photograph plants for identification. If you consent to cloud analysis for that photo, Rocio sends a compressed copy to Plant.id through Rocio Cloud.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Rocio usa las fotos que eliges para identificar flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.</string>
+	<string>Rocio uses photos you choose to identify plants. If you consent to cloud analysis for that photo, Rocio sends a compressed copy to Plant.id through Rocio Cloud.</string>
 	<key>ROCIOSupabaseAnonKey</key>
 	<string>$(ROCIO_SUPABASE_PUBLISHABLE_KEY)</string>
 	<key>ROCIOSupabaseURL</key>

@@ -212,6 +212,7 @@ enum GardenDataResetStatus: Equatable {
     case localOnly
     case cloudConfirmed
     case cloudPending
+    case rejected
 
     var message: String {
         switch self {
@@ -227,6 +228,11 @@ enum GardenDataResetStatus: Equatable {
                 "settings.delete.done.pending",
                 fallback: "Deleted from this device; cloud deletion is pending. Reconnect, then retry."
             )
+        case .rejected:
+            L10n.text(
+                "settings.delete.rejected",
+                fallback: "Nothing was deleted. Rocio could not safely save the deletion request; retry after cloud sync recovers."
+            )
         }
     }
 
@@ -234,13 +240,14 @@ enum GardenDataResetStatus: Equatable {
         switch self {
         case .localOnly, .cloudConfirmed: "checkmark.circle.fill"
         case .cloudPending: "icloud.slash"
+        case .rejected: "exclamationmark.triangle.fill"
         }
     }
 
     var tint: Color {
         switch self {
         case .localOnly, .cloudConfirmed: .rocioTeal
-        case .cloudPending: .rocioAmber
+        case .cloudPending, .rejected: .rocioAmber
         }
     }
 
@@ -268,7 +275,7 @@ struct LocalDataResetter {
         gardenStore: GardenStore,
         waitForCloudConfirmation: (() async -> Bool)? = nil
     ) async -> GardenDataResetStatus {
-        gardenStore.reset()
+        guard gardenStore.reset() else { return .rejected }
         cancelPendingNotifications()
         guard let waitForCloudConfirmation else { return .localOnly }
         return await waitForCloudConfirmation() ? .cloudConfirmed : .cloudPending

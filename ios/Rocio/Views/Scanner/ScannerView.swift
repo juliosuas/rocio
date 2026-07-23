@@ -4,6 +4,7 @@ import UIKit
 
 struct ScannerView: View {
     @EnvironmentObject private var sessionStore: SessionStore
+    @EnvironmentObject private var gardenStore: GardenStore
     // Tab switches must not cancel an in-flight scan; this object owns it until replacement or completion.
     @StateObject private var analysisCoordinator = ScannerAnalysisCoordinator()
     @State private var pickerSelection = ScannerPhotoPickerSelectionState<PhotosPickerItem>()
@@ -14,6 +15,7 @@ struct ScannerView: View {
     @State private var photoConsent = ScannerPhotoConsentState()
     @State private var imageLoadTask: Task<Void, Never>?
     @State private var imagePreparationGeneration = ScannerImagePreparationGeneration()
+    @State private var savedIdentities: Set<PlantIdentity> = []
 
     private let identifier = HybridFlowerIdentifier()
     private let imageProcessor = ScannerImageProcessor()
@@ -79,16 +81,22 @@ struct ScannerView: View {
                     }
 
                     if analysisCoordinator.isProcessing {
-                        ProgressView(L10n.text("scanner.processing", fallback: "Checking colors and candidates"))
+                        ProgressView(L10n.text("scanner.processing", fallback: "Checking plant candidates"))
                     }
 
                     if let result = analysisCoordinator.result {
-                        ScannerResultCard(result: result) { flower in
-                            selectedFlower = flower
-                        }
+                        ScannerResultCard(
+                            result: result,
+                            savedIdentities: savedIdentities,
+                            canSave: gardenStore.canAcceptLocalChanges,
+                            onSave: save,
+                            onSelectFlower: { flower in
+                                selectedFlower = flower
+                            }
+                        )
                     }
 
-                    Text(L10n.text("scanner.disclaimer", fallback: "Flower identification is experimental. Cloud results use Plant.id when available; Rocio falls back to a simple on-device visual match. Always verify before acting."))
+                    Text(L10n.text("scanner.disclaimer", fallback: "Plant identification is probabilistic. Cloud results use Plant.id when available; Rocio falls back to a simple on-device flower match. Always verify before acting."))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -141,9 +149,9 @@ struct ScannerView: View {
             Image(systemName: "viewfinder")
                 .font(.system(size: 48, weight: .light))
                 .foregroundStyle(Color.rocioRose)
-            Text(L10n.text("scanner.placeholder.title", fallback: "Frame an open flower"))
+            Text(L10n.text("scanner.placeholder.title", fallback: "Frame the plant clearly"))
                 .font(.rocioTitle)
-            Text(L10n.text("scanner.placeholder.copy", fallback: "Use natural light and a clean background to improve the on-device match."))
+            Text(L10n.text("scanner.placeholder.copy", fallback: "Include leaves, flowers, or fruit in natural light against a clean background."))
                 .font(.callout)
                 .foregroundStyle(.white.opacity(0.72))
                 .multilineTextAlignment(.center)
@@ -202,6 +210,7 @@ struct ScannerView: View {
         imageLoadTask = nil
         analysisCoordinator.cancel()
         photoConsent.discard()
+        savedIdentities.removeAll()
         return generation
     }
 
@@ -228,6 +237,16 @@ struct ScannerView: View {
                 sessionStore: sessionStore
             )
         }
+    }
+
+    private func save(identity: PlantIdentity, careProfile: PlantCareProfile) {
+        guard !savedIdentities.contains(identity) else { return }
+        guard gardenStore.add(
+            identity: identity,
+            careProfile: careProfile,
+            nickname: identity.commonName
+        ) != nil else { return }
+        savedIdentities.insert(identity)
     }
 }
 
@@ -342,6 +361,9 @@ private struct ScannerPromiseCard: View {
 
 private struct ScannerResultCard: View {
     let result: IdentificationResult
+    let savedIdentities: Set<PlantIdentity>
+    let canSave: Bool
+    let onSave: (PlantIdentity, PlantCareProfile) -> Void
     let onSelectFlower: (Flower) -> Void
 
     var body: some View {
@@ -392,6 +414,38 @@ private struct ScannerResultCard: View {
             }
             .foregroundStyle(.secondary)
 
+            if result.isPlant == false {
+                Label(
+                    L10n.text(
+                        "scanner.not_plant",
+                        fallback: "Plant.id did not detect a plant in this photo. Try another photo before saving."
+                    ),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(Color.rocioAmber)
+            } else {
+                Button {
+                    onSave(result.identity, result.careProfile)
+                } label: {
+                    Label(
+                        savedIdentities.contains(result.identity)
+                            ? L10n.text("scanner.saved", fallback: "Saved to My Garden")
+                            : L10n.format(
+                                "scanner.save",
+                                fallback: "Add %@ to My Garden",
+                                result.displayName
+                            ),
+                        systemImage: savedIdentities.contains(result.identity)
+                            ? "checkmark.circle.fill"
+                            : "plus.circle"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(RocioPrimaryButtonStyle())
+                .disabled(!canSave || savedIdentities.contains(result.identity))
+            }
+
             Button {
                 onSelectFlower(result.flower)
             } label: {
@@ -405,11 +459,11 @@ private struct ScannerResultCard: View {
             }
             .buttonStyle(.bordered)
 
-            if !result.externalCandidates.isEmpty {
+            if !result.alternateExternalCandidates.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text(L10n.text("scanner.ai.candidates", fallback: "AI candidates"))
                         .font(.headline)
-                    ForEach(result.externalCandidates) { candidate in
+                    ForEach(result.alternateExternalCandidates) { candidate in
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(candidate.name)
@@ -418,6 +472,37 @@ private struct ScannerResultCard: View {
                             Spacer()
                             Text("\(Int(candidate.confidence.rounded()))%")
                                 .foregroundStyle(.secondary)
+                            Button {
+                                onSave(
+                                    candidate.identity,
+                                    PlantCareProfile(source: .plantID, fetchedAt: Date())
+                                )
+                            } label: {
+                                Image(
+                                    systemName: savedIdentities.contains(candidate.identity)
+                                        ? "checkmark.circle.fill"
+                                        : "plus.circle"
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(
+                                !canSave ||
+                                    result.isPlant == false ||
+                                    savedIdentities.contains(candidate.identity)
+                            )
+                            .accessibilityLabel(
+                                savedIdentities.contains(candidate.identity)
+                                    ? L10n.format(
+                                        "scanner.candidate.saved",
+                                        fallback: "%@ saved",
+                                        candidate.name
+                                    )
+                                    : L10n.format(
+                                        "scanner.candidate.add",
+                                        fallback: "Add %@ to My Garden",
+                                        candidate.name
+                                    )
+                            )
                         }
                     }
                 }

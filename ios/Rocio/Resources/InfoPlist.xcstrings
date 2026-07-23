@@ -1,0 +1,40 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSCameraUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rocio uses the camera to photograph plants for identification. If you consent to cloud analysis for that photo, Rocio sends a compressed copy to Plant.id through Rocio Cloud."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rocio usa la cámara para fotografiar plantas e identificarlas. Si autorizas el análisis en la nube para esa foto, Rocio envía una copia comprimida a Plant.id mediante Rocio Cloud."
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rocio uses photos you choose to identify plants. If you consent to cloud analysis for that photo, Rocio sends a compressed copy to Plant.id through Rocio Cloud."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rocio usa las fotos que eliges para identificar plantas. Si autorizas el análisis en la nube para esa foto, Rocio envía una copia comprimida a Plant.id mediante Rocio Cloud."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

@@ -97,14 +97,14 @@ struct FlowerDetailView: View {
                 } label: {
                     Label(
                         inGarden
-                            ? L10n.text("detail.in.garden", fallback: "Already in My Garden")
+                            ? L10n.text("detail.add.another", fallback: "Add another to My Garden")
                             : L10n.text("detail.add.garden", fallback: "Add to My Garden"),
-                        systemImage: inGarden ? "checkmark" : "plus"
+                        systemImage: "plus"
                     )
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(RocioPrimaryButtonStyle())
-                .disabled(inGarden)
+                .disabled(!gardenStore.canAcceptLocalChanges)
                 .padding()
                 .background(.bar)
             }
@@ -120,7 +120,7 @@ enum FirstCareFlow {
         router: AppRouter,
         dismiss: () -> Void
     ) {
-        gardenStore.add(flower)
+        guard gardenStore.add(flower) else { return }
         dismiss()
         router.selectedTab = .garden
     }

@@ -16,6 +16,26 @@ struct RocioApp: App {
                 .environmentObject(gardenStore)
                 .environmentObject(sessionStore)
                 .tint(.rocioLeaf)
+                .alert(
+                    L10n.text(
+                        "garden.change.rejected.title",
+                        fallback: "Change not saved"
+                    ),
+                    isPresented: Binding(
+                        get: { gardenStore.mutationErrorMessage != nil },
+                        set: { isPresented in
+                            if !isPresented {
+                                gardenStore.clearMutationError()
+                            }
+                        }
+                    )
+                ) {
+                    Button(L10n.text("action.ok", fallback: "OK")) {
+                        gardenStore.clearMutationError()
+                    }
+                } message: {
+                    Text(gardenStore.mutationErrorMessage ?? "")
+                }
                 .onAppear {
                     router.applyPendingIntentRoute(authenticatedIdentity: authenticationIdentity)
                 }
@@ -46,8 +66,8 @@ struct RocioApp: App {
                 }
                 .task {
                     gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-                        guard let gardenStore, let sessionStore else { return }
-                        sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+                        guard let gardenStore, let sessionStore else { return false }
+                        return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
                     }
                     await sessionStore.bootstrap(gardenStore: gardenStore)
                 }

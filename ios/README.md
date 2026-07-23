@@ -7,7 +7,7 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 - `MARKETING_VERSION = 1.0`
 - `CURRENT_PROJECT_VERSION = 1`
 - Deployment target: iOS 17.0 with Swift 5.
-- 115/115 tests pass on iPhone 17 with iOS 26.3.1.
+- 170/170 tests pass on iPhone 17 with iOS 26.3.1.
 - Debug and unsigned Release compile with Xcode 26.3.
 - A Personal Team development build launches on a physical iPhone.
 - TestFlight remains blocked by paid membership, `DEVELOPMENT_TEAM`, distribution signing, and outstanding external smoke tests.
@@ -15,8 +15,8 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 ## Native surface
 
 - Catalog, Garden, Calendar, Scanner, and Settings in SwiftUI.
-- Bilingual catalog of exactly 15 flowers with attributed local photography.
-- Supabase account, Keychain session, and per-user garden sync with a local cache.
+- Bilingual catalog of exactly 15 editorial flower guides with attributed local photography, plus arbitrary Plant.id results and manual plants that retain their own identity.
+- Supabase account, Keychain session, and per-user garden sync with versioned primary/backup snapshots and a durable mutation outbox.
 - Complete first-care flow: add a plant, return to the garden, enable a reminder, and confirm watering.
 - Local-notification permission requested only after an explicit tap.
 - Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, and an honest fallback.
@@ -90,7 +90,7 @@ xcodebuild \
   test
 ```
 
-The suite covers authentication, PKCE, refresh-token rotation, account isolation, sync/epoch/tombstones, first care, notifications, scanner behavior, image reduction, routing, and persistence.
+The suite covers authentication, PKCE, refresh-token rotation, account isolation, arbitrary Plant.id and manual plants, exact catalog-care matches, versioned snapshot recovery, durable outbox acceptance, idempotent scan retries, sync/epoch/tombstones, first care, notifications, scanner behavior, image reduction, routing, and persistence.
 
 Run the additional gates from the repository root:
 
@@ -123,10 +123,11 @@ Tap **Explore local demo**. Demo mode:
 1. Activate the Apple Developer Program and configure `DEVELOPMENT_TEAM`.
 2. Confirm bundle ID `com.juliosuas.rocio` in Apple Developer and App Store Connect.
 3. Verify that the signed Release build contains the correct publishable key.
-4. Integrate the client before deploying the tombstone migration.
-5. Allowlist `com.juliosuas.rocio://auth/recovery`, then configure the HTTPS Site URL and SMTP.
-6. Test real email recovery and synchronization with two sessions.
-7. Test camera, photo picker, and notification delivery on a physical iPhone.
-8. Archive through Xcode Organizer, upload to TestFlight, and capture final screenshots.
+4. Run `supabase db push --linked --dry-run` and review the expected pending migrations.
+5. Apply `20260721000100_preserve_garden_deletions.sql`, then `20260722000100_support_arbitrary_plants.sql`, then `20260723000100_idempotent_scan_requests.sql`, and only then deploy the matching `identify-flower` Edge Function. All three incremental migrations and the Edge update remain undeployed.
+6. Allowlist `com.juliosuas.rocio://auth/recovery`, then configure the HTTPS Site URL and SMTP.
+7. Test real email recovery and synchronization with two sessions.
+8. Test camera, photo picker, and notification delivery on a physical iPhone.
+9. Archive through Xcode Organizer, upload to TestFlight, and capture final screenshots.
 
 See [`../APP_STORE_RELEASE_CHECKLIST.md`](../APP_STORE_RELEASE_CHECKLIST.md) for the complete gate and [`../DESIGN.md`](../DESIGN.md) for visual rules.

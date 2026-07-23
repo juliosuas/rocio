@@ -52,6 +52,44 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertEqual(legacyPlant.notes, notesPrefix + composedEmoji)
     }
 
+    func testArbitraryPlantCloudPayloadPreservesStableIdentityAndOptionalCare() throws {
+        let plant = GardenPlant(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-123",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa",
+                rank: "species",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(source: .plantID),
+            nickname: "Living room Monstera"
+        )
+        let payload = GardenPlantUpsertPayload(
+            plant: plant,
+            userID: UUID(),
+            gardenEpoch: UUID()
+        )
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
+
+        let data = try encoder.encode(payload)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let identity = try XCTUnwrap(json["identity"] as? [String: Any])
+        let care = try XCTUnwrap(json["care_profile"] as? [String: Any])
+
+        XCTAssertEqual(json["flower_id"] as? String, GardenPlant.arbitraryCloudFlowerID)
+        XCTAssertEqual(json["schema_version"] as? Int, 2)
+        XCTAssertEqual(identity["source"] as? String, "plant_id")
+        XCTAssertEqual(identity["source_id"] as? String, "plant-id-123")
+        XCTAssertEqual(identity["scientific_name"] as? String, "Monstera deliciosa")
+        XCTAssertEqual(identity["rank"] as? String, "species")
+        XCTAssertEqual(care["source"] as? String, "plant_id")
+        XCTAssertNil(care["watering_interval_days"])
+        XCTAssertNil(care["water_amount_ml"])
+    }
+
     func testGardenDeletionPayloadUsesSupabaseTombstoneColumns() throws {
         let deletedAt = Date(timeIntervalSince1970: 1_800_000_100)
         let payload = GardenDeletionPayload(deletedAt: deletedAt, updatedAt: deletedAt)
@@ -89,6 +127,310 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertEqual(record.id, id)
         XCTAssertNotNil(record.deletedAt)
+    }
+
+    func testCloudGardenRecordRestoresArbitraryIdentityWithoutCatalogMatch() throws {
+        let id = UUID()
+        let json = """
+        {
+          "id": "\(id.uuidString.lowercased())",
+          "flower_id": "__arbitrary__",
+          "identity": {
+            "source": "plant_id",
+            "source_id": "plant-id-123",
+            "common_name": "Swiss cheese plant",
+            "scientific_name": "Monstera deliciosa",
+            "rank": "species",
+            "name_locale": "en"
+          },
+          "care_profile": { "source": "plant_id" },
+          "schema_version": 2,
+          "nickname": "Living room Monstera",
+          "added_at": "2026-07-21T12:34:56Z",
+          "last_watered_at": "2026-07-21T12:34:56Z",
+          "status": "healthy",
+          "notes": "",
+          "updated_at": "2026-07-21T12:34:56Z",
+          "deleted_at": null
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+
+        let record = try decoder.decode(CloudGardenRecord.self, from: Data(json.utf8))
+        let plant = record.gardenPlant
+
+        XCTAssertNil(plant.flowerId)
+        XCTAssertEqual(plant.identity.source, .plantID)
+        XCTAssertEqual(plant.identity.sourceID, "plant-id-123")
+        XCTAssertEqual(plant.identity.scientificName, "Monstera deliciosa")
+        XCTAssertNil(plant.careProfile.reminderIntervalDays)
+    }
+
+    func testFetchGardenRejectsFutureActiveSchemaBeforeAnyUpload() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+        let recorder = BackendRequestRecorder()
+        let id = UUID()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (
+                response,
+                Data(
+                    """
+                    [{
+                      "id": "\(id.uuidString.lowercased())",
+                      "flower_id": "__arbitrary__",
+                      "identity": {
+                        "source": "manual",
+                        "common_name": "Future plant"
+                      },
+                      "care_profile": { "source": "manual" },
+                      "schema_version": 3,
+                      "nickname": "Future plant",
+                      "added_at": "2026-07-23T12:34:56Z",
+                      "last_watered_at": "2026-07-23T12:34:56Z",
+                      "status": "healthy",
+                      "notes": "",
+                      "updated_at": "2026-07-23T12:34:56Z",
+                      "deleted_at": null
+                    }]
+                    """.utf8
+                )
+            )
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession
+        )
+
+        do {
+            _ = try await client.fetchGarden(session: validSession(userID: UUID()))
+            XCTFail("A future active garden schema must fail closed.")
+        } catch {
+            XCTAssertEqual(error as? BackendError, .invalidResponse)
+        }
+
+        XCTAssertEqual(recorder.requests.count, 1)
+        XCTAssertEqual(recorder.requests.first?.httpMethod, "GET")
+        XCTAssertFalse(recorder.requests.contains { $0.httpMethod == "POST" })
+    }
+
+    func testRemoteIdentificationDecodesPlantPresenceLocaleAndTaxonomy() throws {
+        let json = """
+        {
+          "provider": "plant_id",
+          "locale": "en",
+          "is_plant": { "binary": true, "probability": 0.99, "threshold": 0.5 },
+          "suggestions": [{
+            "id": "plant-id-123",
+            "name": "Monstera deliciosa",
+            "probability": 0.91,
+            "scientific_name": "Monstera deliciosa",
+            "common_names": ["Swiss cheese plant"],
+            "synonyms": [],
+            "rank": "species",
+            "taxonomy": { "genus": "Monstera", "family": "Araceae" }
+          }],
+          "quota": 10,
+          "remaining": 9
+        }
+        """
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        let response = try decoder.decode(RemoteIdentificationResponse.self, from: Data(json.utf8))
+        let suggestion = try XCTUnwrap(response.suggestions.first)
+
+        XCTAssertEqual(response.locale, "en")
+        XCTAssertEqual(response.isPlant?.binary, true)
+        XCTAssertEqual(suggestion.id, "plant-id-123")
+        XCTAssertEqual(suggestion.rank, "species")
+        XCTAssertEqual(suggestion.taxonomy["family"], "Araceae")
+    }
+
+    @MainActor
+    func testOutOfCatalogCloudResultKeepsIdentityWithoutInventedCareAndEntersDurableJournal() async throws {
+        let userID = UUID()
+        let session = validSession(userID: userID)
+        let scenario = ArbitraryPlantLifecycleScenario(
+            gardenEpoch: UUID(),
+            blockGardenUpsert: true,
+            scanResponse: """
+            {
+              "provider": "plant_id",
+              "locale": "en",
+              "is_plant": { "binary": true, "probability": 0.99, "threshold": 0.5 },
+              "suggestions": [{
+                "id": "plant-id-monstera",
+                "name": "Monstera deliciosa",
+                "probability": 0.93,
+                "scientific_name": "Monstera deliciosa",
+                "common_names": ["Swiss cheese plant"],
+                "synonyms": [],
+                "rank": "species",
+                "taxonomy": { "genus": "Monstera", "family": "Araceae" }
+              }],
+              "quota": 10,
+              "remaining": 9
+            }
+            """
+        )
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { session },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        UserDefaults.standard.set(false, forKey: "rocio.analytics.enabled")
+        defer {
+            scenario.allowGardenUpsert()
+            gardenStore.cloudChangeHandler = nil
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            UserDefaults.standard.removeObject(forKey: "rocio.analytics.enabled")
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        let identification = await HybridFlowerIdentifier().identify(
+            image: cloudScanTestImage(),
+            destination: .cloud,
+            sessionStore: sessionStore
+        )
+        let result = try XCTUnwrap(identification)
+
+        XCTAssertEqual(result.identity.source, .plantID)
+        XCTAssertEqual(result.identity.sourceID, "plant-id-monstera")
+        XCTAssertEqual(result.identity.commonName, "Swiss cheese plant")
+        XCTAssertEqual(result.identity.scientificName, "Monstera deliciosa")
+        XCTAssertEqual(result.careProfile.source, .plantID)
+        XCTAssertNil(result.careProfile.reminderIntervalDays)
+        XCTAssertNil(result.careProfile.waterAmountMl)
+
+        gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+        }
+        let saved = try XCTUnwrap(
+            gardenStore.add(
+                identity: result.identity,
+                careProfile: result.careProfile,
+                nickname: result.displayName
+            )
+        )
+        XCTAssertEqual(gardenStore.plants, [saved])
+        XCTAssertNil(saved.flowerId)
+
+        let journalData = try XCTUnwrap(
+            UserDefaults.standard.data(forKey: pendingGardenKey(userID))
+        )
+        let pending = try decodePendingChanges(journalData)
+        XCTAssertEqual(pending.count, 1)
+        XCTAssertEqual(pending[0].kind, .upsert)
+        XCTAssertEqual(pending[0].plant?.identity, result.identity)
+        XCTAssertEqual(pending[0].plant?.careProfile.source, .plantID)
+
+        scenario.allowGardenUpsert()
+        let didSync = await sessionStore.waitForGardenSync()
+        XCTAssertTrue(didSync)
+        XCTAssertTrue(
+            scenario.signatures.contains("POST /rest/v1/garden_plants")
+        )
+        XCTAssertEqual(gardenStore.plants.first?.identity, result.identity)
+    }
+
+    @MainActor
+    func testExactCatalogScientificMatchKeepsPlantIDIdentityAndUsesBundledCare() async throws {
+        let userID = UUID()
+        let session = validSession(userID: userID)
+        let scenario = ArbitraryPlantLifecycleScenario(
+            gardenEpoch: UUID(),
+            scanResponse: """
+            {
+              "provider": "plant_id",
+              "locale": "en",
+              "is_plant": { "binary": true, "probability": 0.99, "threshold": 0.5 },
+              "suggestions": [{
+                "id": "plant-id-rose",
+                "name": "Rose",
+                "probability": 0.97,
+                "scientific_name": "Rosa spp.",
+                "common_names": ["Rose"],
+                "synonyms": [],
+                "rank": "species",
+                "taxonomy": { "genus": "Rosa", "family": "Rosaceae" }
+              }],
+              "quota": 10,
+              "remaining": 9
+            }
+            """
+        )
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let gardenStore = GardenStore(plants: [])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { session },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        UserDefaults.standard.set(false, forKey: "rocio.analytics.enabled")
+        defer {
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            UserDefaults.standard.removeObject(forKey: "rocio.analytics.enabled")
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        let identification = await HybridFlowerIdentifier().identify(
+            image: cloudScanTestImage(),
+            destination: .cloud,
+            sessionStore: sessionStore
+        )
+        let result = try XCTUnwrap(identification)
+        let rose = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
+
+        XCTAssertEqual(result.flower.id, rose.id)
+        XCTAssertEqual(result.identity.source, .plantID)
+        XCTAssertEqual(result.identity.sourceID, "plant-id-rose")
+        XCTAssertEqual(result.identity.scientificName, rose.scientific)
+        XCTAssertEqual(result.careProfile.source, .bundled)
+        XCTAssertEqual(result.careProfile.wateringIntervalDays, rose.waterDays)
+        XCTAssertEqual(result.careProfile.waterAmountMl, rose.waterMl)
+
+        let saved = GardenPlant(
+            identity: result.identity,
+            careProfile: result.careProfile,
+            nickname: result.displayName
+        )
+        XCTAssertNil(saved.flowerId)
+        XCTAssertEqual(saved.identity.source, .plantID)
+        XCTAssertEqual(saved.careProfile.source, .bundled)
     }
 
     func testCloudGardenSyncStateDecodesServerEpochAndResetTimestamp() throws {
@@ -143,7 +485,11 @@ final class CloudFoundationTests: XCTestCase {
     func testPendingGardenResetRemainsDiscoverableAfterSessionStoreRecreation() throws {
         let userID = UUID()
         let pendingKey = "rocio.cloud.pending.\(userID.uuidString.lowercased())"
-        defer { UserDefaults.standard.removeObject(forKey: pendingKey) }
+        let backupKey = "\(pendingKey).backup"
+        defer {
+            UserDefaults.standard.removeObject(forKey: pendingKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
         let reset = PendingCloudChange(.reset(at: Date(timeIntervalSince1970: 1_800_000_250)))
         UserDefaults.standard.set(try JSONEncoder().encode([reset]), forKey: pendingKey)
 
@@ -151,7 +497,224 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertTrue(recreatedStore.hasPendingGardenReset(for: userID))
         UserDefaults.standard.removeObject(forKey: pendingKey)
+        UserDefaults.standard.removeObject(forKey: backupKey)
         XCTAssertFalse(recreatedStore.hasPendingGardenReset(for: userID))
+    }
+
+    @MainActor
+    func testPendingCloudJournalRecoversCorruptPrimaryFromBackup() throws {
+        let userID = UUID()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let backup = try JSONEncoder().encode([
+            PendingCloudChange(.reset(at: Date(timeIntervalSince1970: 1_800_000_260))),
+        ])
+        defer {
+            UserDefaults.standard.removeObject(forKey: primaryKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
+        UserDefaults.standard.set(Data("corrupt-primary".utf8), forKey: primaryKey)
+        UserDefaults.standard.set(backup, forKey: backupKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertTrue(recreatedStore.hasPendingGardenReset(for: userID))
+        let migratedPrimary = try XCTUnwrap(
+            UserDefaults.standard.data(forKey: primaryKey)
+        )
+        XCTAssertNotEqual(migratedPrimary, backup)
+        XCTAssertEqual(
+            migratedPrimary,
+            UserDefaults.standard.data(forKey: backupKey)
+        )
+        XCTAssertEqual(
+            try decodePendingChanges(migratedPrimary).map(\.kind),
+            [.reset]
+        )
+        XCTAssertNil(recreatedStore.errorMessage)
+    }
+
+    @MainActor
+    func testPendingCloudJournalChoosesNewerBackupGeneration() throws {
+        let userID = UUID()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let oldPlant = GardenPlant(flowerId: "rosa", nickname: "Old pending rose")
+        let oldJournal = PendingCloudChangeJournal(
+            schemaVersion: PendingCloudChangeJournal.currentSchemaVersion,
+            generation: 7,
+            changes: [PendingCloudChange(.upsert(oldPlant))]
+        )
+        let reset = PendingCloudChange(.reset(at: Date(timeIntervalSince1970: 1_800_000_270)))
+        let newestJournal = PendingCloudChangeJournal(
+            schemaVersion: PendingCloudChangeJournal.currentSchemaVersion,
+            generation: 8,
+            changes: [reset]
+        )
+        let primary = try JSONEncoder().encode(oldJournal)
+        let backup = try JSONEncoder().encode(newestJournal)
+        defer {
+            UserDefaults.standard.removeObject(forKey: primaryKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
+        UserDefaults.standard.set(primary, forKey: primaryKey)
+        UserDefaults.standard.set(backup, forKey: backupKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertTrue(recreatedStore.hasPendingGardenReset(for: userID))
+        XCTAssertEqual(UserDefaults.standard.data(forKey: primaryKey), backup)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: backupKey), backup)
+    }
+
+    @MainActor
+    func testLegacyPendingPrimaryFromOlderBuildWinsOverStaleVersionedBackup() throws {
+        let userID = UUID()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let stalePlant = GardenPlant(flowerId: "rosa", nickname: "Stale queued upsert")
+        let staleJournal = PendingCloudChangeJournal(
+            schemaVersion: PendingCloudChangeJournal.currentSchemaVersion,
+            generation: 9,
+            changes: [PendingCloudChange(.upsert(stalePlant))]
+        )
+        let newerLegacyReset = PendingCloudChange(
+            .reset(at: Date(timeIntervalSince1970: 1_800_000_280))
+        )
+        let staleBackup = try JSONEncoder().encode(staleJournal)
+        let legacyPrimary = try JSONEncoder().encode([newerLegacyReset])
+        defer {
+            UserDefaults.standard.removeObject(forKey: primaryKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
+        UserDefaults.standard.set(legacyPrimary, forKey: primaryKey)
+        UserDefaults.standard.set(staleBackup, forKey: backupKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertTrue(recreatedStore.hasPendingGardenReset(for: userID))
+        let migratedPrimary = try XCTUnwrap(
+            UserDefaults.standard.data(forKey: primaryKey)
+        )
+        XCTAssertNotEqual(migratedPrimary, staleBackup)
+        XCTAssertEqual(
+            migratedPrimary,
+            UserDefaults.standard.data(forKey: backupKey)
+        )
+        let changes = try decodePendingChanges(migratedPrimary)
+        XCTAssertEqual(changes.map(\.id), [newerLegacyReset.id])
+        XCTAssertEqual(changes.map(\.kind), [.reset])
+        XCTAssertNil(recreatedStore.errorMessage)
+    }
+
+    @MainActor
+    func testFuturePendingJournalSchemaFailsClosedWithoutOverwritingEitherCopy() throws {
+        let userID = UUID()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let currentBackup = try JSONEncoder().encode(
+            PendingCloudChangeJournal(
+                schemaVersion: PendingCloudChangeJournal.currentSchemaVersion,
+                generation: 3,
+                changes: [PendingCloudChange(.reset(at: Date()))]
+            )
+        )
+        let futurePrimary = Data(
+            #"{"schemaVersion":999,"generation":4,"futureChanges":[]}"#.utf8
+        )
+        defer {
+            UserDefaults.standard.removeObject(forKey: primaryKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
+        UserDefaults.standard.set(futurePrimary, forKey: primaryKey)
+        UserDefaults.standard.set(currentBackup, forKey: backupKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertFalse(recreatedStore.hasPendingGardenReset(for: userID))
+        XCTAssertEqual(recreatedStore.gardenSyncStatus, .pending)
+        XCTAssertNotNil(recreatedStore.errorMessage)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: primaryKey), futurePrimary)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: backupKey), currentBackup)
+    }
+
+    @MainActor
+    func testPendingCloudJournalFailsClosedWhenBothCopiesAreCorrupt() {
+        let userID = UUID()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let corruptPrimary = Data("corrupt-primary".utf8)
+        let corruptBackup = Data("corrupt-backup".utf8)
+        defer {
+            UserDefaults.standard.removeObject(forKey: primaryKey)
+            UserDefaults.standard.removeObject(forKey: backupKey)
+        }
+        UserDefaults.standard.set(corruptPrimary, forKey: primaryKey)
+        UserDefaults.standard.set(corruptBackup, forKey: backupKey)
+
+        let recreatedStore = SessionStore(configuration: nil)
+
+        XCTAssertFalse(recreatedStore.hasPendingGardenReset(for: userID))
+        XCTAssertEqual(recreatedStore.gardenSyncStatus, .pending)
+        XCTAssertNotNil(recreatedStore.errorMessage)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: primaryKey), corruptPrimary)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: backupKey), corruptBackup)
+    }
+
+    @MainActor
+    func testCorruptPendingJournalRejectsDeleteAndResetBeforeLocalMutation() async throws {
+        let userID = UUID()
+        let plant = GardenPlant(
+            flowerId: "rosa",
+            nickname: "Must remain local",
+            updatedAt: Date(timeIntervalSince1970: 1_800_000_700)
+        )
+        let scenario = GardenSyncBackendScenario(plant: plant, gardenEpoch: UUID())
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let gardenStore = GardenStore(plants: [plant])
+        let session = validSession(userID: userID)
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { session },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        XCTAssertTrue(GardenPersistence.savePlants([plant]))
+        gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+        }
+        defer {
+            gardenStore.cloudChangeHandler = nil
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        let baselinePlants = gardenStore.plants
+        let baselinePersistedPlants = GardenPersistence.loadPlants()
+        let primaryKey = pendingGardenKey(userID)
+        let backupKey = "\(primaryKey).backup"
+        let corruptPrimary = Data("corrupt-primary".utf8)
+        let corruptBackup = Data("corrupt-backup".utf8)
+        UserDefaults.standard.set(corruptPrimary, forKey: primaryKey)
+        UserDefaults.standard.set(corruptBackup, forKey: backupKey)
+
+        XCTAssertFalse(gardenStore.delete(plant))
+        XCTAssertEqual(gardenStore.plants, baselinePlants)
+        XCTAssertEqual(GardenPersistence.loadPlants(), baselinePersistedPlants)
+        XCTAssertFalse(gardenStore.reset())
+        XCTAssertEqual(gardenStore.plants, baselinePlants)
+        XCTAssertEqual(GardenPersistence.loadPlants(), baselinePersistedPlants)
+        XCTAssertNotNil(sessionStore.errorMessage)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: primaryKey), corruptPrimary)
+        XCTAssertEqual(UserDefaults.standard.data(forKey: backupKey), corruptBackup)
     }
 
     func testBackendSendsGardenDeletionPatchAndResetRPC() async throws {
@@ -209,6 +772,805 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertEqual(captured[1].url?.path, "/rest/v1/rpc/reset_my_garden")
         XCTAssertEqual(captured[1].value(forHTTPHeaderField: "Authorization"), "Bearer access-token")
         XCTAssertEqual(returnedEpoch, resetEpoch)
+    }
+
+    func testBackendEncodesStableRequestIDForCloudIdentification() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: nil
+            )!
+            return (
+                response,
+                Data(
+                    #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                )
+            )
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession
+        )
+        let session = validSession(userID: UUID())
+        let requestID = UUID()
+        let image = UIGraphicsImageRenderer(
+            size: CGSize(width: 2, height: 2)
+        ).image { context in
+            UIColor.green.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+        }
+
+        _ = try await client.identify(
+            image: image,
+            requestID: requestID,
+            session: session
+        )
+
+        let request = try XCTUnwrap(recorder.requests.first)
+        XCTAssertEqual(request.url?.path, "/functions/v1/identify-flower")
+        XCTAssertEqual(request.httpMethod, "POST")
+        let data = try XCTUnwrap(request.httpBody)
+        let payload = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(
+            UUID(uuidString: try XCTUnwrap(payload["request_id"] as? String)),
+            requestID
+        )
+        XCTAssertEqual(payload["consent"] as? Bool, true)
+        XCTAssertFalse((payload["image"] as? String ?? "").isEmpty)
+    }
+
+    func testCloudIdentificationRetriesInProgressWithTheExactSameRequest() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let isFirstAttempt = recorder.requests.count == 1
+            let response = HTTPURLResponse(
+                url: try XCTUnwrap(request.url),
+                statusCode: isFirstAttempt ? 409 : 200,
+                httpVersion: nil,
+                headerFields: isFirstAttempt ? ["Retry-After": "0"] : nil
+            )!
+            let data = isFirstAttempt
+                ? Data(#"{"error":"scan_in_progress"}"#.utf8)
+                : Data(
+                    #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                )
+            return (response, data)
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0
+        )
+        let requestID = UUID()
+
+        _ = try await client.identify(
+            image: cloudScanTestImage(),
+            requestID: requestID,
+            session: validSession(userID: UUID())
+        )
+
+        let requests = recorder.requests
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].httpBody, requests[1].httpBody)
+        let payloads = try requests.map { request in
+            try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: try XCTUnwrap(request.httpBody)
+                ) as? [String: Any]
+            )
+        }
+        XCTAssertEqual(payloads[0]["request_id"] as? String, payloads[1]["request_id"] as? String)
+        XCTAssertEqual(
+            UUID(uuidString: try XCTUnwrap(payloads[0]["request_id"] as? String)),
+            requestID
+        )
+    }
+
+    func testCloudIdentificationRetriesAmbiguousTransportFailureOnlyOnce() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            if recorder.requests.count == 1 {
+                throw URLError(.networkConnectionLost)
+            }
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: 200,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!,
+                Data(
+                    #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                )
+            )
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0
+        )
+
+        _ = try await client.identify(
+            image: cloudScanTestImage(),
+            requestID: UUID(),
+            session: validSession(userID: UUID())
+        )
+
+        let requests = recorder.requests
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].httpBody, requests[1].httpBody)
+    }
+
+    func testCloudIdentificationRetriesAmbiguousGatewayFailureWithSameBody() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let isFirstAttempt = recorder.requests.count == 1
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: isFirstAttempt ? 504 : 200,
+                    httpVersion: nil,
+                    headerFields: isFirstAttempt ? ["Retry-After": "0"] : nil
+                )!,
+                isFirstAttempt
+                    ? Data(#"{"error":"gateway_timeout"}"#.utf8)
+                    : Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+            )
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0
+        )
+
+        _ = try await client.identify(
+            image: cloudScanTestImage(),
+            requestID: UUID(),
+            session: validSession(userID: UUID())
+        )
+
+        let requests = recorder.requests
+        XCTAssertEqual(requests.count, 2)
+        XCTAssertEqual(requests[0].httpBody, requests[1].httpBody)
+    }
+
+    func testCloudIdentificationPollsAmbiguousThenRepeatedInProgressUntilSuccess() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            switch recorder.requests.count {
+            case 1:
+                throw URLError(.networkConnectionLost)
+            case 2, 3:
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 409,
+                        httpVersion: nil,
+                        headerFields: ["Retry-After": "0"]
+                    )!,
+                    Data(#"{"error":"scan_in_progress"}"#.utf8)
+                )
+            default:
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
+                    Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+                )
+            }
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0
+        )
+
+        _ = try await client.identify(
+            image: cloudScanTestImage(),
+            session: validSession(userID: UUID())
+        )
+
+        XCTAssertEqual(recorder.requests.count, 4)
+        let bodies = recorder.requests.compactMap(\.httpBody)
+        XCTAssertEqual(bodies.count, 4)
+        XCTAssertTrue(bodies.dropFirst().allSatisfy { $0 == bodies[0] })
+    }
+
+    func testAmbiguousScanThenExpiredJWTReusesUUIDAfterClientAndSessionRefresh() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            switch recorder.requests.count {
+            case 1:
+                throw URLError(.networkConnectionLost)
+            case 2:
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 401,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
+                    Data(#"{"error":"invalid_session"}"#.utf8)
+                )
+            default:
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
+                    Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+                )
+            }
+        }
+        let suiteName = "RocioAuthRefreshScanTests.\(UUID().uuidString)"
+        let scanOperationStore = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { scanOperationStore.removePersistentDomain(forName: suiteName) }
+        let userID = UUID()
+        let expiredSession = validSession(userID: userID)
+        let firstClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        let image = cloudScanTestImage()
+
+        do {
+            _ = try await firstClient.identify(
+                image: image,
+                session: expiredSession
+            )
+            XCTFail("The expired JWT must be surfaced for refresh")
+        } catch let BackendError.server(code, _) {
+            XCTAssertEqual(code, "invalid_session")
+        }
+
+        let refreshedSession = AuthSession(
+            accessToken: "refreshed-access-token",
+            refreshToken: "refreshed-refresh-token",
+            expiresAt: .distantFuture,
+            user: expiredSession.user
+        )
+        let recreatedClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        _ = try await recreatedClient.identify(
+            image: image,
+            session: refreshedSession
+        )
+
+        XCTAssertEqual(recorder.requests.count, 3)
+        let payloads = try recorder.requests.map { request in
+            try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: try XCTUnwrap(request.httpBody)
+                ) as? [String: Any]
+            )
+        }
+        let requestIDs = payloads.compactMap { $0["request_id"] as? String }
+        let images = payloads.compactMap { $0["image"] as? String }
+        XCTAssertEqual(Set(requestIDs).count, 1)
+        XCTAssertEqual(Set(images).count, 1)
+        XCTAssertEqual(
+            recorder.requests.last?.value(forHTTPHeaderField: "Authorization"),
+            "Bearer refreshed-access-token"
+        )
+    }
+
+    func testScanRefreshWindowIsLongerThanNormalSessionRefreshThreshold() {
+        let session = AuthSession(
+            accessToken: "access",
+            refreshToken: "refresh",
+            expiresAt: Date().addingTimeInterval(120),
+            user: AuthUser(id: UUID(), email: "gardener@example.com")
+        )
+
+        XCTAssertFalse(session.needsRefresh)
+        XCTAssertTrue(session.needsRefresh(within: 180))
+    }
+
+    @MainActor
+    func testSessionStoreRefreshesJWTBeforeStartingTheFullScanRecoveryWindow() async throws {
+        let userID = UUID()
+        let expiring = AuthSession(
+            accessToken: "expiring-access-token",
+            refreshToken: "refresh-token",
+            expiresAt: Date().addingTimeInterval(120),
+            user: AuthUser(id: userID, email: "gardener@example.com")
+        )
+        let refreshed = AuthSession(
+            accessToken: "fresh-access-token",
+            refreshToken: "fresh-refresh-token",
+            expiresAt: .distantFuture,
+            user: expiring.user
+        )
+        let scenario = AuthLifecycleRaceScenario(
+            userID: userID,
+            gardenEpoch: UUID(),
+            gardenResetAt: nil
+        )
+        let recorder = BackendRequestRecorder()
+        let urlSession = makeStubbedURLSession { request in
+            recorder.append(request)
+            if request.url?.path == "/functions/v1/identify-flower" {
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
+                    Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+                )
+            }
+            return try scenario.response(for: request)
+        }
+        let gardenStore = GardenStore(plants: [])
+        var refreshCount = 0
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { expiring },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { _ in
+                refreshCount += 1
+                return refreshed
+            },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        UserDefaults.standard.set(false, forKey: "rocio.analytics.enabled")
+        defer {
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            UserDefaults.standard.removeObject(forKey: "rocio.analytics.enabled")
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+        XCTAssertEqual(refreshCount, 0)
+
+        _ = try await sessionStore.identify(image: cloudScanTestImage())
+
+        XCTAssertEqual(refreshCount, 1)
+        let scanRequest = try XCTUnwrap(
+            recorder.requests.first {
+                $0.url?.path == "/functions/v1/identify-flower"
+            }
+        )
+        XCTAssertEqual(
+            scanRequest.value(forHTTPHeaderField: "Authorization"),
+            "Bearer fresh-access-token"
+        )
+    }
+
+    func testSamePhotoUserRetryReusesPendingOperationUUIDWithoutKeepingPhoto() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let succeeds = recorder.requests.count > 1
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: succeeds ? 200 : 502,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!,
+                succeeds
+                    ? Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+                    : Data(#"{"error":"provider_timeout"}"#.utf8)
+            )
+        }
+        let suiteName = "RocioPendingScanTests.\(UUID().uuidString)"
+        let scanOperationStore = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { scanOperationStore.removePersistentDomain(forName: suiteName) }
+        let firstClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0.01,
+            scanRecoveryWindow: 0.001,
+            scanOperationReuseWindow: 5,
+            scanOperationStore: scanOperationStore
+        )
+        let image = cloudScanTestImage()
+        let session = validSession(userID: UUID())
+
+        do {
+            _ = try await firstClient.identify(image: image, session: session)
+            XCTFail("The first bounded attempt must remain recoverable")
+        } catch let BackendError.server(code, _) {
+            XCTAssertEqual(code, "provider_timeout")
+        }
+        let recreatedClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        _ = try await recreatedClient.identify(image: image, session: session)
+
+        XCTAssertEqual(recorder.requests.count, 2)
+        let firstPayload = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: try XCTUnwrap(recorder.requests[0].httpBody)
+            ) as? [String: Any]
+        )
+        let retryPayload = try XCTUnwrap(
+            JSONSerialization.jsonObject(
+                with: try XCTUnwrap(recorder.requests[1].httpBody)
+            ) as? [String: Any]
+        )
+        XCTAssertEqual(
+            firstPayload["request_id"] as? String,
+            retryPayload["request_id"] as? String
+        )
+        XCTAssertEqual(firstPayload["image"] as? String, retryPayload["image"] as? String)
+    }
+
+    func testCancelledCloudScanReusesPersistedRequestUUIDAfterClientRecreation() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CancellableScanURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        let recorder = BackendRequestRecorder()
+        CancellableScanURLProtocolStub.recorder = recorder
+        defer {
+            CancellableScanURLProtocolStub.recorder = nil
+            urlSession.invalidateAndCancel()
+        }
+
+        let suiteName = "RocioCancelledScanTests.\(UUID().uuidString)"
+        let scanOperationStore = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { scanOperationStore.removePersistentDomain(forName: suiteName) }
+        let firstClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        let image = cloudScanTestImage()
+        let session = validSession(userID: UUID())
+        let scanTask = Task {
+            try await firstClient.identify(image: image, session: session)
+        }
+
+        let clock = ContinuousClock()
+        let deadline = clock.now + .seconds(2)
+        while recorder.requests.isEmpty, clock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(recorder.requests.count, 1)
+
+        scanTask.cancel()
+        do {
+            _ = try await scanTask.value
+            XCTFail("The stalled scan must stop when its task is cancelled")
+        } catch is CancellationError {
+            // Expected: the durable request mapping remains available below.
+        }
+
+        let recreatedClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        _ = try await recreatedClient.identify(image: image, session: session)
+
+        XCTAssertEqual(recorder.requests.count, 2)
+        let requestIDs = try recorder.requests.map { request -> String in
+            let payload = try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: try XCTUnwrap(request.httpBody)
+                ) as? [String: Any]
+            )
+            return try XCTUnwrap(payload["request_id"] as? String)
+        }
+        XCTAssertEqual(requestIDs[0], requestIDs[1])
+    }
+
+    func testDurableReplayFailureStopsPollingAndClearsPendingPhotoOperation() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            let isTerminalReplay = recorder.requests.count == 1
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: isTerminalReplay ? 502 : 200,
+                    httpVersion: nil,
+                    headerFields: isTerminalReplay
+                        ? ["X-Rocio-Idempotent-Replay": "true"]
+                        : nil
+                )!,
+                isTerminalReplay
+                    ? Data(#"{"error":"provider_unavailable"}"#.utf8)
+                    : Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+            )
+        }
+        let suiteName = "RocioTerminalScanTests.\(UUID().uuidString)"
+        let scanOperationStore = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { scanOperationStore.removePersistentDomain(forName: suiteName) }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        let image = cloudScanTestImage()
+        let session = validSession(userID: UUID())
+
+        do {
+            _ = try await client.identify(image: image, session: session)
+            XCTFail("A durable replayed provider failure must be terminal")
+        } catch let BackendError.server(code, _) {
+            XCTAssertEqual(code, "provider_unavailable")
+        }
+        XCTAssertEqual(recorder.requests.count, 1)
+
+        _ = try await client.identify(image: image, session: session)
+
+        let requestIDs = try recorder.requests.map { request -> String in
+            let payload = try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: try XCTUnwrap(request.httpBody)
+                ) as? [String: Any]
+            )
+            return try XCTUnwrap(payload["request_id"] as? String)
+        }
+        XCTAssertEqual(requestIDs.count, 2)
+        XCTAssertNotEqual(requestIDs[0], requestIDs[1])
+    }
+
+    func testAccountDeletionClearsPersistedPendingPhotoFingerprint() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        var identifyRequestCount = 0
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            if request.url?.path == "/rest/v1/rpc/delete_my_account" {
+                return (
+                    HTTPURLResponse(
+                        url: try XCTUnwrap(request.url),
+                        statusCode: 204,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
+                    Data()
+                )
+            }
+            identifyRequestCount += 1
+            let succeeds = identifyRequestCount > 1
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: succeeds ? 200 : 502,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!,
+                succeeds
+                    ? Data(
+                        #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+                    )
+                    : Data(#"{"error":"provider_timeout"}"#.utf8)
+            )
+        }
+        let suiteName = "RocioDeletedAccountScanTests.\(UUID().uuidString)"
+        let scanOperationStore = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { scanOperationStore.removePersistentDomain(forName: suiteName) }
+        let firstClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0.01,
+            scanRecoveryWindow: 0.001,
+            scanOperationReuseWindow: 5,
+            scanOperationStore: scanOperationStore
+        )
+        let image = cloudScanTestImage()
+        let session = validSession(userID: UUID())
+
+        do {
+            _ = try await firstClient.identify(image: image, session: session)
+            XCTFail("The first operation must remain pending")
+        } catch {}
+        try await firstClient.deleteAccount(session: session)
+
+        let recreatedClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0,
+            scanOperationStore: scanOperationStore
+        )
+        _ = try await recreatedClient.identify(image: image, session: session)
+
+        let scanRequests = recorder.requests.filter {
+            $0.url?.path == "/functions/v1/identify-flower"
+        }
+        let requestIDs = try scanRequests.map { request -> String in
+            let payload = try XCTUnwrap(
+                JSONSerialization.jsonObject(
+                    with: try XCTUnwrap(request.httpBody)
+                ) as? [String: Any]
+            )
+            return try XCTUnwrap(payload["request_id"] as? String)
+        }
+        XCTAssertEqual(requestIDs.count, 2)
+        XCTAssertNotEqual(requestIDs[0], requestIDs[1])
+    }
+
+    func testCloudIdentificationDoesNotRetryQuotaExhaustion() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [BackendURLProtocolStub.self]
+        let urlSession = URLSession(configuration: configuration)
+        defer {
+            urlSession.invalidateAndCancel()
+            BackendURLProtocolStub.handler = nil
+        }
+
+        let recorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            recorder.append(request)
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: 429,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!,
+                Data(#"{"error":"quota_exhausted"}"#.utf8)
+            )
+        }
+        let client = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0
+        )
+
+        do {
+            _ = try await client.identify(
+                image: cloudScanTestImage(),
+                requestID: UUID(),
+                session: validSession(userID: UUID())
+            )
+            XCTFail("Quota exhaustion must be reported")
+        } catch let BackendError.server(code, _) {
+            XCTAssertEqual(code, "quota_exhausted")
+        }
+        XCTAssertEqual(recorder.requests.count, 1)
+
+        let configurationRecorder = BackendRequestRecorder()
+        BackendURLProtocolStub.handler = { request in
+            configurationRecorder.append(request)
+            return (
+                HTTPURLResponse(
+                    url: try XCTUnwrap(request.url),
+                    statusCode: 503,
+                    httpVersion: nil,
+                    headerFields: nil
+                )!,
+                Data(#"{"error":"service_not_configured"}"#.utf8)
+            )
+        }
+        let unconfiguredClient = RocioBackendClient(
+            configuration: testBackendConfiguration,
+            urlSession: urlSession,
+            scanRetryBaseDelay: 0.01,
+            scanRecoveryWindow: 0.05
+        )
+        do {
+            _ = try await unconfiguredClient.identify(
+                image: cloudScanTestImage(),
+                requestID: UUID(),
+                session: validSession(userID: UUID())
+            )
+            XCTFail("A definitive server configuration error must be reported.")
+        } catch let BackendError.server(code, _) {
+            XCTAssertEqual(code, "service_not_configured")
+        }
+        XCTAssertEqual(configurationRecorder.requests.count, 1)
     }
 
     func testBackendSignOutOnlyRevokesTheCurrentDeviceSession() async throws {
@@ -1641,7 +3003,7 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertEqual(sessionStore.session?.user.id, accountB.user.id)
         XCTAssertEqual(scenario.mutationAuthorizationHeaders, ["Bearer account-a-access"])
         let remaining = try XCTUnwrap(UserDefaults.standard.data(forKey: pendingKey))
-        XCTAssertEqual(try JSONDecoder().decode([PendingCloudChange].self, from: remaining).count, 2)
+        XCTAssertEqual(try decodePendingChanges(remaining).count, 2)
     }
 
     func testIdentificationProviderLabelsFallbackHonestly() {
@@ -1716,6 +3078,239 @@ final class CloudFoundationTests: XCTestCase {
         )
 
         XCTAssertTrue(resolved.isEmpty)
+    }
+
+    func testEqualTimestampLegacyArbitrarySentinelKeepsRicherRemoteProfile() throws {
+        let id = UUID()
+        let timestamp = Date(timeIntervalSince1970: 500)
+        let legacy = LegacyGardenPlant(
+            id: id,
+            flowerId: GardenPlant.arbitraryCloudFlowerID,
+            nickname: "Edited on v1",
+            addedAt: timestamp,
+            lastWateredAt: timestamp,
+            status: .healthy,
+            notes: "Keep this local edit"
+        )
+        let local = try JSONDecoder().decode(
+            GardenPlant.self,
+            from: JSONEncoder().encode(legacy)
+        )
+        let remote = GardenPlant(
+            id: id,
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-123",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa",
+                rank: "species",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(
+                wateringPreference: .medium,
+                source: .plantID
+            ),
+            nickname: "Remote name",
+            addedAt: timestamp,
+            lastWateredAt: timestamp,
+            notes: "Remote note",
+            updatedAt: timestamp
+        )
+
+        let resolved = try XCTUnwrap(
+            GardenSyncResolver.resolve(
+                local: [local],
+                remote: [CloudGardenRecord(plant: remote, deletedAt: nil)]
+            ).first
+        )
+
+        XCTAssertEqual(resolved.nickname, "Edited on v1")
+        XCTAssertEqual(resolved.notes, "Keep this local edit")
+        XCTAssertNil(resolved.flowerId)
+        XCTAssertEqual(resolved.identity, remote.identity)
+        XCTAssertEqual(resolved.careProfile, remote.careProfile)
+    }
+
+    @MainActor
+    func testLegacyPendingArbitraryUpsertEnrichesExactUploadFromRemoteProfile() async throws {
+        let userID = UUID()
+        let plantID = UUID()
+        let epoch = UUID()
+        let timestamp = Date(timeIntervalSince1970: 1_800_000_500)
+        let legacy = LegacyGardenPlant(
+            id: plantID,
+            flowerId: GardenPlant.arbitraryCloudFlowerID,
+            nickname: "Edited on Rocio 1.0",
+            addedAt: timestamp,
+            lastWateredAt: timestamp,
+            status: .needsSun,
+            notes: "Keep this offline edit"
+        )
+        let decodedLegacy = try JSONDecoder().decode(
+            GardenPlant.self,
+            from: JSONEncoder().encode(legacy)
+        )
+        let remote = GardenPlant(
+            id: plantID,
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-123",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa",
+                rank: "species",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(
+                wateringPreference: .medium,
+                source: .plantID
+            ),
+            nickname: "Remote Monstera",
+            addedAt: timestamp,
+            lastWateredAt: timestamp,
+            notes: "Remote note",
+            updatedAt: timestamp
+        )
+        let legacyPending = LegacyPendingCloudChange(
+            id: UUID(),
+            kind: .upsert,
+            plant: legacy,
+            plantID: nil,
+            occurredAt: nil
+        )
+        let scenario = AuthLifecycleRaceScenario(
+            userID: userID,
+            gardenEpoch: epoch,
+            gardenResetAt: nil
+        )
+        try scenario.seedGardenRecord(remote)
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        let gardenStore = GardenStore(plants: [decodedLegacy])
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { self.validSession(userID: userID) },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        clearGardenSyncTestState(userID: userID)
+        UserDefaults.standard.set(
+            try JSONEncoder().encode([legacyPending]),
+            forKey: pendingGardenKey(userID)
+        )
+        defer {
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            clearGardenSyncTestState(userID: userID)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertTrue(sessionStore.isGardenCloudReady)
+        XCTAssertNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
+        XCTAssertFalse(scenario.postedGardenRows.isEmpty)
+        for row in scenario.postedGardenRows {
+            let identity = try XCTUnwrap(row["identity"] as? [String: Any])
+            let care = try XCTUnwrap(row["care_profile"] as? [String: Any])
+            XCTAssertEqual(identity["source"] as? String, "plant_id")
+            XCTAssertEqual(identity["source_id"] as? String, "plant-id-123")
+            XCTAssertEqual(identity["scientific_name"] as? String, "Monstera deliciosa")
+            XCTAssertEqual(care["source"] as? String, "plant_id")
+            XCTAssertEqual(row["nickname"] as? String, "Edited on Rocio 1.0")
+            XCTAssertEqual(row["notes"] as? String, "Keep this offline edit")
+        }
+        let synchronized = try XCTUnwrap(gardenStore.plants.first)
+        XCTAssertEqual(synchronized.nickname, "Edited on Rocio 1.0")
+        XCTAssertEqual(synchronized.identity, remote.identity)
+        XCTAssertEqual(synchronized.careProfile, remote.careProfile)
+    }
+
+    @MainActor
+    func testLegacyPendingArbitraryUpsertCannotResurrectMissingOrTombstonedRemote() async throws {
+        for hasTombstone in [false, true] {
+            let userID = UUID()
+            let plantID = UUID()
+            let timestamp = Date(timeIntervalSince1970: 1_800_000_600)
+            let legacy = LegacyGardenPlant(
+                id: plantID,
+                flowerId: GardenPlant.arbitraryCloudFlowerID,
+                nickname: "Legacy offline edit",
+                addedAt: timestamp,
+                lastWateredAt: timestamp,
+                status: .healthy,
+                notes: "Must not resurrect"
+            )
+            let decodedLegacy = try JSONDecoder().decode(
+                GardenPlant.self,
+                from: JSONEncoder().encode(legacy)
+            )
+            let scenario = AuthLifecycleRaceScenario(
+                userID: userID,
+                gardenEpoch: UUID(),
+                gardenResetAt: nil
+            )
+            if hasTombstone {
+                let remote = GardenPlant(
+                    id: plantID,
+                    identity: PlantIdentity(
+                        source: .plantID,
+                        sourceID: "deleted-plant-id",
+                        commonName: "Deleted plant"
+                    ),
+                    careProfile: PlantCareProfile(source: .plantID),
+                    nickname: "Deleted plant",
+                    addedAt: timestamp,
+                    lastWateredAt: timestamp,
+                    updatedAt: timestamp
+                )
+                try scenario.seedGardenRecord(
+                    remote,
+                    deletedAt: timestamp.addingTimeInterval(60)
+                )
+            }
+            let urlSession = makeStubbedURLSession(handler: scenario.response)
+            let gardenStore = GardenStore(plants: [decodedLegacy])
+            let sessionStore = SessionStore(
+                configuration: testBackendConfiguration,
+                sessionPersistence: SessionPersistence(
+                    load: { self.validSession(userID: userID) },
+                    save: { _ in },
+                    clear: {}
+                ),
+                refreshSession: { $0 },
+                urlSession: urlSession
+            )
+            clearGardenSyncTestState(userID: userID)
+            UserDefaults.standard.set(
+                try JSONEncoder().encode([
+                    LegacyPendingCloudChange(
+                        id: UUID(),
+                        kind: .upsert,
+                        plant: legacy,
+                        plantID: nil,
+                        occurredAt: nil
+                    ),
+                ]),
+                forKey: pendingGardenKey(userID)
+            )
+            defer {
+                BackendURLProtocolStub.handler = nil
+                urlSession.invalidateAndCancel()
+                clearGardenSyncTestState(userID: userID)
+            }
+
+            await sessionStore.bootstrap(gardenStore: gardenStore)
+
+            XCTAssertTrue(sessionStore.isGardenCloudReady, "tombstone: \(hasTombstone)")
+            XCTAssertEqual(scenario.gardenPostCount, 0, "tombstone: \(hasTombstone)")
+            XCTAssertTrue(gardenStore.plants.isEmpty, "tombstone: \(hasTombstone)")
+            XCTAssertNil(
+                UserDefaults.standard.data(forKey: pendingGardenKey(userID)),
+                "tombstone: \(hasTombstone)"
+            )
+        }
     }
 
     func testResetTombstoneRemovesAStaleCopyFromAnotherDevice() {
@@ -1839,8 +3434,8 @@ final class CloudFoundationTests: XCTestCase {
         let requestCountBeforeMutation = scenario.signatures.count
         scenario.setTombstoned()
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
 
         gardenStore.update(
@@ -2070,8 +3665,8 @@ final class CloudFoundationTests: XCTestCase {
         )
         clearGardenSyncTestState(userID: userID)
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             scenario.releaseProfileFetch()
@@ -2150,8 +3745,8 @@ final class CloudFoundationTests: XCTestCase {
             forKey: "rocio.cloud.garden-epoch.authoritative.\(userID.uuidString.lowercased())"
         )
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             gardenStore.cloudChangeHandler = nil
@@ -2217,8 +3812,8 @@ final class CloudFoundationTests: XCTestCase {
         )
         clearGardenSyncTestState(userID: userID)
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             gardenStore.cloudChangeHandler = nil
@@ -2284,8 +3879,8 @@ final class CloudFoundationTests: XCTestCase {
             forKey: pendingGardenKey(userID)
         )
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             scenario.releaseProfileFetch()
@@ -2305,7 +3900,7 @@ final class CloudFoundationTests: XCTestCase {
         let pendingData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
-        let pending = try JSONDecoder().decode([PendingCloudChange].self, from: pendingData)
+        let pending = try decodePendingChanges(pendingData)
         XCTAssertEqual(pending.count, 1)
         XCTAssertNotEqual(pending[0].id, inheritedChange.id)
         XCTAssertNotNil(pending[0].lifecycleID)
@@ -2320,7 +3915,7 @@ final class CloudFoundationTests: XCTestCase {
         let quarantinedData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
-        let quarantined = try JSONDecoder().decode([PendingCloudChange].self, from: quarantinedData)
+        let quarantined = try decodePendingChanges(quarantinedData)
         XCTAssertEqual(quarantined.map(\.id), pending.map(\.id))
         XCTAssertNil(quarantined[0].gardenEpoch)
         XCTAssertEqual(quarantined[0].isCreation, false)
@@ -2379,7 +3974,7 @@ final class CloudFoundationTests: XCTestCase {
         let savedPendingData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
-        XCTAssertEqual(try JSONDecoder().decode([PendingCloudChange].self, from: savedPendingData).map(\.id), [pending.id])
+        XCTAssertEqual(try decodePendingChanges(savedPendingData).map(\.id), [pending.id])
     }
 
     @MainActor
@@ -2418,8 +4013,8 @@ final class CloudFoundationTests: XCTestCase {
             forKey: pendingGardenKey(userID)
         )
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             gardenStore.cloudChangeHandler = nil
@@ -2445,7 +4040,7 @@ final class CloudFoundationTests: XCTestCase {
         let savedPendingData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
-        let remaining = try JSONDecoder().decode([PendingCloudChange].self, from: savedPendingData)
+        let remaining = try decodePendingChanges(savedPendingData)
         XCTAssertEqual(remaining.map(\.id), [inheritedChange.id])
         XCTAssertNil(remaining[0].gardenEpoch)
         XCTAssertNil(remaining[0].lifecycleID)
@@ -2502,7 +4097,7 @@ final class CloudFoundationTests: XCTestCase {
         let stampedData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
-        let stampedPending = try JSONDecoder().decode([PendingCloudChange].self, from: stampedData)
+        let stampedPending = try decodePendingChanges(stampedData)
         XCTAssertEqual(stampedPending.map(\.id), [pending.id])
         XCTAssertEqual(stampedPending[0].gardenEpoch, serverEpoch)
         XCTAssertNil(stampedPending[0].lifecycleID)
@@ -2576,8 +4171,8 @@ final class CloudFoundationTests: XCTestCase {
             forKey: pendingGardenKey(userID)
         )
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             gardenStore.cloudChangeHandler = nil
@@ -2632,8 +4227,8 @@ final class CloudFoundationTests: XCTestCase {
         )
         clearGardenSyncTestState(userID: userID)
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
-            guard let gardenStore, let sessionStore else { return }
-            sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
+            guard let gardenStore, let sessionStore else { return false }
+            return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
         }
         defer {
             scenario.releaseGardenResetRequest()
@@ -2801,7 +4396,7 @@ final class CloudFoundationTests: XCTestCase {
         intent.plant = GardenPlantEntity(
             id: plant.id.uuidString,
             name: plant.nickname,
-            flowerName: "Rose"
+            plantName: "Rose"
         )
 
         _ = try await intent.perform()
@@ -2813,7 +4408,7 @@ final class CloudFoundationTests: XCTestCase {
         let staleRemote = CloudGardenRecord(
             plant: GardenPlant(
                 id: plant.id,
-                flowerId: plant.flowerId,
+                flowerId: try XCTUnwrap(plant.flowerId),
                 nickname: plant.nickname,
                 addedAt: plant.addedAt,
                 lastWateredAt: oldDate,
@@ -3010,14 +4605,32 @@ final class CloudFoundationTests: XCTestCase {
         )
     }
 
+    private func cloudScanTestImage() -> UIImage {
+        UIGraphicsImageRenderer(
+            size: CGSize(width: 2, height: 2)
+        ).image { context in
+            UIColor.green.setFill()
+            context.cgContext.fill(CGRect(x: 0, y: 0, width: 2, height: 2))
+        }
+    }
+
     private func pendingGardenKey(_ userID: UUID) -> String {
         "rocio.cloud.pending.\(userID.uuidString.lowercased())"
+    }
+
+    private func decodePendingChanges(_ data: Data) throws -> [PendingCloudChange] {
+        let decoder = JSONDecoder()
+        if let journal = try? decoder.decode(PendingCloudChangeJournal.self, from: data) {
+            return journal.changes
+        }
+        return try decoder.decode([PendingCloudChange].self, from: data)
     }
 
     private func clearGardenSyncTestState(userID: UUID) {
         GardenPersistence.clearPlants()
         let suffix = userID.uuidString.lowercased()
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.pending.\(suffix)")
+        UserDefaults.standard.removeObject(forKey: "rocio.cloud.pending.\(suffix).backup")
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.garden-epoch.authoritative.\(suffix)")
         UserDefaults.standard.removeObject(forKey: "rocio.cloud.garden-epoch.provisional.\(suffix)")
     }
@@ -3241,6 +4854,14 @@ private struct LegacyGardenPlant: Codable {
     let notes: String
 }
 
+private struct LegacyPendingCloudChange: Codable {
+    let id: UUID
+    let kind: PendingCloudChange.Kind
+    let plant: LegacyGardenPlant?
+    let plantID: UUID?
+    let occurredAt: Date?
+}
+
 private final class BackendURLProtocolStub: URLProtocol {
     static var handler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
@@ -3263,6 +4884,157 @@ private final class BackendURLProtocolStub: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+private final class CancellableScanURLProtocolStub: URLProtocol {
+    static var recorder: BackendRequestRecorder?
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        Self.recorder?.append(request)
+        guard let recorder = Self.recorder else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+        // The first POST deliberately remains in flight until Task
+        // cancellation calls stopLoading. A recreated client then receives a
+        // terminal response for the retry of the same persisted operation.
+        guard recorder.requests.count > 1 else { return }
+        let response = HTTPURLResponse(
+            url: request.url!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        let data = Data(
+            #"{"provider":"plant_id","suggestions":[],"quota":5,"remaining":4}"#.utf8
+        )
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: data)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+
+    override func stopLoading() {
+        client?.urlProtocol(self, didFailWithError: URLError(.cancelled))
+    }
+}
+
+private final class ArbitraryPlantLifecycleScenario: @unchecked Sendable {
+    private let lock = NSLock()
+    private let gardenUpsertCondition = NSCondition()
+    private let gardenEpoch: UUID
+    private let blockGardenUpsert: Bool
+    private let scanResponse: Data
+    private var remoteRows: [[String: Any]] = []
+    private var recordedSignatures: [String] = []
+    private var gardenUpsertAllowed: Bool
+
+    init(
+        gardenEpoch: UUID,
+        blockGardenUpsert: Bool = false,
+        scanResponse: String
+    ) {
+        self.gardenEpoch = gardenEpoch
+        self.blockGardenUpsert = blockGardenUpsert
+        gardenUpsertAllowed = !blockGardenUpsert
+        self.scanResponse = Data(scanResponse.utf8)
+    }
+
+    var signatures: [String] {
+        lock.lock()
+        defer { lock.unlock() }
+        return recordedSignatures
+    }
+
+    func allowGardenUpsert() {
+        gardenUpsertCondition.lock()
+        gardenUpsertAllowed = true
+        gardenUpsertCondition.broadcast()
+        gardenUpsertCondition.unlock()
+    }
+
+    func response(for request: URLRequest) throws -> (HTTPURLResponse, Data) {
+        guard let url = request.url else { throw URLError(.badURL) }
+        let signature = "\(request.httpMethod ?? "GET") \(url.path)"
+        lock.lock()
+        recordedSignatures.append(signature)
+        lock.unlock()
+
+        let status: Int
+        let data: Data
+        switch (request.httpMethod, url.path) {
+        case ("GET", "/rest/v1/profiles"):
+            status = 200
+            data = try JSONSerialization.data(withJSONObject: [[
+                "garden_epoch": gardenEpoch.uuidString.lowercased(),
+                "garden_reset_at": NSNull(),
+            ]])
+        case ("GET", "/rest/v1/garden_plants"):
+            lock.lock()
+            let rows = remoteRows
+            lock.unlock()
+            status = 200
+            data = try JSONSerialization.data(withJSONObject: rows)
+        case ("POST", "/rest/v1/garden_plants"):
+            if blockGardenUpsert {
+                gardenUpsertCondition.lock()
+                while !gardenUpsertAllowed {
+                    gardenUpsertCondition.wait()
+                }
+                gardenUpsertCondition.unlock()
+            }
+            let body = try XCTUnwrap(Self.bodyData(from: request))
+            let postedRows = try XCTUnwrap(
+                JSONSerialization.jsonObject(with: body) as? [[String: Any]]
+            )
+            lock.lock()
+            remoteRows = postedRows.map { postedRow in
+                var row = postedRow
+                row.removeValue(forKey: "garden_epoch")
+                row["deleted_at"] = NSNull()
+                return row
+            }
+            lock.unlock()
+            status = 201
+            data = Data()
+        case ("POST", "/functions/v1/identify-flower"):
+            status = 200
+            data = scanResponse
+        default:
+            throw URLError(.unsupportedURL)
+        }
+        let response = HTTPURLResponse(
+            url: url,
+            statusCode: status,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, data)
+    }
+
+    private static func bodyData(from request: URLRequest) -> Data? {
+        if let body = request.httpBody { return body }
+        guard let stream = request.httpBodyStream else { return nil }
+        stream.open()
+        defer { stream.close() }
+        let capacity = 4_096
+        var buffer = [UInt8](repeating: 0, count: capacity)
+        var body = Data()
+        while true {
+            let count = buffer.withUnsafeMutableBytes { bytes -> Int in
+                guard let base = bytes.baseAddress?.assumingMemoryBound(to: UInt8.self) else {
+                    return -1
+                }
+                return stream.read(base, maxLength: capacity)
+            }
+            guard count > 0 else { break }
+            body.append(contentsOf: buffer.prefix(count))
+        }
+        return body.isEmpty ? nil : body
+    }
 }
 
 private final class BackendRequestRecorder {
@@ -3350,14 +5122,16 @@ private final class GardenSyncBackendScenario: @unchecked Sendable {
             status = 200
             data = try JSONSerialization.data(withJSONObject: [[
                 "id": plant.id.uuidString.lowercased(),
-                "flower_id": plant.flowerId,
+                "flower_id": plant.flowerId!,
                 "nickname": plant.nickname,
                 "added_at": "2026-07-21T09:00:00Z",
                 "last_watered_at": "2026-07-21T09:00:00Z",
                 "status": plant.status.rawValue,
                 "notes": plant.notes,
                 "updated_at": tombstoned ? "2026-07-21T11:00:00Z" : "2026-07-21T10:00:00Z",
-                "deleted_at": tombstoned ? "2026-07-21T11:00:00Z" : NSNull(),
+                "deleted_at": tombstoned
+                    ? "2026-07-21T11:00:00Z" as Any
+                    : NSNull() as Any,
             ]])
         case ("POST", "/rest/v1/garden_plants"):
             status = 201
@@ -3399,6 +5173,7 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
     private var recordedGardenResetCount = 0
     private var recordedGardenEpochs: [UUID] = []
     private var recordedGardenPlantIDs: [UUID] = []
+    private var recordedGardenRows: [[String: Any]] = []
     private var storedGardenRows: [[String: Any]] = []
 
     init(
@@ -3451,6 +5226,34 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
         condition.lock()
         defer { condition.unlock() }
         return recordedGardenPlantIDs
+    }
+
+    var postedGardenRows: [[String: Any]] {
+        condition.lock()
+        defer { condition.unlock() }
+        return recordedGardenRows
+    }
+
+    func seedGardenRecord(_ plant: GardenPlant, deletedAt: Date? = nil) throws {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.dateEncodingStrategy = .iso8601
+        let payload = GardenPlantUpsertPayload(
+            plant: plant,
+            userID: userID,
+            gardenEpoch: gardenEpoch
+        )
+        let encoded = try encoder.encode(payload)
+        guard var row = try JSONSerialization.jsonObject(with: encoded) as? [String: Any] else {
+            throw URLError(.cannotParseResponse)
+        }
+        row.removeValue(forKey: "garden_epoch")
+        row["deleted_at"] = deletedAt.map {
+            ISO8601DateFormatter().string(from: $0)
+        } ?? NSNull()
+        condition.lock()
+        storedGardenRows = [row]
+        condition.unlock()
     }
 
     func blockNextProfileFetch() {
@@ -3641,6 +5444,7 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
             recordedGardenPostCount += 1
             recordedGardenEpochs.append(contentsOf: epochs)
             recordedGardenPlantIDs.append(contentsOf: plantIDs)
+            recordedGardenRows.append(contentsOf: postedRows)
             let shouldFailGardenPost = failsGardenPost
             if !shouldFailGardenPost {
                 for postedRow in postedRows {
@@ -3808,7 +5612,7 @@ private final class BlockingGardenFetchScenario: @unchecked Sendable {
             status = 200
             data = try JSONSerialization.data(withJSONObject: [[
                 "id": plant.id.uuidString.lowercased(),
-                "flower_id": plant.flowerId,
+                "flower_id": plant.flowerId!,
                 "nickname": plant.nickname,
                 "added_at": "2026-07-21T09:00:00Z",
                 "last_watered_at": "2026-07-21T09:00:00Z",

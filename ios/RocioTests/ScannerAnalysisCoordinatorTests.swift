@@ -146,6 +146,82 @@ final class ScannerAnalysisCoordinatorTests: XCTestCase {
         XCTAssertEqual(selection.item, "replacement-photo")
     }
 
+    func testExternalCandidateBuildsDurablePlantIDIdentity() {
+        let candidate = IdentificationResult.ExternalCandidate(
+            id: "plant-id-123",
+            sourceID: "plant-id-123",
+            name: "Swiss cheese plant",
+            scientificName: "Monstera deliciosa",
+            confidence: 91,
+            rank: "species",
+            nameLocale: "en"
+        )
+
+        XCTAssertEqual(candidate.identity.source, .plantID)
+        XCTAssertEqual(candidate.identity.sourceID, "plant-id-123")
+        XCTAssertEqual(candidate.identity.commonName, "Swiss cheese plant")
+        XCTAssertEqual(candidate.identity.scientificName, "Monstera deliciosa")
+        XCTAssertEqual(candidate.identity.rank, "species")
+        XCTAssertEqual(candidate.identity.nameLocale, "en")
+    }
+
+    func testTopExternalSuggestionIsNotRepeatedAsAnAlternateSaveChoice() throws {
+        let flower = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
+        let top = IdentificationResult.ExternalCandidate(
+            id: "plant-id-rose",
+            sourceID: "plant-id-rose",
+            name: "Rose",
+            scientificName: "Rosa spp.",
+            confidence: 96,
+            rank: "species",
+            nameLocale: "en"
+        )
+        let alternate = IdentificationResult.ExternalCandidate(
+            id: "plant-id-camellia",
+            sourceID: "plant-id-camellia",
+            name: "Camellia",
+            scientificName: "Camellia japonica",
+            confidence: 72,
+            rank: "species",
+            nameLocale: "en"
+        )
+        let result = IdentificationResult(
+            flower: flower,
+            confidence: top.confidence,
+            candidates: [],
+            isUncertain: false,
+            provider: .cloud,
+            externalName: top.name,
+            externalScientificName: top.scientificName,
+            externalCandidates: [top, alternate],
+            identity: top.identity,
+            careProfile: .bundled(flower),
+            isPlant: true
+        )
+
+        XCTAssertEqual(result.alternateExternalCandidates, [alternate])
+    }
+
+    func testCloudNotPlantResultCannotBeSavedToGarden() throws {
+        let flower = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
+        let result = IdentificationResult(
+            flower: flower,
+            confidence: 96,
+            candidates: [],
+            isUncertain: true,
+            provider: .cloud,
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "provider-candidate",
+                commonName: "Candidate"
+            ),
+            careProfile: PlantCareProfile(source: .plantID),
+            isPlant: false
+        )
+
+        XCTAssertFalse(result.canSaveToGarden)
+    }
+
     private func result(flowerID: String) -> IdentificationResult {
         let flower = FlowerCatalog.flower(id: flowerID)!
         return IdentificationResult(

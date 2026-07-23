@@ -15,11 +15,11 @@
 <body>
   <nav class="nav" aria-label="Main"><a href="launch.html">Rocío 1.0</a><a href="index.html?demo=1">Web demo</a><a href="support.html">Support</a></nav>
   <h1>Privacy policy</h1>
-  <p class="muted">Last updated: July 22, 2026.</p>
+  <p class="muted">Last updated: July 23, 2026.</p>
   <div class="box"><strong>Summary:</strong> The Rocío iOS app uses an account to synchronize your garden and enforce fair scanner limits. It contains no advertising or cross-app tracking. The web demo is separate and stores its data only in your browser.</div>
 
   <h2>iOS app data</h2>
-  <p>Rocío keeps a local copy and synchronizes your garden's plants, nicknames, notes, care status, and watering dates with Supabase. This data is associated with your account identifier to provide synchronization. You can export or delete it from Settings.</p>
+  <p>Rocío keeps a local copy and synchronizes your garden with Supabase, including each saved plant's source identity, common and scientific names when available, nickname, notes, optional care preferences, care status, and watering dates. This data is associated with your account identifier to provide synchronization. You can export or delete it from Settings.</p>
 
   <h2>Account and analytics</h2>
   <p>Creating an account stores your email address and a user identifier. Rocío may record limited product-usage events to improve the app; you can opt out in Settings. We do not use advertising identifiers, precise location, or data from other apps.</p>
@@ -28,7 +28,7 @@
   <p>The app stores its session in Keychain. Password recovery uses PKCE and a deep link to return to Rocío; the URL must not contain bearer tokens. Final email and allowed-URL configuration remain prerequisites for public distribution.</p>
 
   <h2>Camera and photos</h2>
-  <p>The camera and selected photos are used only when you open the scanner. For every selected photo, Rocío lets you analyze it only on the iPhone, or explains the transfer and asks for consent for that photo before sending a reduced copy to Plant.id/Kindwise through an authenticated Supabase function. Rocío does not store the original image in its database, but Plant.id processes the submitted copy under its applicable terms. If the service fails, Rocío may show a less precise local match.</p>
+  <p>The camera and selected photos are used only when you open the scanner. For every selected photo, Rocío lets you analyze it only on the iPhone, or explains the transfer and asks for consent for that photo before sending a reduced copy to Plant.id/Kindwise through an authenticated Supabase function. Rocío does not store the original image in its database, but Plant.id processes the submitted copy under its applicable terms. To resume an interrupted paid scan without sending it twice, the device temporarily stores an account-scoped mapping containing a SHA-256 fingerprint of the compressed image, a random request UUID, and an expiry; it stores no photo bytes. The mapping can be reused for up to five minutes. It is removed immediately after a terminal result, sign-out, or account deletion, while stale entries are removed on the next app launch or scan. Rocío may also keep a bounded normalized identification response (up to 128 KiB) with a seven-day server replay window. Expired replay rows are removed on that account's next cloud scan or account deletion; without either event, an expired bounded row can remain stored but cannot be replayed. That replay record contains neither the raw photo nor a Plant.id access token. If the service fails, Rocío may show a less precise local match.</p>
 
   <h2>Notifications</h2>
   <p>Rocío requests permission only when you enable watering reminders. These are local notifications based on saved plants. Clearing local data also cancels pending reminders.</p>

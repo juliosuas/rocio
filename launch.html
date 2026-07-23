@@ -301,7 +301,7 @@
 
     .screenshot-grid {
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: 14px;
       margin-top: 28px;
     }
@@ -463,15 +463,15 @@
     </nav>
 
     <div class="hero-content">
-      <div class="eyebrow">Rocío 1.0 · build 1 · beta candidate</div>
+      <div class="eyebrow">Rocío 1.0 · build 1 · feature candidate</div>
       <h1>Rocío</h1>
-      <p class="lead">Daily plant care in English and Spanish: a synchronized garden, opt-in reminders, and an experimental scanner that asks before sending each photo.</p>
+      <p class="lead">Daily plant care in English and Spanish: save scanned or manually entered plants, choose optional reminders, work offline, and synchronize your garden.</p>
       <div class="actions">
         <a class="button" href="index.html?demo=1">Open web demo</a>
         <a class="button secondary" href="#status">View iOS status</a>
       </div>
       <div class="hero-stats" aria-label="Release status">
-        <div class="hero-stat"><strong>115</strong><span>iOS tests</span></div>
+        <div class="hero-stat"><strong>170</strong><span>iOS tests</span></div>
         <div class="hero-stat"><strong>15</strong><span>editorial guides</span></div>
         <div class="hero-stat"><strong>2</strong><span>languages</span></div>
       </div>
@@ -496,7 +496,7 @@
           <p class="section-copy">The clip and interactive experience belong to the local-data web demo. The current iOS app has been verified in Simulator and launches with development signing on a physical iPhone, but no public TestFlight or App Store binary exists yet.</p>
           <ul class="list">
             <li><strong>Local-data demo</strong> Open <a href="index.html?demo=1">Rocío with sample data</a>. The garden and history remain in this browser; the demo does not create an account or sync with Supabase.</li>
-            <li><strong>Native app</strong> The iOS version keeps a resilient cache, synchronizes per account, and lets you export or delete your data.</li>
+            <li><strong>Native app</strong> The iOS version keeps versioned primary and backup snapshots, synchronizes per account, and lets you export or delete your data.</li>
             <li><strong>Experimental scanner</strong> The demo compares locally. On iOS, you can keep the photo on the phone or authorize a one-time upload; both paths expose uncertainty.</li>
           </ul>
         </div>
@@ -507,7 +507,7 @@
       <div class="section-inner">
         <div class="eyebrow">Running native build · no mockups</div>
         <h2>Rocío on iPhone</h2>
-        <p class="section-copy">Five privacy-safe screens captured directly from the current Rocío Debug build on an iPhone 17 simulator with iOS 26.3 on July 22, 2026. The final App Store set will be captured again from the exact Release archive.</p>
+        <p class="section-copy">Six privacy-safe screens captured directly from the Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23 from the current arbitrary-plant branch. They are real development evidence, not mockups or final App Store art. The submission set will be captured again from the exact Release archive.</p>
         <div class="screenshot-grid">
           <figure class="screenshot-card">
             <img src="docs/screenshots/ios/catalog.png" alt="Rocío native catalog with real flower photography" loading="lazy">
@@ -526,6 +526,10 @@
             <figcaption>Scanner</figcaption>
           </figure>
           <figure class="screenshot-card">
+            <img src="docs/screenshots/ios/manual-plant.png" alt="Rocío native manual Swiss cheese plant with moderate watering preference" loading="lazy">
+            <figcaption>Manual plant</figcaption>
+          </figure>
+          <figure class="screenshot-card">
             <img src="docs/screenshots/ios/settings.png" alt="Rocío native settings and privacy controls" loading="lazy">
             <figcaption>Settings</figcaption>
           </figure>
@@ -536,19 +540,19 @@
     <section>
       <div class="section-inner">
         <h2>Made for the home garden</h2>
-        <p class="section-copy">The current beta contains 15 reviewed flower guides and does not promise perfect artificial intelligence. The production completion plan removes the catalog ceiling so any scanned or manually entered plant can use the same care, offline, and synchronization loop.</p>
+        <p class="section-copy">Rocío keeps 15 bundled editorial flower guides without making them a runtime limit. The native feature candidate can save arbitrary Plant.id results or manual entries with durable identity, optional user-confirmed care, offline persistence, and account synchronization.</p>
         <div class="features">
           <article class="feature">
             <strong>Complete first care</strong>
-            <p>Choose a plant, add it, enable a reminder when you decide, and confirm the first watering.</p>
+            <p>Scan or enter a plant, save the specimen, choose a watering preference when you decide, and confirm the first watering.</p>
           </article>
           <article class="feature">
             <strong>Resilient garden</strong>
-            <p>The local cache retains changes, shows the true synchronization state, and retries when the connection returns.</p>
+            <p>Versioned primary and backup snapshots retain plants offline, surface recovery state, and retry synchronization when the connection returns.</p>
           </article>
           <article class="feature">
             <strong>Per-photo privacy</strong>
-            <p>The scanner offers local analysis and requests fresh consent before transferring a reduced image.</p>
+            <p>The scanner offers local analysis and requests fresh consent before transferring a reduced image. Provider results keep their own identity.</p>
           </article>
         </div>
       </div>
@@ -572,24 +576,24 @@
     <section id="status">
       <div class="section-inner">
         <h2>Version 1.0 status</h2>
-        <p class="section-copy">The code is prepared as a beta candidate. Publishing an app still requires external configuration and testing that a web demo cannot replace.</p>
+        <p class="section-copy">The arbitrary-plant code is locally verified as a feature candidate. Publishing still requires reviewed backend deployment, authenticated canaries, device and two-session testing, distribution signing, and external configuration that a web demo cannot replace.</p>
         <div class="pricing">
           <article class="price">
             <h3>Verified in the repository</h3>
-            <p>115/115 iOS tests, an unsigned Release build, 11/11 release gates, 41/41 cloud controls, and a 20/20 App Store audit.</p>
+            <p>170/170 iOS tests, 28/28 Edge runtime tests, 50/50 static cloud controls, the four-migration PostgreSQL 16 harness, the 12/12 release gate, the 12/12 strict classifier, and the 20/20 unsigned App Store audit pass on the current feature candidate. The unsigned Release build also compiles successfully.</p>
           </article>
           <article class="price">
             <h3>Before TestFlight</h3>
-            <p>Paid Apple Developer membership and distribution signing, remote recovery configuration, the pending Supabase migration, and physical smoke tests for camera, photos, and notifications remain outstanding.</p>
+            <p>The reviewed deletion-preserving, arbitrary-plant, and idempotent-scan migrations, matching Edge deployment, authenticated production canaries, remote recovery configuration, real-device and two-session smoke tests, paid Apple Developer membership, and distribution signing remain outstanding.</p>
           </article>
         </div>
-        <p class="status-note"><strong>Availability:</strong> Rocío 1.0 is not yet offered through TestFlight or the App Store. This page does not install the native app; the web demo is a separate surface.</p>
+        <p class="status-note"><strong>Availability:</strong> The deletion-preserving, arbitrary-plant, and idempotent-scan migrations and matching Edge update are not deployed, and Rocío 1.0 is not yet offered through TestFlight or the App Store. This page does not install the native app; the 15-guide web demo is a separate surface.</p>
       </div>
     </section>
   </main>
 
   <footer>
-    <span>Rocío 1.0 · build 1 · beta candidate.</span>
+    <span>Rocío 1.0 · build 1 · feature candidate.</span>
     <span><a href="privacy.html">Privacy</a> · <a href="support.html">Support</a> · <a href="index.html?demo=1">Demo</a></span>
   </footer>
 </body>

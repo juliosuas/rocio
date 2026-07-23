@@ -51,6 +51,7 @@
 		01000000000000000000002A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002C /* Localization.swift */; };
 		01000000000000000000002B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002D /* Localizable.xcstrings */; };
 		01000000000000000000002C /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002E /* AppShortcuts.xcstrings */; };
+		010000000000000000000034 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000044 /* InfoPlist.xcstrings */; };
 		01000000000000000000002D /* BackendConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002F /* BackendConfiguration.swift */; };
 		01000000000000000000002E /* KeychainSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000030 /* KeychainSessionStore.swift */; };
 		01000000000000000000002F /* RocioBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000031 /* RocioBackendClient.swift */; };
@@ -128,6 +129,7 @@
 		020000000000000000000041 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
 		020000000000000000000042 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		020000000000000000000043 /* validate-supabase-client-key.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "validate-supabase-client-key.sh"; sourceTree = "<group>"; };
+		020000000000000000000044 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -225,6 +227,7 @@
 				020000000000000000000017 /* PrivacyInfo.xcprivacy */,
 				02000000000000000000002D /* Localizable.xcstrings */,
 				02000000000000000000002E /* AppShortcuts.xcstrings */,
+				020000000000000000000044 /* InfoPlist.xcstrings */,
 				070000000000000000000012 /* Flowers */,
 			);
 			path = Resources;
@@ -343,6 +346,7 @@
 				010000000000000000000017 /* PrivacyInfo.xcprivacy in Resources */,
 				01000000000000000000002B /* Localizable.xcstrings in Resources */,
 				01000000000000000000002C /* AppShortcuts.xcstrings in Resources */,
+				010000000000000000000034 /* InfoPlist.xcstrings in Resources */,
 				010000000000000000000018 /* cempasuchil.jpg in Resources */,
 				010000000000000000000019 /* clavel.jpg in Resources */,
 				01000000000000000000001A /* gardenia.jpg in Resources */,

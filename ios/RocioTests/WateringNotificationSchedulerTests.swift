@@ -141,6 +141,88 @@ final class WateringNotificationSchedulerTests: XCTestCase {
 
         XCTAssertGreaterThan(fireDate, now)
     }
+
+    func testPlantIDPlantSchedulesWithoutCatalogOrExactWaterAmount() throws {
+        let calendar = Calendar(identifier: .gregorian)
+        let lastWateredAt = try XCTUnwrap(
+            calendar.date(from: DateComponents(year: 2026, month: 7, day: 20, hour: 10))
+        )
+        let now = try XCTUnwrap(
+            calendar.date(from: DateComponents(year: 2026, month: 7, day: 21, hour: 10))
+        )
+        let plant = GardenPlant(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-123",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa"
+            ),
+            careProfile: PlantCareProfile(
+                wateringIntervalDays: 6,
+                source: .plantID
+            ),
+            nickname: "Monstera",
+            lastWateredAt: lastWateredAt
+        )
+
+        let plan = try XCTUnwrap(
+            WateringNotificationScheduler().notificationPlan(
+                for: plant,
+                now: now,
+                calendar: calendar
+            )
+        )
+
+        XCTAssertEqual(plan.body, "It is time to water Monstera.")
+        XCTAssertTrue(plan.identifier.contains(plant.id.uuidString))
+        let fireComponents = calendar.dateComponents(
+            [.year, .month, .day, .hour, .minute],
+            from: plan.fireDate
+        )
+        XCTAssertEqual(fireComponents.year, 2026)
+        XCTAssertEqual(fireComponents.month, 7)
+        XCTAssertEqual(fireComponents.day, 26)
+        XCTAssertEqual(fireComponents.hour, 9)
+        XCTAssertEqual(fireComponents.minute, 0)
+    }
+
+    func testPlantWithoutWateringCareDoesNotInventReminderSchedule() {
+        let plant = GardenPlant(
+            identity: PlantIdentity(source: .manual, commonName: "Mystery plant"),
+            careProfile: PlantCareProfile(source: .manual)
+        )
+
+        XCTAssertNil(WateringNotificationScheduler().notificationPlan(for: plant))
+    }
+
+    func testLegacyBundledPlantWithoutExplicitCareUsesCatalogSchedule() throws {
+        var plant = GardenPlant(flowerId: "rosa", nickname: "Legacy rose")
+        plant.careProfile = PlantCareProfile(source: .bundled)
+
+        let plan = try XCTUnwrap(
+            WateringNotificationScheduler().notificationPlan(for: plant)
+        )
+
+        XCTAssertNotNil(plan.fireDate)
+    }
+
+    func testBundledPlantNotificationKeepsCatalogAmount() throws {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Rosa")
+
+        let plan = try XCTUnwrap(
+            WateringNotificationScheduler().notificationPlan(for: plant)
+        )
+
+        XCTAssertEqual(
+            plan.body,
+            L10n.format(
+                "notification.watering.body",
+                fallback: "%@ needs %d ml of water today.",
+                "Rosa",
+                300
+            )
+        )
+    }
 }
 
 private actor NotificationAuthorizationGate {

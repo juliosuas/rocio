@@ -4,6 +4,8 @@ import UIKit
 struct IdentificationResult: Identifiable, Equatable, Sendable {
     let id = UUID()
     let flower: Flower
+    let identity: PlantIdentity
+    let careProfile: PlantCareProfile
     let confidence: Double
     let candidates: [Candidate]
     let isUncertain: Bool
@@ -12,12 +14,27 @@ struct IdentificationResult: Identifiable, Equatable, Sendable {
     let externalName: String?
     let externalScientificName: String?
     let externalCandidates: [ExternalCandidate]
+    let isPlant: Bool?
 
     struct ExternalCandidate: Identifiable, Equatable, Sendable {
         let id: String
+        let sourceID: String?
         let name: String
         let scientificName: String
         let confidence: Double
+        let rank: String?
+        let nameLocale: String?
+
+        var identity: PlantIdentity {
+            PlantIdentity(
+                source: .plantID,
+                sourceID: sourceID,
+                commonName: name,
+                scientificName: scientificName,
+                rank: rank,
+                nameLocale: nameLocale
+            ).normalized(fallback: scientificName)
+        }
     }
 
     init(
@@ -29,9 +46,14 @@ struct IdentificationResult: Identifiable, Equatable, Sendable {
         remainingCloudScans: Int? = nil,
         externalName: String? = nil,
         externalScientificName: String? = nil,
-        externalCandidates: [ExternalCandidate] = []
+        externalCandidates: [ExternalCandidate] = [],
+        identity: PlantIdentity? = nil,
+        careProfile: PlantCareProfile? = nil,
+        isPlant: Bool? = nil
     ) {
         self.flower = flower
+        self.identity = identity ?? .bundled(flower)
+        self.careProfile = careProfile ?? .bundled(flower)
         self.confidence = confidence
         self.candidates = candidates
         self.isUncertain = isUncertain
@@ -40,11 +62,16 @@ struct IdentificationResult: Identifiable, Equatable, Sendable {
         self.externalName = externalName
         self.externalScientificName = externalScientificName
         self.externalCandidates = externalCandidates
+        self.isPlant = isPlant
     }
 
     var displayName: String { externalName ?? flower.name }
     var displayScientificName: String { externalScientificName ?? flower.scientific }
     var usesExternalSuggestion: Bool { externalName != nil }
+    var canSaveToGarden: Bool { isPlant != false }
+    var alternateExternalCandidates: [ExternalCandidate] {
+        externalCandidates.filter { $0.identity != identity }
+    }
 
     struct Candidate: Identifiable, Equatable, Sendable {
         let id: String
@@ -325,20 +352,41 @@ struct HybridFlowerIdentifier {
         }
         do {
             let remote = try await sessionStore.identify(image: image)
-            let localResult = await localTask.value
+            guard let localResult = await localTask.value else { return nil }
             let candidates = matchedCandidates(remote.suggestions)
-            guard let best = candidates.first else {
-                guard let result = localResult, let top = remote.suggestions.first else { return localResult }
+            let external = externalCandidates(remote.suggestions, locale: remote.locale)
+            if let top = external.first {
+                let exactGuide = exactCatalogMatch(for: top.scientificName)
+                let closestGuide = exactGuide ?? candidates.first?.flower ?? localResult.flower
+                let candidateConfidence = top.confidence
+                var careProfile = exactGuide.map(PlantCareProfile.bundled)
+                    ?? PlantCareProfile(source: .plantID)
+                careProfile.fetchedAt = Date()
                 return IdentificationResult(
-                    flower: result.flower,
-                    confidence: min(99, max(1, top.probability * 100)),
-                    candidates: result.candidates,
-                    isUncertain: top.probability < 0.64,
+                    flower: closestGuide,
+                    confidence: candidateConfidence,
+                    candidates: candidates.isEmpty ? localResult.candidates : Array(candidates.prefix(3)),
+                    isUncertain: candidateConfidence < 64 || remote.isPlant?.binary == false,
                     provider: .cloud,
                     remainingCloudScans: remote.remaining,
-                    externalName: top.commonNames.first ?? top.name,
+                    externalName: top.name,
                     externalScientificName: top.scientificName,
-                    externalCandidates: externalCandidates(remote.suggestions)
+                    externalCandidates: external,
+                    identity: top.identity,
+                    careProfile: careProfile,
+                    isPlant: remote.isPlant?.binary
+                )
+            }
+
+            guard let best = candidates.first else {
+                return IdentificationResult(
+                    flower: localResult.flower,
+                    confidence: localResult.confidence,
+                    candidates: localResult.candidates,
+                    isUncertain: localResult.isUncertain,
+                    provider: .cloud,
+                    remainingCloudScans: remote.remaining,
+                    isPlant: remote.isPlant?.binary
                 )
             }
             return IdentificationResult(
@@ -348,7 +396,8 @@ struct HybridFlowerIdentifier {
                 isUncertain: best.confidence < 64 || best.confidence - (candidates.dropFirst().first?.confidence ?? 0) < 8,
                 provider: .cloud,
                 remainingCloudScans: remote.remaining,
-                externalCandidates: externalCandidates(remote.suggestions)
+                externalCandidates: external,
+                isPlant: remote.isPlant?.binary
             )
         } catch {
             let localResult = await localTask.value
@@ -389,16 +438,35 @@ struct HybridFlowerIdentifier {
     }
 
     private func externalCandidates(
-        _ suggestions: [RemoteIdentificationResponse.Suggestion]
+        _ suggestions: [RemoteIdentificationResponse.Suggestion],
+        locale: String?
     ) -> [IdentificationResult.ExternalCandidate] {
-        suggestions.prefix(3).enumerated().map { index, suggestion in
-            IdentificationResult.ExternalCandidate(
-                id: "\(index)-\(suggestion.scientificName)-\(suggestion.name)",
-                name: suggestion.commonNames.first ?? suggestion.name,
-                scientificName: suggestion.scientificName,
-                confidence: min(99, max(1, suggestion.probability * 100))
+        suggestions.prefix(3).compactMap { suggestion in
+            let commonName = (suggestion.commonNames.first ?? suggestion.name)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let scientificName = suggestion.scientificName
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !commonName.isEmpty || !scientificName.isEmpty else { return nil }
+            let displayName = commonName.isEmpty ? scientificName : commonName
+            let stableID = suggestion.id?.isEmpty == false
+                ? suggestion.id!
+                : "\(scientificName)|\(displayName)"
+            return IdentificationResult.ExternalCandidate(
+                id: stableID,
+                sourceID: suggestion.id,
+                name: displayName,
+                scientificName: scientificName.isEmpty ? displayName : scientificName,
+                confidence: min(99, max(1, suggestion.probability * 100)),
+                rank: suggestion.rank,
+                nameLocale: locale
             )
         }
+    }
+
+    private func exactCatalogMatch(for scientificName: String) -> Flower? {
+        let target = normalize(scientificName)
+        guard !target.isEmpty else { return nil }
+        return FlowerCatalog.all.first { normalize($0.scientific) == target }
     }
 
     private func normalize(_ value: String) -> String {

@@ -215,13 +215,429 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(store.plants[0].lastWateredAt, newDate)
     }
 
+    func testAddManualPlantPreservesGenericIdentityWithoutCatalogID() {
+        let store = GardenStore(plants: [])
+        let identity = PlantIdentity(
+            source: .manual,
+            commonName: "Prayer plant",
+            scientificName: "Maranta leuconeura",
+            nameLocale: "en"
+        )
+        let careProfile = PlantCareProfile(
+            wateringPreference: .medium,
+            source: .manual
+        )
+
+        store.add(
+            identity: identity,
+            careProfile: careProfile,
+            nickname: "Prayer plant"
+        )
+
+        XCTAssertEqual(store.plants.count, 1)
+        XCTAssertNil(store.plants[0].flowerId)
+        XCTAssertEqual(store.plants[0].identity, identity)
+        XCTAssertEqual(store.plants[0].careProfile, careProfile)
+    }
+
+    func testLegacyRoseDecodesWithBundledIdentityCareAndOriginalSpecimenID() throws {
+        let specimenID = UUID(uuidString: "4C96BD49-28D0-4BA7-BFE2-00178B30373F")!
+        let addedAt = Date(timeIntervalSinceReferenceDate: 1_234)
+        let legacyPlant = LegacyGardenPlantFixture(
+            id: specimenID,
+            flowerId: "rosa",
+            nickname: "Patio rose",
+            addedAt: addedAt,
+            lastWateredAt: addedAt,
+            status: .healthy,
+            notes: "Inherited from version 1"
+        )
+
+        let decoded = try JSONDecoder().decode(
+            GardenPlant.self,
+            from: JSONEncoder().encode(legacyPlant)
+        )
+
+        XCTAssertEqual(decoded.id, specimenID)
+        XCTAssertEqual(decoded.flowerId, "rosa")
+        XCTAssertEqual(decoded.identity.source, .bundled)
+        XCTAssertEqual(decoded.identity.sourceID, "rosa")
+        XCTAssertEqual(decoded.identity.scientificName, "Rosa spp.")
+        XCTAssertEqual(decoded.careProfile.source, .bundled)
+        XCTAssertEqual(decoded.careProfile.wateringIntervalDays, 3)
+        XCTAssertEqual(decoded.careProfile.waterAmountMl, 300)
+        XCTAssertEqual(decoded.updatedAt, addedAt)
+    }
+
+    func testExternalMonsteraRoundTripKeepsProviderIdentityWithoutInventingExactCare() throws {
+        let specimenID = UUID(uuidString: "31ED8C74-81FA-4DB8-A42C-4D168738CD33")!
+        let fetchedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let plant = GardenPlant(
+            id: specimenID,
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-monstera-deliciosa",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa",
+                rank: "species",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(
+                wateringPreference: .medium,
+                source: .plantID,
+                fetchedAt: fetchedAt
+            ),
+            nickname: "Living room Monstera",
+            addedAt: fetchedAt,
+            lastWateredAt: fetchedAt,
+            updatedAt: fetchedAt
+        )
+
+        let decoded = try JSONDecoder().decode(
+            GardenPlant.self,
+            from: JSONEncoder().encode(plant)
+        )
+        let store = GardenStore(plants: [decoded])
+
+        XCTAssertEqual(decoded, plant)
+        XCTAssertEqual(decoded.id, specimenID)
+        XCTAssertNil(decoded.flowerId)
+        XCTAssertEqual(decoded.identity.sourceID, "plant-id-monstera-deliciosa")
+        XCTAssertEqual(decoded.identity.scientificName, "Monstera deliciosa")
+        XCTAssertNil(decoded.careProfile.wateringIntervalDays)
+        XCTAssertNil(decoded.careProfile.waterAmountMl)
+        XCTAssertEqual(store.wateringIntervalDays(for: decoded), 7)
+    }
+
+    func testManualPlantRoundTripPreservesUserIdentityAndOptionalCare() throws {
+        let specimenID = UUID(uuidString: "455FF867-86EA-4B9A-8BE8-46D27ED05CA7")!
+        let createdAt = Date(timeIntervalSince1970: 1_800_000_100)
+        let plant = GardenPlant(
+            id: specimenID,
+            identity: PlantIdentity(
+                source: .manual,
+                commonName: "Grandma's cutting",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(
+                source: .manual,
+                fetchedAt: createdAt
+            ),
+            addedAt: createdAt,
+            lastWateredAt: createdAt,
+            updatedAt: createdAt
+        )
+
+        let decoded = try JSONDecoder().decode(
+            GardenPlant.self,
+            from: JSONEncoder().encode(plant)
+        )
+
+        XCTAssertEqual(decoded, plant)
+        XCTAssertEqual(decoded.id, specimenID)
+        XCTAssertEqual(decoded.nickname, "Grandma's cutting")
+        XCTAssertEqual(decoded.identity.source, .manual)
+        XCTAssertNil(decoded.identity.sourceID)
+        XCTAssertNil(decoded.identity.scientificName)
+        XCTAssertNil(decoded.careProfile.wateringIntervalDays)
+        XCTAssertNil(decoded.careProfile.reminderIntervalDays)
+
+        let store = GardenStore(plants: [decoded])
+        XCTAssertNil(store.wateringIntervalDays(for: decoded))
+        XCTAssertNil(store.urgency(for: decoded))
+        XCTAssertNil(store.nextWateringDate(for: decoded))
+        XCTAssertEqual(store.wateringSchedule().totalDueCount, 0)
+        XCTAssertNil(store.summary().nextWateringDate)
+        XCTAssertEqual(store.summary().unscheduledCount, 1)
+        XCTAssertEqual(
+            store.summary().statusLabel,
+            L10n.text("garden.summary.unscheduled", fallback: "Set care schedule")
+        )
+    }
+
+    func testArbitraryPlantFieldsNormalizeToCloudContractBeforeSave() throws {
+        let longName = "  " + String(repeating: "n", count: 220) + "  "
+        let store = GardenStore(plants: [])
+
+        let saved = try XCTUnwrap(store.add(
+            identity: PlantIdentity(
+                source: .manual,
+                sourceID: "   ",
+                commonName: longName,
+                scientificName: String(repeating: "s", count: 220),
+                rank: String(repeating: "r", count: 90),
+                nameLocale: String(repeating: "l", count: 40)
+            ),
+            careProfile: PlantCareProfile(
+                wateringIntervalDays: 0,
+                waterAmountMl: 20_000,
+                source: .manual
+            )
+        ))
+
+        XCTAssertNil(saved.identity.sourceID)
+        XCTAssertEqual(saved.identity.commonName.unicodeScalars.count, 200)
+        XCTAssertEqual(saved.identity.scientificName?.unicodeScalars.count, 200)
+        XCTAssertEqual(saved.identity.rank?.unicodeScalars.count, 80)
+        XCTAssertEqual(saved.identity.nameLocale?.unicodeScalars.count, 32)
+        XCTAssertNil(saved.careProfile.wateringIntervalDays)
+        XCTAssertNil(saved.careProfile.waterAmountMl)
+        XCTAssertEqual(store.plants, [saved])
+        XCTAssertNil(
+            PlantIdentity(source: .manual, commonName: "Aloe", nameLocale: "x")
+                .normalized()
+                .nameLocale
+        )
+    }
+
+    func testAddingTheSameSpeciesCreatesIndependentSpecimens() throws {
+        let store = GardenStore(plants: [])
+        let rose = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
+
+        store.add(rose)
+        store.add(rose)
+
+        XCTAssertEqual(store.plants.count, 2)
+        XCTAssertEqual(Set(store.plants.map(\.id)).count, 2)
+        XCTAssertEqual(store.plants.map(\.flowerId), ["rosa", "rosa"])
+        XCTAssertTrue(store.plants.allSatisfy { $0.identity.sourceID == "rosa" })
+    }
+
+    func testVersionedPersistenceRecoversCorruptPrimaryFromLastKnownGoodBackup() throws {
+        let suiteName = "GardenStoreTests.primary.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(CoordinatedUserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Backup rose")
+
+        XCTAssertTrue(GardenPersistence.savePlants([plant], defaults: defaults))
+        defaults.set(Data("corrupt-primary".utf8), forKey: GardenPersistence.plantsKey)
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .recoveredFromBackup)
+        XCTAssertEqual(result.plants, [plant])
+        XCTAssertEqual(
+            defaults.data(forKey: GardenPersistence.plantsKey),
+            defaults.data(forKey: GardenPersistence.backupPlantsKey)
+        )
+
+        let selectedOldData = try XCTUnwrap(
+            defaults.data(forKey: GardenPersistence.backupPlantsKey)
+        )
+        let newerPlant = GardenPlant(flowerId: "lavanda", nickname: "Concurrent save")
+        defaults.set(
+            Data("corrupt-primary-again".utf8),
+            forKey: GardenPersistence.plantsKey
+        )
+        defaults.blockNextSet(
+            data: selectedOldData,
+            forKey: GardenPersistence.plantsKey
+        )
+        let loaderFinished = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = GardenPersistence.loadSnapshot(defaults: defaults)
+            loaderFinished.signal()
+        }
+        XCTAssertEqual(
+            defaults.didReachBlockedSet.wait(timeout: .now() + 2),
+            .success
+        )
+
+        let saverFinished = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async {
+            _ = GardenPersistence.savePlants([newerPlant], defaults: defaults)
+            saverFinished.signal()
+        }
+        XCTAssertEqual(
+            saverFinished.wait(timeout: .now() + 0.1),
+            .timedOut,
+            "A save must wait while recovery holds the persistence transaction."
+        )
+
+        defaults.allowBlockedSet.signal()
+        XCTAssertEqual(loaderFinished.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(saverFinished.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(
+            GardenPersistence.loadSnapshot(defaults: defaults).plants,
+            [newerPlant]
+        )
+    }
+
+    func testVersionedPersistenceKeepsValidPrimaryWhenBackupIsCorrupt() throws {
+        let suiteName = "GardenStoreTests.backup.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let plant = GardenPlant(flowerId: "lavanda", nickname: "Primary lavender")
+
+        XCTAssertTrue(GardenPersistence.savePlants([plant], defaults: defaults))
+        defaults.set(Data("corrupt-backup".utf8), forKey: GardenPersistence.backupPlantsKey)
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .loaded)
+        XCTAssertEqual(result.plants, [plant])
+        XCTAssertEqual(
+            defaults.data(forKey: GardenPersistence.plantsKey),
+            defaults.data(forKey: GardenPersistence.backupPlantsKey)
+        )
+    }
+
+    func testVersionedPersistenceChoosesNewerBackupGenerationAfterInterruptedWrite() throws {
+        let suiteName = "GardenStoreTests.newer-backup.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let oldPlant = GardenPlant(flowerId: "rosa", nickname: "Old rose")
+        let newestPlant = GardenPlant(flowerId: "rosa", nickname: "Newest rose")
+
+        XCTAssertTrue(GardenPersistence.savePlants([oldPlant], defaults: defaults))
+        let oldSnapshot = try XCTUnwrap(defaults.data(forKey: GardenPersistence.plantsKey))
+        XCTAssertTrue(GardenPersistence.savePlants([newestPlant], defaults: defaults))
+        let newestSnapshot = try XCTUnwrap(defaults.data(forKey: GardenPersistence.backupPlantsKey))
+        defaults.set(oldSnapshot, forKey: GardenPersistence.plantsKey)
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .recoveredFromBackup)
+        XCTAssertEqual(result.plants, [newestPlant])
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.plantsKey), newestSnapshot)
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.backupPlantsKey), newestSnapshot)
+    }
+
+    func testLegacyPrimaryFromOlderBuildWinsOverStaleVersionedBackup() throws {
+        let suiteName = "GardenStoreTests.mixed-version.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let stalePlant = GardenPlant(flowerId: "rosa", nickname: "Before downgrade")
+        let newerLegacyPlant = GardenPlant(flowerId: "rosa", nickname: "Edited by older build")
+
+        XCTAssertTrue(GardenPersistence.savePlants([stalePlant], defaults: defaults))
+        let staleBackup = try XCTUnwrap(
+            defaults.data(forKey: GardenPersistence.backupPlantsKey)
+        )
+        defaults.set(
+            try JSONEncoder().encode([newerLegacyPlant]),
+            forKey: GardenPersistence.plantsKey
+        )
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .migratedLegacy)
+        XCTAssertEqual(result.plants, [newerLegacyPlant])
+        XCTAssertNotEqual(defaults.data(forKey: GardenPersistence.plantsKey), staleBackup)
+        XCTAssertEqual(
+            defaults.data(forKey: GardenPersistence.plantsKey),
+            defaults.data(forKey: GardenPersistence.backupPlantsKey)
+        )
+    }
+
+    func testFuturePrimarySchemaFailsClosedWithoutOverwritingEitherCopy() throws {
+        let suiteName = "GardenStoreTests.future-schema.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let currentPlant = GardenPlant(flowerId: "lavanda", nickname: "Current backup")
+
+        XCTAssertTrue(GardenPersistence.savePlants([currentPlant], defaults: defaults))
+        let backup = try XCTUnwrap(defaults.data(forKey: GardenPersistence.backupPlantsKey))
+        let futurePrimary = Data(#"{"schemaVersion":999,"futureData":"preserve"}"#.utf8)
+        defaults.set(futurePrimary, forKey: GardenPersistence.plantsKey)
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .unrecoverableCorruption)
+        XCTAssertTrue(result.plants.isEmpty)
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.plantsKey), futurePrimary)
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.backupPlantsKey), backup)
+        XCTAssertFalse(
+            GardenPersistence.savePlants(
+                [GardenPlant(flowerId: "rosa", nickname: "Must not overwrite")],
+                defaults: defaults
+            )
+        )
+        XCTAssertEqual(
+            GardenPersistence.updatePlant(id: currentPlant.id, defaults: defaults) {
+                $0.nickname = "Must not mutate"
+            },
+            .persistenceFailure
+        )
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.plantsKey), futurePrimary)
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.backupPlantsKey), backup)
+    }
+
+    func testVersionedPersistenceReportsWhenBothSnapshotsAreCorrupt() throws {
+        let suiteName = "GardenStoreTests.both.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        defaults.set(Data("corrupt-primary".utf8), forKey: GardenPersistence.plantsKey)
+        defaults.set(Data("corrupt-backup".utf8), forKey: GardenPersistence.backupPlantsKey)
+
+        let result = GardenPersistence.loadSnapshot(defaults: defaults)
+
+        XCTAssertEqual(result.status, .unrecoverableCorruption)
+        XCTAssertTrue(result.plants.isEmpty)
+    }
+
+    func testNormalSaveDoesNotOverwriteTwoUnreadableSnapshots() throws {
+        let suiteName = "GardenStoreTests.preserve-corruption.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let primary = Data("future-primary".utf8)
+        let backup = Data("future-backup".utf8)
+        defaults.set(primary, forKey: GardenPersistence.plantsKey)
+        defaults.set(backup, forKey: GardenPersistence.backupPlantsKey)
+
+        XCTAssertFalse(
+            GardenPersistence.savePlants(
+                [GardenPlant(flowerId: "rosa", nickname: "Must not overwrite")],
+                defaults: defaults
+            )
+        )
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.plantsKey), primary)
+        XCTAssertEqual(defaults.data(forKey: GardenPersistence.backupPlantsKey), backup)
+    }
+
+    func testExplicitCloudRecoveryCanReplaceTwoUnreadableSnapshots() throws {
+        let suiteName = "GardenStoreTests.cloud-recovery.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Recovered from cloud")
+        defaults.set(Data("corrupt-primary".utf8), forKey: GardenPersistence.plantsKey)
+        defaults.set(Data("corrupt-backup".utf8), forKey: GardenPersistence.backupPlantsKey)
+
+        XCTAssertTrue(
+            GardenPersistence.savePlants(
+                [plant],
+                defaults: defaults,
+                allowsCorruptionRecovery: true
+            )
+        )
+        XCTAssertEqual(GardenPersistence.loadSnapshot(defaults: defaults).plants, [plant])
+    }
+
+    func testPersistenceWritesCurrentSchemaVersion() throws {
+        let suiteName = "GardenStoreTests.version.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        XCTAssertTrue(
+            GardenPersistence.savePlants(
+                [GardenPlant(flowerId: "rosa", nickname: "Versioned rose")],
+                defaults: defaults
+            )
+        )
+        let data = try XCTUnwrap(defaults.data(forKey: GardenPersistence.plantsKey))
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(json["schemaVersion"] as? Int, GardenPersistence.currentSchemaVersion)
+    }
+
     func testUpdateNormalizesLocalPlantAndCloudUpsertPayload() {
         let original = GardenPlant(flowerId: "rosa", nickname: "Original")
         let store = GardenStore(plants: [original])
         var upsertedPlants: [GardenPlant] = []
         store.cloudChangeHandler = { change in
-            guard case let .upsert(plant) = change else { return }
+            guard case let .upsert(plant) = change else { return true }
             upsertedPlants.append(plant)
+            return true
         }
         let composedEmoji = "👨‍👩‍👧‍👦"
         let expectedNickname = String(repeating: composedEmoji, count: 11)
@@ -291,6 +707,7 @@ final class GardenStoreTests: XCTestCase {
 
         XCTAssertEqual(summary.plantCount, 2)
         XCTAssertEqual(summary.overdueCount, 1)
+        XCTAssertEqual(summary.unscheduledCount, 0)
         XCTAssertEqual(summary.statusLabel, L10n.text("garden.summary.overdue", fallback: "Time to water"))
         XCTAssertEqual(summary.nextWateringDate, calendar.date(byAdding: .day, value: 3, to: overdueDate))
     }
@@ -349,12 +766,63 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertTrue(payload.contains("\"plants\""))
     }
 
+    func testGardenExportPayloadContainsArbitraryPlantIdentityAndOptionalCare() {
+        let plant = GardenPlant(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-456",
+                commonName: "Swiss cheese plant",
+                scientificName: "Monstera deliciosa",
+                rank: "species",
+                nameLocale: "en"
+            ),
+            careProfile: PlantCareProfile(
+                wateringIntervalDays: nil,
+                waterAmountMl: nil,
+                wateringPreference: .medium,
+                source: .plantID
+            ),
+            nickname: "Living room monstera"
+        )
+
+        let payload = GardenExport.payload(
+            plants: [plant],
+            exportedAt: Date(timeIntervalSince1970: 1_800_000_000)
+        )
+
+        XCTAssertTrue(payload.contains("\"commonName\" : \"Swiss cheese plant\""))
+        XCTAssertTrue(payload.contains("\"scientificName\" : \"Monstera deliciosa\""))
+        XCTAssertTrue(payload.contains("\"source\" : \"plant_id\""))
+        XCTAssertTrue(payload.contains("\"wateringPreference\" : \"medium\""))
+        XCTAssertFalse(payload.contains("\"flowerId\""))
+    }
+
+    func testGardenPlantEntityUsesGenericIdentityWithoutCatalogLookup() {
+        let plant = GardenPlant(
+            identity: PlantIdentity(
+                source: .manual,
+                commonName: "Snake plant",
+                scientificName: "Dracaena trifasciata"
+            ),
+            careProfile: PlantCareProfile(source: .manual),
+            nickname: "Desk plant"
+        )
+
+        let entity = GardenPlantEntity(plant: plant)
+
+        XCTAssertEqual(entity.id, plant.id.uuidString)
+        XCTAssertEqual(entity.name, "Desk plant")
+        XCTAssertEqual(entity.plantName, "Dracaena trifasciata")
+    }
+
     func testResetClearsPlants() {
         let store = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
 
         store.reset()
 
         XCTAssertTrue(store.plants.isEmpty)
+        XCTAssertEqual(store.persistenceStatus, .empty)
+        XCTAssertTrue(store.canAcceptLocalChanges)
     }
 
     func testDeleteAndResetEmitDatedCloudTombstones() {
@@ -363,7 +831,10 @@ final class GardenStoreTests: XCTestCase {
         let resetDate = Date(timeIntervalSince1970: 1_800_000_200)
         let store = GardenStore(plants: [plant])
         var changes: [GardenChange] = []
-        store.cloudChangeHandler = { changes.append($0) }
+        store.cloudChangeHandler = {
+            changes.append($0)
+            return true
+        }
 
         store.delete(plant, at: deleteDate)
         store.reset(at: resetDate)
@@ -381,6 +852,36 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(occurredAt, resetDate)
     }
 
+    func testRejectedCloudJournalLeavesWaterEditDeleteAndResetUnchanged() {
+        let timestamp = Date(timeIntervalSince1970: 1_800_000_800)
+        let plant = GardenPlant(
+            flowerId: "rosa",
+            nickname: "Original",
+            addedAt: timestamp,
+            lastWateredAt: timestamp,
+            notes: "Original notes",
+            updatedAt: timestamp
+        )
+        let store = GardenStore(plants: [plant])
+        store.cloudChangeHandler = { _ in false }
+
+        XCTAssertFalse(store.water(plant, at: timestamp.addingTimeInterval(60)))
+        XCTAssertFalse(
+            store.update(
+                plant,
+                nickname: "Rejected edit",
+                status: .needsSun,
+                notes: "Rejected notes"
+            )
+        )
+        XCTAssertFalse(store.delete(plant))
+        XCTAssertFalse(store.reset())
+        XCTAssertEqual(store.plants, [plant])
+        XCTAssertNotNil(store.mutationErrorMessage)
+        store.clearMutationError()
+        XCTAssertNil(store.mutationErrorMessage)
+    }
+
     func testLocalDataResetClearsPlantsCancelsRemindersAndReportsLocalCompletion() async {
         let store = GardenStore(plants: [GardenPlant(flowerId: "rosa", nickname: "Rosa")])
         var didCancelPendingNotifications = false
@@ -393,6 +894,34 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertTrue(store.plants.isEmpty)
         XCTAssertTrue(didCancelPendingNotifications)
         XCTAssertEqual(status, .localOnly)
+    }
+
+    func testLocalDataResetRecoversAnUnreadableDeviceSnapshot() async {
+        GardenPersistence.clearPlants()
+        UserDefaults.standard.set(
+            Data("corrupt-primary".utf8),
+            forKey: GardenPersistence.plantsKey
+        )
+        UserDefaults.standard.set(
+            Data("corrupt-backup".utf8),
+            forKey: GardenPersistence.backupPlantsKey
+        )
+        defer { GardenPersistence.clearPlants() }
+        let store = GardenStore()
+        var didCancelPendingNotifications = false
+        let resetter = LocalDataResetter {
+            didCancelPendingNotifications = true
+        }
+
+        XCTAssertEqual(store.persistenceStatus, .unrecoverableCorruption)
+        let status = await resetter.reset(gardenStore: store)
+
+        XCTAssertEqual(status, .localOnly)
+        XCTAssertTrue(store.plants.isEmpty)
+        XCTAssertEqual(store.persistenceStatus, .empty)
+        XCTAssertTrue(didCancelPendingNotifications)
+        XCTAssertNil(UserDefaults.standard.data(forKey: GardenPersistence.plantsKey))
+        XCTAssertNil(UserDefaults.standard.data(forKey: GardenPersistence.backupPlantsKey))
     }
 
     func testLocalDataResetNeverClaimsCloudDeletionBeforeConfirmation() async {
@@ -411,6 +940,26 @@ final class GardenStoreTests: XCTestCase {
 
         XCTAssertEqual(pendingStatus, .cloudPending)
         XCTAssertEqual(confirmedStatus, .cloudConfirmed)
+    }
+
+    func testRejectedDataResetTruthfullyKeepsPlantsAndReminders() async {
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Rosa")
+        let store = GardenStore(plants: [plant])
+        store.cloudChangeHandler = { _ in false }
+        var didCancelPendingNotifications = false
+        let resetter = LocalDataResetter {
+            didCancelPendingNotifications = true
+        }
+
+        let status = await resetter.reset(
+            gardenStore: store,
+            waitForCloudConfirmation: { true }
+        )
+
+        XCTAssertEqual(status, .rejected)
+        XCTAssertEqual(store.plants, [plant])
+        XCTAssertFalse(didCancelPendingNotifications)
+        XCTAssertTrue(status.message.contains("Nothing was deleted"))
     }
 
     func testPendingDataResetBecomesConfirmedOnlyAfterCloudSyncCompletes() {
@@ -447,4 +996,50 @@ final class GardenStoreTests: XCTestCase {
         XCTAssertEqual(store.plants, [existing])
     }
 #endif
+}
+
+private struct LegacyGardenPlantFixture: Codable {
+    let id: UUID
+    let flowerId: String
+    let nickname: String
+    let addedAt: Date
+    let lastWateredAt: Date
+    let status: PlantStatus
+    let notes: String
+}
+
+private final class CoordinatedUserDefaults: UserDefaults, @unchecked Sendable {
+    let didReachBlockedSet = DispatchSemaphore(value: 0)
+    let allowBlockedSet = DispatchSemaphore(value: 0)
+
+    private let coordinationLock = NSLock()
+    private var blockedData: Data?
+    private var blockedKey: String?
+    private var shouldBlock = false
+
+    func blockNextSet(data: Data, forKey key: String) {
+        coordinationLock.lock()
+        blockedData = data
+        blockedKey = key
+        shouldBlock = true
+        coordinationLock.unlock()
+    }
+
+    override func set(_ value: Any?, forKey defaultName: String) {
+        coordinationLock.lock()
+        let shouldPause =
+            shouldBlock &&
+            blockedKey == defaultName &&
+            blockedData == value as? Data
+        if shouldPause {
+            shouldBlock = false
+        }
+        coordinationLock.unlock()
+
+        if shouldPause {
+            didReachBlockedSet.signal()
+            _ = allowBlockedSet.wait(timeout: .now() + 5)
+        }
+        super.set(value, forKey: defaultName)
+    }
 }
