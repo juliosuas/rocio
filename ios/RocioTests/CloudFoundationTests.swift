@@ -684,7 +684,7 @@ final class CloudFoundationTests: XCTestCase {
             urlSession: urlSession
         )
         clearGardenSyncTestState(userID: userID)
-        XCTAssertTrue(GardenPersistence.savePlants([plant]))
+        XCTAssertTrue(GardenPersistence.savePlants([plant], ownerID: userID))
         gardenStore.cloudChangeHandler = { [weak gardenStore, weak sessionStore] change in
             guard let gardenStore, let sessionStore else { return false }
             return sessionStore.enqueueGardenChange(change, gardenStore: gardenStore)
@@ -698,7 +698,7 @@ final class CloudFoundationTests: XCTestCase {
 
         await sessionStore.bootstrap(gardenStore: gardenStore)
         let baselinePlants = gardenStore.plants
-        let baselinePersistedPlants = GardenPersistence.loadPlants()
+        let baselinePersistedPlants = GardenPersistence.loadPlants(ownerID: userID)
         let primaryKey = pendingGardenKey(userID)
         let backupKey = "\(primaryKey).backup"
         let corruptPrimary = Data("corrupt-primary".utf8)
@@ -708,10 +708,16 @@ final class CloudFoundationTests: XCTestCase {
 
         XCTAssertFalse(gardenStore.delete(plant))
         XCTAssertEqual(gardenStore.plants, baselinePlants)
-        XCTAssertEqual(GardenPersistence.loadPlants(), baselinePersistedPlants)
-        XCTAssertFalse(gardenStore.reset())
+        XCTAssertEqual(
+            GardenPersistence.loadPlants(ownerID: userID),
+            baselinePersistedPlants
+        )
+        XCTAssertEqual(gardenStore.reset(), .rejected)
         XCTAssertEqual(gardenStore.plants, baselinePlants)
-        XCTAssertEqual(GardenPersistence.loadPlants(), baselinePersistedPlants)
+        XCTAssertEqual(
+            GardenPersistence.loadPlants(ownerID: userID),
+            baselinePersistedPlants
+        )
         XCTAssertNotNil(sessionStore.errorMessage)
         XCTAssertEqual(UserDefaults.standard.data(forKey: primaryKey), corruptPrimary)
         XCTAssertEqual(UserDefaults.standard.data(forKey: backupKey), corruptBackup)
@@ -2151,6 +2157,69 @@ final class CloudFoundationTests: XCTestCase {
     }
 
     @MainActor
+    func testPasswordRecoveryRefreshRejectsAnotherUserBeforeUpdatingOrSaving() async throws {
+        GardenPersistence.clearPlants()
+        defer { GardenPersistence.clearPlants() }
+        let originalUserID = UUID()
+        let otherUserID = UUID()
+        let plant = GardenPlant(flowerId: "rosa", nickname: "Private recovery rose")
+        XCTAssertTrue(GardenPersistence.savePlants([plant], ownerID: originalUserID))
+        let gardenStore = GardenStore()
+        gardenStore.activatePersistence(for: originalUserID)
+        let originalSession = AuthSession(
+            accessToken: "original-access",
+            refreshToken: "original-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: originalUserID, email: "original@example.com")
+        )
+        let expiredRecoverySession = AuthSession(
+            accessToken: "expired-recovery-access",
+            refreshToken: "recovery-refresh",
+            expiresAt: .distantPast,
+            user: originalSession.user
+        )
+        let mismatchedRefresh = AuthSession(
+            accessToken: "other-access",
+            refreshToken: "other-refresh",
+            expiresAt: .distantFuture,
+            user: AuthUser(id: otherUserID, email: "other@example.com")
+        )
+        var didClearSession = false
+        var savedSessions: [AuthSession] = []
+        var passwordUpdateSessions: [AuthSession] = []
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { originalSession },
+                save: { savedSessions.append($0) },
+                clear: { didClearSession = true }
+            ),
+            refreshSession: { _ in mismatchedRefresh },
+            passwordRecoveryActions: PasswordRecoveryActions(
+                requestReset: { _ in },
+                validate: { _ in expiredRecoverySession },
+                updatePassword: { _, session in passwordUpdateSessions.append(session) }
+            )
+        )
+        let url = try XCTUnwrap(URL(string:
+            "com.juliosuas.rocio://auth/recovery?code=mismatched-refresh"
+        ))
+
+        await sessionStore.handlePasswordRecoveryURL(url, gardenStore: gardenStore)
+        XCTAssertEqual(sessionStore.state, .recoveringPassword(expiredRecoverySession))
+
+        await sessionStore.updateRecoveredPassword("new-password", gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.state, .signedOut)
+        XCTAssertTrue(didClearSession)
+        XCTAssertTrue(savedSessions.isEmpty)
+        XCTAssertTrue(passwordUpdateSessions.isEmpty)
+        XCTAssertNil(gardenStore.persistenceOwnerID)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+        XCTAssertEqual(GardenPersistence.loadPlants(ownerID: originalUserID), [plant])
+    }
+
+    @MainActor
     func testInvalidSecondRecoveryCallbackPreservesTheActiveRecoveryBeforePasswordChange() async throws {
         let originalSession = AuthSession(
             accessToken: "original-access",
@@ -3455,7 +3524,7 @@ final class CloudFoundationTests: XCTestCase {
             "A successful upsert must be followed by an authoritative garden readback"
         )
         XCTAssertTrue(gardenStore.plants.isEmpty)
-        XCTAssertTrue(GardenPersistence.loadPlants().isEmpty)
+        XCTAssertTrue(GardenPersistence.loadPlants(ownerID: userID).isEmpty)
         XCTAssertNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
         XCTAssertEqual(sessionStore.syncMessage, L10n.text("cloud.synced", fallback: "Synced"))
     }
@@ -3496,7 +3565,7 @@ final class CloudFoundationTests: XCTestCase {
         await sessionStore.refreshGarden(gardenStore: gardenStore)
 
         XCTAssertTrue(gardenStore.plants.isEmpty)
-        XCTAssertTrue(GardenPersistence.loadPlants().isEmpty)
+        XCTAssertTrue(GardenPersistence.loadPlants(ownerID: userID).isEmpty)
         XCTAssertEqual(sessionStore.syncMessage, L10n.text("cloud.synced", fallback: "Synced"))
     }
 
@@ -3717,6 +3786,8 @@ final class CloudFoundationTests: XCTestCase {
 
     @MainActor
     func testFailedInitialGardenHandshakePreservesAuthAndPendingWithoutPosting() async throws {
+        GardenPersistence.clearPlants()
+        defer { GardenPersistence.clearPlants() }
         let userID = UUID()
         let staleEpoch = UUID()
         let scenario = AuthLifecycleRaceScenario(
@@ -3726,7 +3797,7 @@ final class CloudFoundationTests: XCTestCase {
             failsProfileFetch: true
         )
         let urlSession = makeStubbedURLSession(handler: scenario.response)
-        let gardenStore = GardenStore(plants: [])
+        let gardenStore = GardenStore()
         var saveCount = 0
         var didClear = false
         let sessionStore = SessionStore(
@@ -3779,7 +3850,10 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertEqual(scenario.gardenPostCount, 0)
         XCTAssertGreaterThan(scenario.profileFetchCount, profileFetchCountBeforeEdit)
         XCTAssertEqual(gardenStore.plants.map(\.flowerId), ["rosa"])
-        XCTAssertEqual(GardenPersistence.loadPlants().map(\.flowerId), ["rosa"])
+        XCTAssertEqual(
+            GardenPersistence.loadPlants(ownerID: userID).map(\.flowerId),
+            ["rosa"]
+        )
         XCTAssertNotNil(UserDefaults.standard.data(forKey: pendingGardenKey(userID)))
         XCTAssertEqual(
             sessionStore.syncMessage,
@@ -3873,7 +3947,7 @@ final class CloudFoundationTests: XCTestCase {
             urlSession: urlSession
         )
         clearGardenSyncTestState(userID: userID)
-        GardenPersistence.savePlants([plant])
+        GardenPersistence.savePlants([plant], ownerID: userID)
         UserDefaults.standard.set(
             try JSONEncoder().encode([inheritedChange]),
             forKey: pendingGardenKey(userID)
@@ -3947,7 +4021,7 @@ final class CloudFoundationTests: XCTestCase {
             urlSession: urlSession
         )
         clearGardenSyncTestState(userID: userID)
-        GardenPersistence.savePlants([plant])
+        GardenPersistence.savePlants([plant], ownerID: userID)
         UserDefaults.standard.set(
             staleEpoch.uuidString.lowercased(),
             forKey: "rocio.cloud.garden-epoch.authoritative.\(userID.uuidString.lowercased())"
@@ -3970,7 +4044,7 @@ final class CloudFoundationTests: XCTestCase {
         XCTAssertGreaterThan(scenario.profileFetchCount, 0)
         XCTAssertEqual(scenario.gardenPostCount, 0)
         XCTAssertEqual(gardenStore.plants, [plant])
-        XCTAssertEqual(GardenPersistence.loadPlants(), [plant])
+        XCTAssertEqual(GardenPersistence.loadPlants(ownerID: userID), [plant])
         let savedPendingData = try XCTUnwrap(
             UserDefaults.standard.data(forKey: pendingGardenKey(userID))
         )
@@ -4003,7 +4077,7 @@ final class CloudFoundationTests: XCTestCase {
             urlSession: urlSession
         )
         clearGardenSyncTestState(userID: userID)
-        GardenPersistence.savePlants([inheritedPlant])
+        GardenPersistence.savePlants([inheritedPlant], ownerID: userID)
         UserDefaults.standard.set(
             staleEpoch.uuidString.lowercased(),
             forKey: "rocio.cloud.garden-epoch.authoritative.\(userID.uuidString.lowercased())"
@@ -4161,7 +4235,7 @@ final class CloudFoundationTests: XCTestCase {
             urlSession: urlSession
         )
         clearGardenSyncTestState(userID: userID)
-        GardenPersistence.savePlants([plant])
+        GardenPersistence.savePlants([plant], ownerID: userID)
         UserDefaults.standard.set(
             staleEpoch.uuidString.lowercased(),
             forKey: "rocio.cloud.garden-epoch.authoritative.\(userID.uuidString.lowercased())"
@@ -4381,8 +4455,58 @@ final class CloudFoundationTests: XCTestCase {
         )
     }
 
+    @MainActor
+    func testDeletingAccountBPreservesAccountAForOfflineRestoration() async {
+        let firstOwner = UUID()
+        let deletedOwner = UUID()
+        let firstPlant = GardenPlant(flowerId: "rosa", nickname: "Account A rose")
+        let deletedSession = validSession(userID: deletedOwner)
+        let scenario = AuthLifecycleRaceScenario(
+            userID: deletedOwner,
+            gardenEpoch: UUID(),
+            gardenResetAt: nil
+        )
+        let urlSession = makeStubbedURLSession(handler: scenario.response)
+        clearGardenSyncTestState(userID: firstOwner)
+        clearGardenSyncTestState(userID: deletedOwner)
+        XCTAssertTrue(GardenPersistence.savePlants([firstPlant], ownerID: firstOwner))
+        let gardenStore = GardenStore()
+        let sessionStore = SessionStore(
+            configuration: testBackendConfiguration,
+            sessionPersistence: SessionPersistence(
+                load: { deletedSession },
+                save: { _ in },
+                clear: {}
+            ),
+            refreshSession: { $0 },
+            urlSession: urlSession
+        )
+        defer {
+            BackendURLProtocolStub.handler = nil
+            urlSession.invalidateAndCancel()
+            clearGardenSyncTestState(userID: firstOwner)
+            clearGardenSyncTestState(userID: deletedOwner)
+        }
+
+        await sessionStore.bootstrap(gardenStore: gardenStore)
+
+        XCTAssertEqual(sessionStore.session?.user.id, deletedOwner)
+        XCTAssertEqual(gardenStore.persistenceOwnerID, deletedOwner)
+        XCTAssertEqual(gardenStore.persistenceStatus, .loaded)
+        await sessionStore.deleteAccount(gardenStore: gardenStore)
+
+        XCTAssertEqual(scenario.accountDeletionCount, 1)
+        XCTAssertEqual(sessionStore.state, .signedOut)
+        XCTAssertNil(sessionStore.errorMessage)
+        XCTAssertNil(gardenStore.persistenceOwnerID)
+        XCTAssertTrue(gardenStore.plants.isEmpty)
+        XCTAssertEqual(GardenPersistence.loadPlants(ownerID: firstOwner), [firstPlant])
+    }
+
     func testLogWateringIntentAdvancesConflictTimestampWithWateringDate() async throws {
         let oldDate = Date(timeIntervalSince1970: 1_700_000_000)
+        let ownerID = UUID()
+        let session = validSession(userID: ownerID)
         let plant = GardenPlant(
             flowerId: "rosa",
             nickname: "Siri rose",
@@ -4390,8 +4514,10 @@ final class CloudFoundationTests: XCTestCase {
             status: .needsWater,
             updatedAt: oldDate
         )
-        GardenPersistence.savePlants([plant])
-        defer { GardenPersistence.clearPlants() }
+        GardenPersistence.savePlants([plant], ownerID: ownerID)
+        defer {
+            GardenPersistence.clearPlants()
+        }
         let intent = LogWateringIntent()
         intent.plant = GardenPlantEntity(
             id: plant.id.uuidString,
@@ -4399,9 +4525,11 @@ final class CloudFoundationTests: XCTestCase {
             plantName: "Rose"
         )
 
-        _ = try await intent.perform()
+        _ = try await intent.perform(sessionLoader: { session })
 
-        let watered = try XCTUnwrap(GardenPersistence.loadPlants().first)
+        let watered = try XCTUnwrap(
+            GardenPersistence.loadPlants(ownerID: ownerID).first
+        )
         XCTAssertEqual(watered.lastWateredAt, watered.updatedAt)
         XCTAssertGreaterThan(watered.updatedAt, oldDate)
         XCTAssertEqual(watered.status, .healthy)
@@ -4426,7 +4554,7 @@ final class CloudFoundationTests: XCTestCase {
         let plant = GardenPlant(flowerId: "rosa", nickname: "Offline rose")
         let savedSession = expiredSession()
         var didClearSession = false
-        GardenPersistence.savePlants([plant])
+        GardenPersistence.savePlants([plant], ownerID: savedSession.user.id)
         defer { GardenPersistence.clearPlants() }
         let gardenStore = GardenStore()
         let sessionStore = SessionStore(
@@ -4448,7 +4576,10 @@ final class CloudFoundationTests: XCTestCase {
         )
         XCTAssertFalse(didClearSession)
         XCTAssertEqual(gardenStore.plants, [plant])
-        XCTAssertEqual(GardenPersistence.loadPlants(), [plant])
+        XCTAssertEqual(
+            GardenPersistence.loadPlants(ownerID: savedSession.user.id),
+            [plant]
+        )
     }
 
     @MainActor
@@ -4510,7 +4641,7 @@ final class CloudFoundationTests: XCTestCase {
         let plant = GardenPlant(flowerId: "rosa", nickname: "Validation rose")
         let savedSession = expiredSession()
         var didClearSession = false
-        GardenPersistence.savePlants([plant])
+        GardenPersistence.savePlants([plant], ownerID: savedSession.user.id)
         defer { GardenPersistence.clearPlants() }
         let gardenStore = GardenStore()
         let sessionStore = SessionStore(
@@ -4534,7 +4665,10 @@ final class CloudFoundationTests: XCTestCase {
         )
         XCTAssertFalse(didClearSession)
         XCTAssertEqual(gardenStore.plants, [plant])
-        XCTAssertEqual(GardenPersistence.loadPlants(), [plant])
+        XCTAssertEqual(
+            GardenPersistence.loadPlants(ownerID: savedSession.user.id),
+            [plant]
+        )
     }
 
     @MainActor
@@ -5171,6 +5305,7 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
     private var recordedProfileFetchCount = 0
     private var recordedGardenPostCount = 0
     private var recordedGardenResetCount = 0
+    private var recordedAccountDeletionCount = 0
     private var recordedGardenEpochs: [UUID] = []
     private var recordedGardenPlantIDs: [UUID] = []
     private var recordedGardenRows: [[String: Any]] = []
@@ -5214,6 +5349,12 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
         condition.lock()
         defer { condition.unlock() }
         return recordedGardenResetCount
+    }
+
+    var accountDeletionCount: Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return recordedAccountDeletionCount
     }
 
     var postedGardenEpochs: [UUID] {
@@ -5388,6 +5529,12 @@ private final class AuthLifecycleRaceScenario: @unchecked Sendable {
             condition.unlock()
             status = 200
             data = Data("\"\(returnedResetEpoch.uuidString.lowercased())\"".utf8)
+        case ("POST", "/rest/v1/rpc/delete_my_account"):
+            condition.lock()
+            recordedAccountDeletionCount += 1
+            condition.unlock()
+            status = 204
+            data = Data()
         case ("GET", "/rest/v1/profiles"):
             condition.lock()
             recordedProfileFetchCount += 1

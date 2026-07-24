@@ -7,7 +7,7 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 - `MARKETING_VERSION = 1.0`
 - `CURRENT_PROJECT_VERSION = 1`
 - Deployment target: iOS 17.0 with Swift 5.
-- 170/170 tests pass on iPhone 17 with iOS 26.3.1.
+- 194/194 tests pass under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1.
 - Debug and unsigned Release compile with Xcode 26.3.
 - A Personal Team development build launches on a physical iPhone.
 - TestFlight remains blocked by paid membership, `DEVELOPMENT_TEAM`, distribution signing, and outstanding external smoke tests.
@@ -16,7 +16,7 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 
 - Catalog, Garden, Calendar, Scanner, and Settings in SwiftUI.
 - Bilingual catalog of exactly 15 editorial flower guides with attributed local photography, plus arbitrary Plant.id results and manual plants that retain their own identity.
-- Supabase account, Keychain session, and per-user garden sync with versioned primary/backup snapshots and a durable mutation outbox.
+- Supabase account, Keychain session, and per-user garden sync with owner-bound, versioned primary/backup snapshots, fail-closed owner checks, repair from a valid redundant copy, quarantine for unsafe replacements, and a durable mutation outbox.
 - Complete first-care flow: add a plant, return to the garden, enable a reminder, and confirm watering.
 - Local-notification permission requested only after an explicit tap.
 - Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, and an honest fallback.

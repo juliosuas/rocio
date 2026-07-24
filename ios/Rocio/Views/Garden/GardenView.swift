@@ -383,6 +383,32 @@ private struct GardenPersistenceStatusView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Color.rocioRose.opacity(0.11), in: RoundedRectangle(cornerRadius: 8))
+        case .unownedSnapshot:
+            Label(
+                L10n.text(
+                    "garden.persistence.unowned",
+                    fallback: "Rocio isolated an older local garden because its account owner cannot be verified. Nothing was uploaded or deleted; reconnect to restore this account from Rocio Cloud."
+                ),
+                systemImage: "lock.shield"
+            )
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.rocioRose)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color.rocioRose.opacity(0.11), in: RoundedRectangle(cornerRadius: 8))
+        case .ownerMismatch:
+            Label(
+                L10n.text(
+                    "garden.persistence.owner_mismatch",
+                    fallback: "Rocio protected local garden data from another account. This account will load its own garden after cloud sync."
+                ),
+                systemImage: "lock.shield"
+            )
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color.rocioRose)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(Color.rocioRose.opacity(0.11), in: RoundedRectangle(cornerRadius: 8))
         case .empty, .loaded, .migratedLegacy:
             EmptyView()
         }

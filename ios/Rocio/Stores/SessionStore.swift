@@ -74,6 +74,7 @@ final class SessionStore: ObservableObject {
     var syncMessage: String { gardenSyncStatus.message }
 
     private let client: RocioBackendClient?
+    private weak var activeGardenStore: GardenStore?
     private let sessionPersistence: SessionPersistence
     private let refreshSession: (AuthSession) async throws -> AuthSession
     private let passwordRecoveryActions: PasswordRecoveryActions
@@ -151,20 +152,29 @@ final class SessionStore: ObservableObject {
     }
 
     func bootstrap(gardenStore: GardenStore) async {
+        activeGardenStore = gardenStore
         guard !hasBootstrapped else { return }
         hasBootstrapped = true
         guard client != nil else {
+            gardenStore.deactivatePersistence()
             state = .unconfigured
             return
         }
         guard let saved = sessionPersistence.load() else {
+            gardenStore.deactivatePersistence()
             state = .signedOut
             return
         }
+        // Keychain proves the active account, not who wrote an ownerless
+        // legacy UserDefaults snapshot. Keep legacy data quarantined.
+        gardenStore.activatePersistence(for: saved.user.id)
         let generation = beginSessionPreparation(saved)
         do {
             let active = try await activeSession(from: saved)
             guard isCurrentSessionLifecycle(generation) else { return }
+            if active.user.id != saved.user.id {
+                gardenStore.activatePersistence(for: active.user.id)
+            }
             sessionBeingPrepared = active
             guard let prepared = completeSessionPreparation(generation: generation) else { return }
             state = .signedIn(prepared)
@@ -228,6 +238,7 @@ final class SessionStore: ObservableObject {
     }
 
     func handlePasswordRecoveryURL(_ url: URL, gardenStore: GardenStore) async {
+        activeGardenStore = gardenStore
         guard PasswordRecoveryCallback.matches(url) else { return }
         await waitForSessionEnd()
         guard !Task.isCancelled else { return }
@@ -294,6 +305,7 @@ final class SessionStore: ObservableObject {
     }
 
     func updateRecoveredPassword(_ password: String, gardenStore: GardenStore) async {
+        activeGardenStore = gardenStore
         guard case let .recoveringPassword(publishedRecoverySession) = state else { return }
         guard !isPasswordUpdateInProgress else { return }
         isPasswordUpdateInProgress = true
@@ -314,7 +326,23 @@ final class SessionStore: ObservableObject {
         do {
             let activeRecoverySession: AuthSession
             if recoverySession.needsRefresh {
-                activeRecoverySession = try await refreshSession(recoverySession)
+                let refreshed = try await refreshSession(recoverySession)
+                try Task.checkCancellation()
+                if isCurrentSessionLifecycle(generation) {
+                    activeRecoverySession = try requireMatchingRefreshedIdentity(
+                        refreshed,
+                        expectedUserID: recoverySession.user.id
+                    )
+                } else {
+                    // A same-user refresh token rotation can finish while an
+                    // invalid duplicate callback temporarily owns the
+                    // lifecycle. Preserve it only in the exact validated
+                    // recovery lineage so a retry never reuses the consumed
+                    // token. A distinct callback has a different lineage and
+                    // cannot be overwritten here.
+                    guard refreshed.user.id == recoverySession.user.id else { return }
+                    activeRecoverySession = refreshed
+                }
             } else {
                 activeRecoverySession = recoverySession
             }
@@ -382,6 +410,7 @@ final class SessionStore: ObservableObject {
             recoveryReturnState = nil
             errorMessage = nil
             gardenSyncStatus = .local
+            gardenStore.deactivatePersistence()
             state = client == nil ? .unconfigured : .signedOut
             return
         }
@@ -392,6 +421,7 @@ final class SessionStore: ObservableObject {
         errorMessage = nil
         let generation = beginSessionPreparation(recoveredSession)
         guard let prepared = completeSessionPreparation(generation: generation) else { return }
+        gardenStore.activatePersistence(for: prepared.user.id)
         state = .signedIn(prepared)
         guard isCurrentSessionLifecycle(generation), !isEndingSession else { return }
         await refreshGarden(gardenStore: gardenStore)
@@ -441,11 +471,17 @@ final class SessionStore: ObservableObject {
             try await client.deleteAccount(session: try await activeSession(from: session))
             savePendingChanges([], userID: session.user.id)
             clearGardenEpochs(userID: session.user.id)
-            gardenStore.clearLocalCache()
+            let didPurgeLocalGarden = gardenStore.purgeAllLocalGardenData()
             sessionPersistence.clear()
             UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
             gardenSyncStatus = .local
             state = .signedOut
+            errorMessage = didPurgeLocalGarden
+                ? nil
+                : L10n.text(
+                    "error.local_data_delete",
+                    fallback: "Your account was deleted and its garden is hidden, but Rocio could not remove every local garden file. Restart Rocio before signing in again. If this warning returns, remove and reinstall Rocio to clear the remaining local data."
+                )
             finishEndingSession()
         } catch {
             errorMessage = userMessage(for: error)
@@ -487,6 +523,10 @@ final class SessionStore: ObservableObject {
     func enqueueGardenChange(_ change: GardenChange, gardenStore: GardenStore) -> Bool {
         // Signed-out/local-only operation has no cloud journal to maintain.
         guard let session else { return true }
+        guard gardenStore.isPersistenceActive(for: session.user.id) else {
+            gardenSyncStatus = .pending
+            return false
+        }
         var pending = loadPendingChanges(userID: session.user.id)
         guard !corruptedPendingOutboxUsers.contains(session.user.id) else {
             gardenSyncStatus = .pending
@@ -698,16 +738,22 @@ final class SessionStore: ObservableObject {
 
         switch destination {
         case .unconfigured:
+            gardenStore.deactivatePersistence()
             gardenSyncStatus = .local
             state = .unconfigured
         case .signedOut:
+            gardenStore.deactivatePersistence()
             gardenSyncStatus = .local
             state = .signedOut
         case let .signedIn(saved):
+            gardenStore.activatePersistence(for: saved.user.id)
             let restoreGeneration = beginSessionPreparation(saved)
             do {
                 let active = try await activeSession(from: saved)
                 guard isCurrentSessionLifecycle(restoreGeneration) else { return }
+                if active.user.id != saved.user.id {
+                    gardenStore.activatePersistence(for: active.user.id)
+                }
                 sessionBeingPrepared = active
                 guard let prepared = completeSessionPreparation(generation: restoreGeneration) else { return }
                 state = .signedIn(prepared)
@@ -772,6 +818,7 @@ final class SessionStore: ObservableObject {
         gardenStore: GardenStore,
         action: (RocioBackendClient) async throws -> AuthSession
     ) async {
+        activeGardenStore = gardenStore
         await waitForSessionEnd()
         guard !Task.isCancelled else { return }
         guard let client else {
@@ -792,6 +839,9 @@ final class SessionStore: ObservableObject {
                 await client.signOut(session: session)
                 return
             }
+            // A fresh authentication may resume only a snapshot already bound
+            // to the returned UUID. It must never claim legacy ownerless data.
+            gardenStore.activatePersistence(for: session.user.id)
             guard let prepared = completeSessionPreparation(generation: generation) else { return }
             state = .signedIn(prepared)
             if analyticsEnabled {
@@ -813,6 +863,10 @@ final class SessionStore: ObservableObject {
     private func syncGarden(_ gardenStore: GardenStore) async -> Bool {
         guard let client, let startingSession = sessionForOperations else { return false }
         let expectedUserID = startingSession.user.id
+        guard gardenStore.isPersistenceActive(for: expectedUserID) else {
+            gardenSyncStatus = .pending
+            return false
+        }
         let expectedLifecycleGeneration = sessionLifecycleGeneration
         let expectedLifecycleID = sessionLifecycleID
         // Capture before any network suspension. Reconciliation can then keep
@@ -978,7 +1032,10 @@ final class SessionStore: ObservableObject {
                     return $0.id.uuidString < $1.id.uuidString
                 }
             }
-            gardenStore.replaceFromCloud(reconciled)
+            guard gardenStore.replaceFromCloud(reconciled) else {
+                gardenSyncStatus = .pending
+                return false
+            }
             saveAuthoritativeGardenEpoch(syncState.gardenEpoch, userID: expectedUserID)
             clearProvisionalGardenEpoch(userID: expectedUserID)
             gardenHandshakeUserID = expectedUserID
@@ -1002,9 +1059,13 @@ final class SessionStore: ObservableObject {
         minimumValidity: TimeInterval = 60
     ) async throws -> AuthSession {
         guard session.needsRefresh(within: minimumValidity) else { return session }
-        let refreshed = try await refreshSession(session)
+        let refreshedSession = try await refreshSession(session)
         try Task.checkCancellation()
         guard sessionForOperations == session else { throw CancellationError() }
+        let refreshed = try requireMatchingRefreshedIdentity(
+            refreshedSession,
+            expectedUserID: session.user.id
+        )
         try sessionPersistence.save(refreshed)
         if sessionBeingPrepared == session {
             sessionBeingPrepared = refreshed
@@ -1012,6 +1073,29 @@ final class SessionStore: ObservableObject {
             state = .signedIn(refreshed)
         } else {
             throw CancellationError()
+        }
+        return refreshed
+    }
+
+    private func requireMatchingRefreshedIdentity(
+        _ refreshed: AuthSession,
+        expectedUserID: UUID
+    ) throws -> AuthSession {
+        guard refreshed.user.id == expectedUserID else {
+            invalidateSessionLifecycle()
+            _ = cancelGardenSyncTask()
+            sessionPersistence.clear()
+            passwordRecoveryValidationOperation = nil
+            validatedPasswordRecovery = nil
+            recoveryReturnState = nil
+            UserDefaults.standard.removeObject(forKey: "rocio.cloud.photoConsent")
+            activeGardenStore?.deactivatePersistence()
+            gardenSyncStatus = .local
+            state = client == nil ? .unconfigured : .signedOut
+            throw BackendError.server(
+                code: "session_identity_changed",
+                message: "The refreshed session belongs to a different account."
+            )
         }
         return refreshed
     }
@@ -1099,7 +1183,10 @@ final class SessionStore: ObservableObject {
     }
 
     private func startGardenSync(_ gardenStore: GardenStore) {
-        guard !isEndingSession, !isPreparingGardenSync, gardenSyncTask == nil else { return }
+        guard sessionForOperations != nil,
+              !isEndingSession,
+              !isPreparingGardenSync,
+              gardenSyncTask == nil else { return }
         let generation = gardenSyncTaskGeneration.begin()
         gardenSyncTask = Task { [weak self, weak gardenStore] in
             guard let self else { return false }

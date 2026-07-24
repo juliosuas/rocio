@@ -1,17 +1,17 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-07-23
+Date: 2026-07-24
 
 This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 170 passing integrated simulator tests, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging the stacked PRs, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 194 passing integrated simulator tests under both unsigned-CI and locally signed contracts, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging the stacked PRs, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
 1. Real-device permission smoke is not locally verified on this machine.
-   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 170/170 iPhone 17 simulator tests passed on 2026-07-23 with iOS 26.3.1. Re-run these gates from the exact release commit.
+   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 194/194 tests passed on 2026-07-24 under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract with iOS 26.3.1. Re-run these gates from the exact release commit.
    - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
    - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
@@ -43,7 +43,7 @@ Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authen
    - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
 8. QA must finish on hardware and production cloud state.
-   - Classifier, release, App Store, security, unsigned Release build, and 170/170 simulator tests pass locally on the feature candidate as of 2026-07-23. A verified simulator smoke covers core Debug screens and the Personal Team app launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
+   - Classifier, release, App Store, security, unsigned Release build, and 194/194 simulator tests under both unsigned-CI and locally signed contracts pass on the feature candidate as of 2026-07-24. A verified simulator smoke covers core Debug screens and the Personal Team app launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
 
 ## Garry Tan Tooling Context
 

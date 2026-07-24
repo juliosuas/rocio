@@ -212,6 +212,7 @@ enum GardenDataResetStatus: Equatable {
     case localOnly
     case cloudConfirmed
     case cloudPending
+    case localPurgeFailed
     case rejected
 
     var message: String {
@@ -228,6 +229,11 @@ enum GardenDataResetStatus: Equatable {
                 "settings.delete.done.pending",
                 fallback: "Deleted from this device; cloud deletion is pending. Reconnect, then retry."
             )
+        case .localPurgeFailed:
+            L10n.text(
+                "settings.delete.local_purge_failed",
+                fallback: "Cloud deletion was accepted and reminders were canceled, but some local garden data could not be removed. Restart Rocio and use Delete local data again."
+            )
         case .rejected:
             L10n.text(
                 "settings.delete.rejected",
@@ -240,14 +246,14 @@ enum GardenDataResetStatus: Equatable {
         switch self {
         case .localOnly, .cloudConfirmed: "checkmark.circle.fill"
         case .cloudPending: "icloud.slash"
-        case .rejected: "exclamationmark.triangle.fill"
+        case .localPurgeFailed, .rejected: "exclamationmark.triangle.fill"
         }
     }
 
     var tint: Color {
         switch self {
         case .localOnly, .cloudConfirmed: .rocioTeal
-        case .cloudPending, .rejected: .rocioAmber
+        case .cloudPending, .localPurgeFailed, .rejected: .rocioAmber
         }
     }
 
@@ -275,8 +281,15 @@ struct LocalDataResetter {
         gardenStore: GardenStore,
         waitForCloudConfirmation: (() async -> Bool)? = nil
     ) async -> GardenDataResetStatus {
-        guard gardenStore.reset() else { return .rejected }
+        let resetResult = gardenStore.reset()
+        guard resetResult != .rejected else { return .rejected }
         cancelPendingNotifications()
+        if resetResult == .acceptedLocalPurgeFailed {
+            if let waitForCloudConfirmation {
+                _ = await waitForCloudConfirmation()
+            }
+            return .localPurgeFailed
+        }
         guard let waitForCloudConfirmation else { return .localOnly }
         return await waitForCloudConfirmation() ? .cloudConfirmed : .cloudPending
     }

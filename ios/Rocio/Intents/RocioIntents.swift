@@ -40,7 +40,8 @@ struct GardenPlantQuery: EntityQuery {
     }
 
     private func allEntities() -> [GardenPlantEntity] {
-        GardenPersistence.loadPlants().map(GardenPlantEntity.init(plant:))
+        GardenPersistence.loadPlantsForAuthenticatedSession()
+            .map(GardenPlantEntity.init(plant:))
     }
 }
 
@@ -75,11 +76,20 @@ struct LogWateringIntent: AppIntent {
     var plant: GardenPlantEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        try await perform(sessionLoader: KeychainSessionStore.load)
+    }
+
+    func perform(
+        sessionLoader: () -> AuthSession?
+    ) async throws -> some IntentResult & ProvidesDialog {
         guard let uuid = UUID(uuidString: plant.id) else {
             return .result(dialog: "I could not find that plant in My Garden.")
         }
         let now = Date()
-        let result = GardenPersistence.updatePlant(id: uuid) { savedPlant in
+        let result = GardenPersistence.updatePlantForAuthenticatedSession(
+            id: uuid,
+            sessionLoader: sessionLoader
+        ) { savedPlant in
             savedPlant.lastWateredAt = now
             savedPlant.updatedAt = now
             if savedPlant.status == .needsWater {

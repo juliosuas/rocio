@@ -1,6 +1,6 @@
 # Rocío 1.0: Current Status
 
-Last updated: July 23, 2026
+Last updated: July 24, 2026
 
 Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
@@ -17,7 +17,7 @@ The native runtime is no longer limited to the bundled catalog:
 - **Manual plant entry** provides an offline fallback when a provider result is unavailable or the user does not want to upload a photo.
 - **Durable saved plants** keep a versioned identity and care snapshot instead of depending on a `FlowerCatalog` lookup.
 - **Optional user-confirmed care** supports dry, medium, or wet watering preferences and optional reminder schedules. Unknown plants do not receive invented milliliter or interval precision.
-- **Offline persistence** uses versioned primary and backup snapshots and surfaces unrecoverable corruption instead of silently replacing the garden with an empty array.
+- **Offline persistence** uses owner-bound, versioned primary and backup snapshots. Ownerless or mixed-ownership data fails closed, recoverable single-slot corruption is repaired from its valid peer, and unsafe replacement inputs are quarantined instead of being claimed by another account.
 - **Generic rendering** keeps non-catalog plants visible in Garden, Calendar, notifications, App Intents, export, watering, and deletion flows.
 - **Duplicate specimens** are supported. Two plants of the same species can keep independent nicknames, schedules, and watering state.
 - **Account synchronization contract** carries arbitrary identity and care fields through the same account isolation, RLS, delete-wins, reset, and purge boundaries used by bundled plants.
@@ -28,7 +28,7 @@ The native runtime is no longer limited to the bundled catalog:
 
 Current evidence for the arbitrary-plant branch:
 
-- **170/170 XCTest cases pass** on an iPhone 17 simulator with iOS 26.3.1.
+- **194/194 XCTest cases pass** under both the unsigned-CI contract on iPhone 17 Pro and the locally signed contract on iPhone 17 Pro Max with iOS 26.3.1.
 - **Edge runtime tests pass 28/28**, including timeout, body-abort, idempotent recovery, replay, quota, deletion, and malformed-provider paths.
 - **Static cloud/security audit passes 50/50**.
 - **PostgreSQL 16 four-migration harness passes**, including ordered upgrade, RLS, ACLs, idempotent quota/replay lifecycle, tombstones, reset, purge, and rollback.

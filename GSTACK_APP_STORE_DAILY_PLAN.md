@@ -1,6 +1,6 @@
 # Rocío: 12-Hour Production Completion Ledger
 
-Last updated: July 23, 2026
+Last updated: July 24, 2026
 
 Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
@@ -90,7 +90,7 @@ Deployment status: **not deployed**. Runtime integration tests pass locally; aut
 
 Evidence recorded from the current work:
 
-- **170/170 XCTest cases pass** on an iPhone 17 simulator with iOS 26.3.1.
+- **194/194 XCTest cases pass** under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract with iOS 26.3.1.
 - **Edge runtime tests pass 28/28**.
 - **Static cloud/security audit passes 50/50**.
 - **PostgreSQL 16 four-migration harness passes** with ordered upgrade, RLS, ACL, idempotent quota/replay lifecycle, tombstone, reset, purge, and rollback checks.

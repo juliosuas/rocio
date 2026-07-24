@@ -37,7 +37,7 @@ These are raw, privacy-safe screenshots from the running Rocío Debug build on a
 - **15 bundled editorial flower guides** with attributed photography, scientific names, difficulty, and care guidance.
 - **Arbitrary native plants** from Plant.id or manual entry, saved with durable source identity instead of being relabeled as the closest bundled flower.
 - **First plant to first care**: add a plant, return to My Garden, enable a reminder, and confirm watering.
-- **Crash-safe offline garden** with versioned primary and backup snapshots, surfaced recovery state, retries, honest sync states, and account isolation.
+- **Crash-safe offline garden** with owner-bound, versioned primary and backup snapshots. Ownerless or mixed-ownership data fails closed, recoverable single-slot corruption is repaired from its valid peer, and unsafe replacement inputs are quarantined instead of being attached to a different account.
 - **Editable care** with optional dry/medium/wet watering preferences, optional schedules, and no invented milliliter precision for unknown plants.
 - **Generic rendering and duplicate specimens** so non-catalog plants appear across the product and two plants of the same species keep independent names and care state.
 - **Seven-day calendar** and local notifications requested only after an explicit user action; unscheduled plants stay unscheduled until the user chooses a preference.
@@ -58,7 +58,7 @@ Its cloud configuration is intentionally blank. The published demo does not crea
 | Surface | Status | What it means |
 |---|---|---|
 | Web demo | Available | Stores data only in the current browser and uses the local matcher. |
-| iOS app 1.0 (build 1) | Feature candidate | The full 170/170 XCTest suite passes on iPhone 17 with iOS 26.3.1; external device smoke remains. |
+| iOS app 1.0 (build 1) | Feature candidate | The full 194/194 XCTest suite passes under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1; external device smoke remains. |
 | Supabase | Local contract verified | Auth, RLS, ACLs, idempotent quota, replay, sync, deletion, and the four-migration PostgreSQL 16 upgrade path pass locally. The three incremental migrations and matching Edge update are not deployed. |
 | Physical iPhone | Launch verified | Opens with a Personal Team; camera, photos, notifications, and the authenticated scanner still need end-to-end testing. |
 | TestFlight / App Store | Externally blocked | Requires paid Apple Developer membership, `DEVELOPMENT_TEAM`, distribution signing, and App Store Connect. |
@@ -143,9 +143,9 @@ ROCIO_SECURITY_DATABASE_URL='<disposable-postgres-16>' \
   node qa/run-cloud-ai-security-postgres.mjs
 ```
 
-Current local evidence from July 23, 2026:
+Current local evidence from July 24, 2026:
 
-- **170/170 XCTest cases** on iPhone 17 with iOS 26.3.1 for the current arbitrary-plant implementation.
+- **194/194 XCTest cases** under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1 for the current arbitrary-plant implementation.
 - **Edge runtime: 28/28** executable handler tests, including idempotent recovery and failure paths.
 - **Release gate: 12/12** on the current feature-candidate state.
 - **Static cloud/security: 50/50** on the current implementation.

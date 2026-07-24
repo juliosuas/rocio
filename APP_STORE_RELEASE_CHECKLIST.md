@@ -1,10 +1,10 @@
 # Rocio App Store Release Checklist
 
-Date: 2026-07-23
+Date: 2026-07-24
 
 ## Current Build Strategy
 
-Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-23, and 170/170 native tests passed on an iPhone 17 simulator running iOS 26.3.1. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
+Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-23, and 194/194 native tests passed on 2026-07-24 under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract running iOS 26.3.1. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
 
 The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
 

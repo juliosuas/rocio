@@ -1,5 +1,11 @@
 import Foundation
 
+enum GardenResetResult: Equatable {
+    case rejected
+    case accepted
+    case acceptedLocalPurgeFailed
+}
+
 @MainActor
 final class GardenStore: ObservableObject {
     @Published private(set) var plants: [GardenPlant]
@@ -11,20 +17,61 @@ final class GardenStore: ObservableObject {
     /// accept changes without installing a handler.
     var cloudChangeHandler: ((GardenChange) -> Bool)?
     private var plantsBeforeDemo: [GardenPlant]?
+    private let isEphemeralStore: Bool
+    private let gardenDataPurger: (UUID?) -> Bool
+    private(set) var persistenceOwnerID: UUID?
 
     var canAcceptLocalChanges: Bool {
-        isDemoMode || persistenceStatus != .unrecoverableCorruption
+        guard !isDemoMode, !isEphemeralStore else { return true }
+        guard persistenceOwnerID != nil else { return false }
+        switch persistenceStatus {
+        case .unrecoverableCorruption, .unownedSnapshot, .ownerMismatch:
+            return false
+        case .empty, .loaded, .migratedLegacy, .recoveredFromBackup:
+            return true
+        }
     }
 
-    init(plants: [GardenPlant]? = nil) {
+    init(
+        plants: [GardenPlant]? = nil,
+        gardenDataPurger: @escaping (UUID?) -> Bool = {
+            GardenPersistence.purgeGardenData(ownerID: $0)
+        }
+    ) {
+        self.gardenDataPurger = gardenDataPurger
         if let plants {
             self.plants = plants
             persistenceStatus = .loaded
+            isEphemeralStore = true
         } else {
-            let result = GardenPersistence.loadSnapshot()
-            self.plants = result.plants
-            persistenceStatus = result.status
+            self.plants = []
+            persistenceStatus = .empty
+            isEphemeralStore = false
         }
+    }
+
+    /// Makes one authenticated account the only owner allowed to read and
+    /// write the on-device garden. Ownerless legacy data stays quarantined
+    /// until an authoritative cloud read replaces it.
+    func activatePersistence(for ownerID: UUID) {
+        guard !isDemoMode, !isEphemeralStore else { return }
+        let result = GardenPersistence.loadSnapshot(ownerID: ownerID)
+        persistenceOwnerID = ownerID
+        persistenceStatus = result.status
+        plants = result.plants
+    }
+
+    /// Hides persisted data when no authenticated owner can be proven without
+    /// deleting a valid owner-bound snapshot that may be resumed later.
+    func deactivatePersistence() {
+        guard !isDemoMode, !isEphemeralStore else { return }
+        persistenceOwnerID = nil
+        plants.removeAll()
+        persistenceStatus = .empty
+    }
+
+    func isPersistenceActive(for ownerID: UUID) -> Bool {
+        isEphemeralStore || persistenceOwnerID == ownerID
     }
 
     @discardableResult
@@ -120,42 +167,89 @@ final class GardenStore: ObservableObject {
     }
 
     @discardableResult
-    func reset(at date: Date = Date()) -> Bool {
+    func reset(at date: Date = Date()) -> GardenResetResult {
         // Reset is the explicit recovery path for an unreadable local
         // snapshot, so it remains available even when ordinary edits are
         // blocked. An authenticated reset still has to enter the durable
         // cloud journal before local data is cleared.
-        guard acceptsCloudChange(.reset(at: date)) else { return false }
+        guard acceptsCloudChange(.reset(at: date)) else { return .rejected }
+        if isDemoMode || isEphemeralStore {
+            plants.removeAll()
+            return .accepted
+        }
+        guard gardenDataPurger(persistenceOwnerID) else {
+            return .acceptedLocalPurgeFailed
+        }
         plants.removeAll()
-        if !isDemoMode {
-            GardenPersistence.clearPlants()
+        if let persistenceOwnerID {
+            persistenceStatus = GardenPersistence.loadSnapshot(
+                ownerID: persistenceOwnerID
+            ).status
+        } else {
             persistenceStatus = .empty
         }
-        return true
+        return .accepted
     }
 
+    /// Clears only the proven active owner's cache. Use this for sign-out or
+    /// account transitions so another user's recoverable archive survives.
     func clearLocalCache() {
         plants.removeAll()
-        GardenPersistence.clearPlants()
+        if !isEphemeralStore, let persistenceOwnerID {
+            _ = GardenPersistence.clearPlants(ownerID: persistenceOwnerID)
+        }
+        persistenceOwnerID = nil
         persistenceStatus = .empty
     }
 
+    /// Explicit privacy purge used by account deletion. It removes the active
+    /// account plus unattributed legacy, corrupt, or future-schema bytes while
+    /// preserving data proven to belong to another UUID on this shared device.
+    @discardableResult
+    func purgeAllLocalGardenData() -> Bool {
+        let didPurge = gardenDataPurger(persistenceOwnerID)
+        // Server-side account deletion has already ended this identity. Hide
+        // its in-memory garden even if a local storage failure requires a
+        // restart or reinstall to finish deleting the remaining bytes.
+        plants.removeAll()
+        persistenceOwnerID = nil
+        persistenceStatus = .empty
+        return didPurge
+    }
+
     func reloadFromPersistence() {
-        guard !isDemoMode else { return }
-        let result = GardenPersistence.loadSnapshot()
+        guard !isDemoMode, !isEphemeralStore, let persistenceOwnerID else { return }
+        let result = GardenPersistence.loadSnapshot(ownerID: persistenceOwnerID)
         persistenceStatus = result.status
-        guard result.status != .unrecoverableCorruption else { return }
+        guard result.status != .unrecoverableCorruption,
+              result.status != .ownerMismatch,
+              result.status != .unownedSnapshot else {
+            plants.removeAll()
+            return
+        }
         guard result.plants != plants else { return }
         plants = result.plants
     }
 
-    func replaceFromCloud(_ cloudPlants: [GardenPlant]) {
+    @discardableResult
+    func replaceFromCloud(_ cloudPlants: [GardenPlant]) -> Bool {
         let normalizedPlants = cloudPlants
             .map { $0.normalizingTextFields() }
             .sorted { $0.addedAt < $1.addedAt }
-        guard normalizedPlants != plants || persistenceStatus == .unrecoverableCorruption else { return }
+        guard normalizedPlants != plants || [
+            .unrecoverableCorruption,
+            .unownedSnapshot,
+            .ownerMismatch,
+        ].contains(persistenceStatus) else { return true }
+        let previousPlants = plants
+        let previousPersistenceStatus = persistenceStatus
         plants = normalizedPlants
-        persist(allowsCorruptionRecovery: true)
+        guard persist(allowsCorruptionRecovery: true) else {
+            plants = previousPlants
+            persistenceStatus = previousPersistenceStatus
+            return false
+        }
+        return true
     }
 
     func flower(for plant: GardenPlant) -> Flower? {
@@ -262,15 +356,22 @@ final class GardenStore: ObservableObject {
         )
     }
 
-    private func persist(allowsCorruptionRecovery: Bool = false) {
-        guard !isDemoMode else { return }
-        guard allowsCorruptionRecovery || persistenceStatus != .unrecoverableCorruption else { return }
+    @discardableResult
+    private func persist(allowsCorruptionRecovery: Bool = false) -> Bool {
+        guard !isDemoMode, !isEphemeralStore else { return true }
+        guard let persistenceOwnerID else { return false }
+        guard allowsCorruptionRecovery || persistenceStatus != .unrecoverableCorruption else {
+            return false
+        }
         if GardenPersistence.savePlants(
             plants,
+            ownerID: persistenceOwnerID,
             allowsCorruptionRecovery: allowsCorruptionRecovery
         ) {
             persistenceStatus = .loaded
+            return true
         }
+        return false
     }
 
 #if DEBUG
@@ -285,10 +386,13 @@ final class GardenStore: ObservableObject {
         guard isDemoMode else { return }
         if let plantsBeforeDemo {
             plants = plantsBeforeDemo
-        } else {
-            let result = GardenPersistence.loadSnapshot()
+        } else if let persistenceOwnerID {
+            let result = GardenPersistence.loadSnapshot(ownerID: persistenceOwnerID)
             plants = result.plants
             persistenceStatus = result.status
+        } else {
+            plants.removeAll()
+            persistenceStatus = .empty
         }
         plantsBeforeDemo = nil
         isDemoMode = false
