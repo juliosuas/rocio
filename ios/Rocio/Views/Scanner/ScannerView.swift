@@ -3,19 +3,19 @@ import SwiftUI
 import UIKit
 
 struct ScannerView: View {
+    @EnvironmentObject private var router: AppRouter
     @EnvironmentObject private var sessionStore: SessionStore
     @EnvironmentObject private var gardenStore: GardenStore
     // Tab switches must not cancel an in-flight scan; this object owns it until replacement or completion.
     @StateObject private var analysisCoordinator = ScannerAnalysisCoordinator()
     @State private var pickerSelection = ScannerPhotoPickerSelectionState<PhotosPickerItem>()
-    @State private var selectedImage: UIImage?
+    @State private var presentationState = ScannerPresentationState()
     @State private var selectedFlower: Flower?
     @State private var isShowingCamera = false
     @State private var cameraUnavailableMessage: String?
     @State private var photoConsent = ScannerPhotoConsentState()
     @State private var imageLoadTask: Task<Void, Never>?
     @State private var imagePreparationGeneration = ScannerImagePreparationGeneration()
-    @State private var savedIdentities: Set<PlantIdentity> = []
 
     private let identifier = HybridFlowerIdentifier()
     private let imageProcessor = ScannerImageProcessor()
@@ -40,7 +40,7 @@ struct ScannerView: View {
                     }
 #endif
 
-                    if let selectedImage {
+                    if let selectedImage = presentationState.selectedImage {
                         Image(uiImage: selectedImage)
                             .resizable()
                             .scaledToFill()
@@ -87,9 +87,15 @@ struct ScannerView: View {
                     if let result = analysisCoordinator.result {
                         ScannerResultCard(
                             result: result,
-                            savedIdentities: savedIdentities,
                             canSave: gardenStore.canAcceptLocalChanges,
-                            onSave: save,
+                            onReview: { identity, careProfile, confidence in
+                                presentationState.beginReview(
+                                    result: result,
+                                    identity: identity,
+                                    careProfile: careProfile,
+                                    confidence: confidence
+                                )
+                            },
                             onSelectFlower: { flower in
                                 selectedFlower = flower
                             }
@@ -113,6 +119,21 @@ struct ScannerView: View {
             .sheet(item: $selectedFlower) { flower in
                 FlowerDetailView(flower: flower)
             }
+            .sheet(item: $presentationState.reviewDraft) { draft in
+                ScannedPlantReviewView(
+                    draft: draft,
+                    onCancel: {
+                        presentationState.cancelReview()
+                    },
+                    onSave: { nickname, wateringSelection in
+                        save(
+                            draft: draft,
+                            nickname: nickname,
+                            wateringSelection: wateringSelection
+                        )
+                    }
+                )
+            }
             .alert(
                 L10n.text("scanner.consent.title", fallback: "How should Rocio identify this photo?"),
                 isPresented: Binding(
@@ -132,7 +153,7 @@ struct ScannerView: View {
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {
                     photoConsent.discard()
-                    selectedImage = nil
+                    presentationState.clearSelectedImage()
                     pickerSelection.item = nil
                 }
             } message: {
@@ -200,7 +221,7 @@ struct ScannerView: View {
     }
 
     private func acceptPreparedImage(_ image: UIImage) {
-        selectedImage = image
+        presentationState.acceptPreparedImage(image)
         requestAnalysis(image)
     }
 
@@ -210,7 +231,7 @@ struct ScannerView: View {
         imageLoadTask = nil
         analysisCoordinator.cancel()
         photoConsent.discard()
-        savedIdentities.removeAll()
+        presentationState.cancelReview()
         return generation
     }
 
@@ -239,14 +260,33 @@ struct ScannerView: View {
         }
     }
 
-    private func save(identity: PlantIdentity, careProfile: PlantCareProfile) {
-        guard !savedIdentities.contains(identity) else { return }
-        guard gardenStore.add(
-            identity: identity,
-            careProfile: careProfile,
-            nickname: identity.commonName
-        ) != nil else { return }
-        savedIdentities.insert(identity)
+    private func save(
+        draft: ScannedPlantReviewDraft,
+        nickname: String,
+        wateringSelection: PlantWateringSelection
+    ) -> Bool {
+        guard presentationState.completeReview(
+            draft: draft,
+            nickname: nickname,
+            wateringSelection: wateringSelection,
+            gardenStore: gardenStore,
+            router: router,
+            analysisCoordinator: analysisCoordinator
+        ) != nil else { return false }
+
+        clearCompletedScan()
+        return true
+    }
+
+    private func clearCompletedScan() {
+        _ = imagePreparationGeneration.begin()
+        imageLoadTask?.cancel()
+        imageLoadTask = nil
+        photoConsent.discard()
+        pickerSelection.item = nil
+        presentationState.clearScan()
+        selectedFlower = nil
+        cameraUnavailableMessage = nil
     }
 }
 
@@ -332,6 +372,282 @@ final class ScannerAnalysisCoordinator: ObservableObject {
     }
 }
 
+struct ScannedPlantReviewDraft: Identifiable, Equatable {
+    let id: UUID
+    let identity: PlantIdentity
+    let careProfile: PlantCareProfile
+    let confidence: Double
+    let provider: IdentificationProvider
+
+    init(
+        id: UUID = UUID(),
+        identity: PlantIdentity,
+        careProfile: PlantCareProfile,
+        confidence: Double,
+        provider: IdentificationProvider
+    ) {
+        self.id = id
+        self.identity = identity
+        self.careProfile = careProfile
+        self.confidence = confidence
+        self.provider = provider
+    }
+
+    var initialWateringSelection: PlantWateringSelection {
+        PlantWateringSelection(preference: careProfile.wateringPreference)
+    }
+
+    func reviewedCareProfile(
+        wateringSelection: PlantWateringSelection
+    ) -> PlantCareProfile {
+        var reviewed = careProfile
+        reviewed.wateringPreference = wateringSelection.preference
+
+        // A user-confirmed preference becomes the source of the reminder
+        // cadence. Remove exact catalog values so they cannot silently win
+        // over that choice or imply a precise amount for an arbitrary plant.
+        if wateringSelection.preference != nil {
+            reviewed.wateringIntervalDays = nil
+            reviewed.waterAmountMl = nil
+        }
+
+        return reviewed.normalized
+    }
+}
+
+@MainActor
+struct ScannerPresentationState {
+    var selectedImage: UIImage?
+    var reviewDraft: ScannedPlantReviewDraft?
+
+    mutating func acceptPreparedImage(_ image: UIImage) {
+        selectedImage = image
+    }
+
+    @discardableResult
+    mutating func beginReview(
+        result: IdentificationResult,
+        identity: PlantIdentity,
+        careProfile: PlantCareProfile,
+        confidence: Double
+    ) -> Bool {
+        guard result.canSaveToGarden else { return false }
+        reviewDraft = ScannedPlantReviewDraft(
+            identity: identity,
+            careProfile: careProfile,
+            confidence: confidence,
+            provider: result.provider
+        )
+        return true
+    }
+
+    mutating func cancelReview() {
+        reviewDraft = nil
+    }
+
+    mutating func clearSelectedImage() {
+        selectedImage = nil
+    }
+
+    mutating func clearScan() {
+        selectedImage = nil
+        reviewDraft = nil
+    }
+
+    @discardableResult
+    mutating func completeReview(
+        draft: ScannedPlantReviewDraft,
+        nickname: String,
+        wateringSelection: PlantWateringSelection,
+        gardenStore: GardenStore,
+        router: AppRouter,
+        analysisCoordinator: ScannerAnalysisCoordinator,
+        at date: Date = Date()
+    ) -> GardenPlant? {
+        guard reviewDraft?.id == draft.id else { return nil }
+        guard let plant = ScannerFirstCareFlow.addToGarden(
+            draft: draft,
+            nickname: nickname,
+            wateringSelection: wateringSelection,
+            gardenStore: gardenStore,
+            router: router,
+            at: date
+        ) else { return nil }
+
+        analysisCoordinator.cancel()
+        clearScan()
+        return plant
+    }
+}
+
+@MainActor
+enum ScannerFirstCareFlow {
+    @discardableResult
+    static func addToGarden(
+        draft: ScannedPlantReviewDraft,
+        nickname: String,
+        wateringSelection: PlantWateringSelection,
+        gardenStore: GardenStore,
+        router: AppRouter,
+        at date: Date = Date()
+    ) -> GardenPlant? {
+        guard let plant = gardenStore.add(
+            identity: draft.identity,
+            careProfile: draft.reviewedCareProfile(
+                wateringSelection: wateringSelection
+            ),
+            nickname: nickname,
+            at: date
+        ) else { return nil }
+
+        router.selectedTab = .garden
+        return plant
+    }
+}
+
+private struct ScannedPlantReviewView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let draft: ScannedPlantReviewDraft
+    let onCancel: () -> Void
+    let onSave: (String, PlantWateringSelection) -> Bool
+
+    @State private var nickname: String
+    @State private var wateringSelection: PlantWateringSelection
+    @State private var isSaving = false
+
+    init(
+        draft: ScannedPlantReviewDraft,
+        onCancel: @escaping () -> Void,
+        onSave: @escaping (String, PlantWateringSelection) -> Bool
+    ) {
+        self.draft = draft
+        self.onCancel = onCancel
+        self.onSave = onSave
+        _nickname = State(initialValue: draft.identity.commonName)
+        _wateringSelection = State(initialValue: draft.initialWateringSelection)
+    }
+
+    private var normalizedNickname: String {
+        nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    LabeledContent(
+                        L10n.text("scanner.review.match", fallback: "Suggested identity"),
+                        value: draft.identity.commonName
+                    )
+                    if let scientificName = draft.identity.scientificName {
+                        LabeledContent(
+                            L10n.text("scanner.review.scientific", fallback: "Scientific name"),
+                            value: scientificName
+                        )
+                    }
+                    LabeledContent(
+                        L10n.text("scanner.review.source", fallback: "Source"),
+                        value: draft.provider.label
+                    )
+                    LabeledContent(
+                        L10n.text("scanner.review.confidence", fallback: "Visual match"),
+                        value: L10n.format(
+                            "scanner.review.confidence.value",
+                            fallback: "%d%%",
+                            Int(draft.confidence.rounded())
+                        )
+                    )
+                } header: {
+                    Text(L10n.text("scanner.review.identity", fallback: "Identification"))
+                } footer: {
+                    Text(L10n.text(
+                        "scanner.review.identity.help",
+                        fallback: "Identification is a suggestion. Verify the plant before acting on care guidance."
+                    ))
+                }
+
+                Section {
+                    TextField(
+                        L10n.text("scanner.review.nickname", fallback: "Specimen name"),
+                        text: $nickname
+                    )
+                    .textInputAutocapitalization(.words)
+                    .accessibilityIdentifier("scanner.review.nickname")
+                } header: {
+                    Text(L10n.text("scanner.review.specimen", fallback: "Your specimen"))
+                } footer: {
+                    Text(L10n.text(
+                        "scanner.review.nickname.help",
+                        fallback: "This name is only for your specimen. It does not change the provider identity."
+                    ))
+                }
+
+                Section {
+                    Picker(
+                        L10n.text(
+                            "garden.edit.watering.preference",
+                            fallback: "Watering preference"
+                        ),
+                        selection: $wateringSelection
+                    ) {
+                        ForEach(PlantWateringSelection.allCases) { selection in
+                            Text(selection.label).tag(selection)
+                        }
+                    }
+                    .accessibilityIdentifier("scanner.review.watering")
+                } header: {
+                    Text(L10n.text("garden.manual.care", fallback: "Care (optional)"))
+                } footer: {
+                    Text(L10n.text(
+                        "scanner.review.care.help",
+                        fallback: "Choose only what you know. Not sure keeps the plant unscheduled unless a matching Rocio guide provides care."
+                    ))
+                }
+            }
+            .scrollContentBackground(.hidden)
+            .background(Color.rocioCanvas)
+            .navigationTitle(
+                L10n.text("scanner.review.title", fallback: "Review plant")
+            )
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(L10n.text("action.cancel", fallback: "Cancel")) {
+                        onCancel()
+                        dismiss()
+                    }
+                    .disabled(isSaving)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L10n.text("scanner.review.save", fallback: "Save to Garden")) {
+                        save()
+                    }
+                    .disabled(normalizedNickname.isEmpty || isSaving)
+                    .accessibilityIdentifier("scanner.review.save")
+                    .accessibilityLabel(
+                        L10n.format(
+                            "scanner.review.save.accessibility",
+                            fallback: "Save %@ to My Garden",
+                            normalizedNickname
+                        )
+                    )
+                }
+            }
+        }
+    }
+
+    private func save() {
+        guard !normalizedNickname.isEmpty, !isSaving else { return }
+        isSaving = true
+        guard onSave(normalizedNickname, wateringSelection) else {
+            isSaving = false
+            return
+        }
+        dismiss()
+    }
+}
+
 private struct ScannerPromiseCard: View {
     private var sampleFlower: Flower? {
         FlowerCatalog.flower(id: "girasol")
@@ -361,9 +677,8 @@ private struct ScannerPromiseCard: View {
 
 private struct ScannerResultCard: View {
     let result: IdentificationResult
-    let savedIdentities: Set<PlantIdentity>
     let canSave: Bool
-    let onSave: (PlantIdentity, PlantCareProfile) -> Void
+    let onReview: (PlantIdentity, PlantCareProfile, Double) -> Void
     let onSelectFlower: (Flower) -> Void
 
     var body: some View {
@@ -426,24 +741,27 @@ private struct ScannerResultCard: View {
                 .foregroundStyle(Color.rocioAmber)
             } else {
                 Button {
-                    onSave(result.identity, result.careProfile)
+                    onReview(result.identity, result.careProfile, result.confidence)
                 } label: {
                     Label(
-                        savedIdentities.contains(result.identity)
-                            ? L10n.text("scanner.saved", fallback: "Saved to My Garden")
-                            : L10n.format(
-                                "scanner.save",
-                                fallback: "Add %@ to My Garden",
-                                result.displayName
-                            ),
-                        systemImage: savedIdentities.contains(result.identity)
-                            ? "checkmark.circle.fill"
-                            : "plus.circle"
+                        L10n.format(
+                            "scanner.review.action",
+                            fallback: "Review and add %@",
+                            result.displayName
+                        ),
+                        systemImage: "checkmark.circle"
                     )
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(RocioPrimaryButtonStyle())
-                .disabled(!canSave || savedIdentities.contains(result.identity))
+                .disabled(!canSave)
+                .accessibilityIdentifier("scanner.review.primary")
+                .accessibilityHint(
+                    L10n.text(
+                        "scanner.review.action.hint",
+                        fallback: "Review the specimen name and watering preference before saving."
+                    )
+                )
             }
 
             Button {
@@ -473,35 +791,38 @@ private struct ScannerResultCard: View {
                             Text("\(Int(candidate.confidence.rounded()))%")
                                 .foregroundStyle(.secondary)
                             Button {
-                                onSave(
+                                onReview(
                                     candidate.identity,
-                                    PlantCareProfile(source: .plantID, fetchedAt: Date())
+                                    PlantCareProfile(source: .plantID, fetchedAt: Date()),
+                                    candidate.confidence
                                 )
                             } label: {
-                                Image(
-                                    systemName: savedIdentities.contains(candidate.identity)
-                                        ? "checkmark.circle.fill"
-                                        : "plus.circle"
-                                )
+                                HStack(spacing: 4) {
+                                    Text(L10n.text(
+                                        "scanner.candidate.review.action",
+                                        fallback: "Review"
+                                    ))
+                                    Image(systemName: "chevron.right")
+                                        .accessibilityHidden(true)
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .frame(minWidth: 44, minHeight: 44)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
-                            .disabled(
-                                !canSave ||
-                                    result.isPlant == false ||
-                                    savedIdentities.contains(candidate.identity)
-                            )
+                            .disabled(!canSave || result.isPlant == false)
                             .accessibilityLabel(
-                                savedIdentities.contains(candidate.identity)
-                                    ? L10n.format(
-                                        "scanner.candidate.saved",
-                                        fallback: "%@ saved",
-                                        candidate.name
-                                    )
-                                    : L10n.format(
-                                        "scanner.candidate.add",
-                                        fallback: "Add %@ to My Garden",
-                                        candidate.name
-                                    )
+                                L10n.format(
+                                    "scanner.candidate.review",
+                                    fallback: "Review %@ before adding",
+                                    candidate.name
+                                )
+                            )
+                            .accessibilityHint(
+                                L10n.text(
+                                    "scanner.review.action.hint",
+                                    fallback: "Review the specimen name and watering preference before saving."
+                                )
                             )
                         }
                     }

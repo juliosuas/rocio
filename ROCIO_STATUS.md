@@ -4,7 +4,7 @@ Last updated: July 24, 2026
 
 Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
-Base commit: `649293e`
+Verification target: the exact PR head after the scanner-review increment
 
 Rocío is a locally verified iOS feature candidate, not a production release. The native arbitrary-plant implementation is complete enough for integration testing, but its matching Supabase migrations and Edge Function update have not been deployed. Rocío is not available through TestFlight or the App Store.
 
@@ -22,13 +22,14 @@ The native runtime is no longer limited to the bundled catalog:
 - **Duplicate specimens** are supported. Two plants of the same species can keep independent nicknames, schedules, and watering state.
 - **Account synchronization contract** carries arbitrary identity and care fields through the same account isolation, RLS, delete-wins, reset, and purge boundaries used by bundled plants.
 - **Per-photo privacy** still offers on-device matching or fresh consent before a reduced image is sent through the authenticated Supabase proxy.
+- **Review-before-save scanner handoff** keeps the provider identity immutable, shows source and confidence, lets the user name the specimen and optionally confirm watering care, and routes to Garden only after persistence succeeds. Repeated confirmations create independent specimens.
 - **Idempotent paid scans** use one stable request UUID, atomically claim quota once, recover ambiguous Plant.id work through `custom_id`, and replay a bounded normalized result for seven days without storing raw photos or provider tokens.
 
 ## Verification Evidence
 
 Current evidence for the arbitrary-plant branch:
 
-- **194/194 XCTest cases pass** under both the unsigned-CI contract on iPhone 17 Pro and the locally signed contract on iPhone 17 Pro Max with iOS 26.3.1.
+- **XCTest passes 200/200 under both the unsigned CI-equivalent and locally signed simulator contracts** on iPhone 17 Pro with iOS 26.3.1 for the current scanner-review worktree. Exact-PR-head CI confirmation remains pending.
 - **Edge runtime tests pass 28/28**, including timeout, body-abort, idempotent recovery, replay, quota, deletion, and malformed-provider paths.
 - **Static cloud/security audit passes 50/50**.
 - **PostgreSQL 16 four-migration harness passes**, including ordered upgrade, RLS, ACLs, idempotent quota/replay lifecycle, tombstones, reset, purge, and rollback.
@@ -44,10 +45,10 @@ Current evidence for the arbitrary-plant branch:
 
 These items prevent a production-readiness claim:
 
-1. Review and merge the stacked pull request with Edge runtime tests and every repository gate green.
+1. Review and merge consolidated PR #21 with Edge runtime tests and every repository gate green on the exact head.
 2. Review the final migration dry run, then apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order before deploying the matching Edge Function update.
 3. Complete a two-session authenticated smoke test covering add, edit, water, relaunch, sync, delete-wins, reset, purge, and account switching.
-4. Complete real-device tests for camera, photo picker, per-photo consent, offline behavior, notification permission, scheduling, and delivery.
+4. Complete real-device tests for camera, photo picker, per-photo consent, local and cloud analysis, review cancellation, successful scan → review → Garden save, offline behavior, notification permission, scheduling, and delivery.
 5. Configure the stable HTTPS Site URL, exact Auth redirect allowlist, custom SMTP, and the complete email → app → new-password recovery path.
 6. Activate the paid Apple Developer Program, configure `DEVELOPMENT_TEAM`, create a distribution-signed archive, and upload it to TestFlight.
 7. Capture final English App Store screenshots from that exact Release archive and repeat a focused Spanish localization smoke.

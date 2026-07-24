@@ -4,9 +4,9 @@ Last updated: July 24, 2026
 
 Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
-Base commit: `649293e`
+Verification target: the exact PR head after the scanner-review increment
 
-Upstream integration PR: [#20](https://github.com/juliosuas/rocio/pull/20)
+Consolidated integration PR: [#21](https://github.com/juliosuas/rocio/pull/21), targeting `main`
 
 Operating mode: active implementation and release hardening. Do not restart the original 12-hour plan from Hour 0; continue from the remaining runtime, integration, deployment, and device work below.
 
@@ -18,13 +18,14 @@ Ship one production-capable native care loop in which a Plant.id result or manua
 
 ## Current Outcome
 
-The arbitrary-plant vertical is implemented in the current worktree and passes the full iOS test suite. The additive database migrations and Edge Function update exist locally and the four-migration PostgreSQL 16 harness passes, but those backend changes have not been deployed. The branch is a feature candidate, not an App Store release candidate.
+The arbitrary-plant vertical and scanner review-to-Garden handoff are implemented in the current worktree. Both the full unsigned CI-equivalent and locally signed XCTest suites pass 200/200 on iPhone 17 Pro with iOS 26.3.1; exact-PR-head CI confirmation remains pending. The additive database migrations and Edge Function update exist locally and the four-migration PostgreSQL 16 harness passes, but those backend changes have not been deployed. The branch is a feature candidate, not an App Store release candidate.
 
 ## Ship Standard Ledger
 
 | Requirement | State | Evidence or remaining proof |
 |---|---|---|
 | Preserve a Plant.id result without substituting a bundled flower | Implemented and simulator-tested | The scanner response carries provider identity, names, locale, rank, taxonomy, confidence, and `is_plant`; the saved garden identity retains the stable ID, names, rank, locale, and freshness. |
+| Scanner review-to-Garden handoff | Implemented and fully simulator-tested | Provider identity remains separate from the specimen nickname; optional user care removes false exact precision; failed saves do not mutate or route; successful saves create one independent specimen and open Garden. |
 | Manual provider-free entry | Implemented and simulator-tested | Manual plants use durable manual identity and enter the same garden model. |
 | Durable identity and offline care snapshot | Implemented and simulator-tested | `PlantIdentity`, `PlantCareProfile`, and backward-compatible `GardenPlant` decoding round-trip arbitrary and bundled plants. |
 | Crash-safe local garden | Implemented and simulator-tested | Versioned primary and backup snapshots recover valid data and surface unrecoverable corruption instead of silently returning an empty garden. |
@@ -70,6 +71,9 @@ Deployment status: **not deployed**. Review the backup and linked dry run before
 
 - External suggestions remain external suggestions and keep their provider identity.
 - Results marked as not a plant cannot be saved.
+- Results pass through an explicit review that shows the suggested identity, source, and confidence while keeping the editable specimen nickname separate.
+- A user-confirmed watering preference removes exact catalog interval and milliliter values so the app does not imply false precision.
+- Failed saves leave the garden and route unchanged; successful saves create one independent specimen, clear the completed scan, and open Garden.
 - Rank, locale, freshness, and stable provider ID survive into the saved model when available. Taxonomy and confidence remain transient scan evidence rather than durable garden claims.
 - Manual entry supplies an offline/provider-free path.
 - User care remains optional and editable after save.
@@ -90,7 +94,7 @@ Deployment status: **not deployed**. Runtime integration tests pass locally; aut
 
 Evidence recorded from the current work:
 
-- **194/194 XCTest cases pass** under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract with iOS 26.3.1.
+- **XCTest passes 200/200 under both the unsigned CI-equivalent and locally signed simulator contracts** on iPhone 17 Pro with iOS 26.3.1 for the current scanner-review worktree. Exact-PR-head CI confirmation remains pending.
 - **Edge runtime tests pass 28/28**.
 - **Static cloud/security audit passes 50/50**.
 - **PostgreSQL 16 four-migration harness passes** with ordered upgrade, RLS, ACL, idempotent quota/replay lifecycle, tombstone, reset, purge, and rollback checks.
@@ -157,13 +161,13 @@ Also produce an unsigned Release build and archive validation from the same comm
 
 Exit evidence: current, not inherited, results for XCTest, release gate, cloud/security, App Store audit, PostgreSQL, and unsigned Release.
 
-### R4. Commit, push, and review — current checkpoint
+### R4. Commit, push, and review — active for the scanner-review increment
 
-1. Commit the arbitrary-plant vertical as one reviewable unit.
-2. Push `fsociaty/rocio-arbitrary-plants`.
-3. Open a stacked pull request against `fsociaty/rocio-beta-first-care`.
-4. Attach exact commands, result counts, migration order, deployment warning, and screenshot provenance.
-5. Merge the stacked chain in order only after CI is green.
+1. Commit the scanner review-to-Garden increment as one reviewable unit on `fsociaty/rocio-arbitrary-plants`.
+2. Push the branch and update consolidated PR #21, which targets `main`.
+3. Attach exact commands, current result counts, migration order, deployment warning, and screenshot provenance.
+4. Run review and every repository workflow on the exact PR head.
+5. Merge #21 only after CI is green, then verify `main` before closing #18–#20 as superseded.
 
 Exit evidence: reviewed commit, green CI, and no unresolved P0/P1 comment.
 
@@ -194,7 +198,8 @@ Two authenticated sessions:
 
 Physical iPhone:
 
-- camera, photo picker, local analysis, and one-time cloud consent;
+- camera, photo picker, local analysis, and per-photo cloud consent;
+- review cancellation without mutation, a successful scan → review → Garden save, and duplicate specimens;
 - manual entry and a duplicate specimen;
 - offline add/edit/water/relaunch/export;
 - notification permission, scheduling, delivery, and cancellation;
@@ -252,4 +257,4 @@ Do not claim production readiness while any of these is true:
 
 ## Resume Point
 
-Resume at **R4: Commit, push, and review**. R1 through R3 are complete locally. Move to R5 only after the stacked pull request is green, reviewed, and merged; the backend deployment, two-session/device smoke, and signing steps remain deliberately separate owner-controlled gates.
+Resume at **R4: Commit, push, and review** for the scanner-review increment. Treat R1 through R3 as prior evidence until the expanded suite and gates pass on the exact PR head. Move to R5 only after consolidated PR #21 is green, reviewed, merged, and verified on `main`; the backend deployment, two-session/device smoke, and signing steps remain deliberately separate owner-controlled gates.

@@ -7,7 +7,7 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 - `MARKETING_VERSION = 1.0`
 - `CURRENT_PROJECT_VERSION = 1`
 - Deployment target: iOS 17.0 with Swift 5.
-- 194/194 tests pass under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1.
+- The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Exact-PR-head CI confirmation remains pending.
 - Debug and unsigned Release compile with Xcode 26.3.
 - A Personal Team development build launches on a physical iPhone.
 - TestFlight remains blocked by paid membership, `DEVELOPMENT_TEAM`, distribution signing, and outstanding external smoke tests.
@@ -19,7 +19,7 @@ Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web 
 - Supabase account, Keychain session, and per-user garden sync with owner-bound, versioned primary/backup snapshots, fail-closed owner checks, repair from a valid redundant copy, quarantine for unsafe replacements, and a durable mutation outbox.
 - Complete first-care flow: add a plant, return to the garden, enable a reminder, and confirm watering.
 - Local-notification permission requested only after an explicit tap.
-- Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, and an honest fallback.
+- Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, an honest fallback, and a review-before-save handoff that preserves provider identity separately from the specimen nickname.
 - PKCE password recovery with the verifier in Keychain, bearer-free URLs, and cross-scene race handling.
 - App Intents to open the garden, open the scanner, and record watering.
 - Export, local reset, cloud deletion, analytics opt-out, sign-out, and permanent account deletion.
@@ -90,7 +90,7 @@ xcodebuild \
   test
 ```
 
-The suite covers authentication, PKCE, refresh-token rotation, account isolation, arbitrary Plant.id and manual plants, exact catalog-care matches, versioned snapshot recovery, durable outbox acceptance, idempotent scan retries, sync/epoch/tombstones, first care, notifications, scanner behavior, image reduction, routing, and persistence.
+The suite covers authentication, PKCE, refresh-token rotation, account isolation, arbitrary Plant.id and manual plants, exact catalog-care matches, versioned snapshot recovery, durable outbox acceptance, idempotent scan retries, sync/epoch/tombstones, first care, notifications, scanner behavior, scanner review-to-Garden routing, conservative care overrides, duplicate scan specimens, failed-save behavior, image reduction, routing, and persistence.
 
 Run the additional gates from the repository root:
 

@@ -6,14 +6,14 @@ This plan starts from the current `juliosuas/rocio` product: a bilingual native 
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, 194 passing integrated simulator tests under both unsigned-CI and locally signed contracts, and an isolated Debug-only local demo. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging the stacked PRs, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, and an isolated Debug-only local demo. The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1; exact-PR-head CI confirmation remains pending. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging consolidated PR #21, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
 1. Real-device permission smoke is not locally verified on this machine.
-   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and 194/194 tests passed on 2026-07-24 under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract with iOS 26.3.1. Re-run these gates from the exact release commit.
+   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and the current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Confirm the same evidence from the exact PR head.
    - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
-   - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
+   - Camera capture, photo picker, local and consented cloud analysis, review cancellation, a successful scan → review → Garden save, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
 2. Development signing works locally; distribution signing and App Store Connect are not configured.
    - A Personal Team Debug build for bundle id `com.juliosuas.rocio` and team `67QTYANL3F` installed and launched successfully after the developer profile was trusted in Settings. Its provisioning profile expires on 2026-07-28.
@@ -36,14 +36,14 @@ Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authen
 
 6. Cloud deployment is partially complete.
    - The read-only production diagnostic on 2026-07-21 confirmed only the foundation migration, six RLS-protected tables, public client configuration, and `identify-flower` v5. Treat that as dated evidence and revalidate the exact remote state before deployment.
-   - After the matching client stack lands and a database backup plus dry run are reviewed, apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order, then deploy the matching Edge Function and verify account isolation, delete-wins/reset convergence, quota/replay, analytics opt-out, and account deletion.
+   - After consolidated client PR #21 lands and a database backup plus dry run are reviewed, apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order, then deploy the matching Edge Function and verify account isolation, delete-wins/reset convergence, quota/replay, analytics opt-out, and account deletion.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
    - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
 8. QA must finish on hardware and production cloud state.
-   - Classifier, release, App Store, security, unsigned Release build, and 194/194 simulator tests under both unsigned-CI and locally signed contracts pass on the feature candidate as of 2026-07-24. A verified simulator smoke covers core Debug screens and the Personal Team app launches on the physical iPhone; re-run all gates from the exact release commit, then complete real-device permissions and authenticated two-session production sync before submission.
+   - Classifier, release, App Store, security, and unsigned Release build evidence passed on the feature candidate as of 2026-07-24. The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1; rerun every gate from the exact PR head, then complete real-device permissions and authenticated two-session production sync before submission.
 
 ## Garry Tan Tooling Context
 
@@ -152,6 +152,7 @@ Ship `Rocio 1.0 — arbitrary plants end to end` on top of the beta first-care f
 - Offer watering reminders in context, while requesting iOS permission only after an explicit tap.
 - Confirm the first watering immediately in the garden UI.
 - Ask for cloud-photo consent for every scan, preserve an on-device-only choice, and downsample large photos before retaining or analyzing them.
+- Require scanner results to pass through an explicit review step; preserve provider identity separately from the specimen nickname, remove false interval and milliliter precision when the user confirms a preference, and route to Garden only after a successful save.
 - Require confirmation before the irreversible removal of one plant.
 - Report garden deletion as cloud-confirmed only after the reset RPC and authoritative reconciliation succeed; otherwise keep a visible pending state.
 - Include the locally integrated PKCE password-recovery client, while keeping it externally blocked until the callback allowlist, stable HTTPS Site URL, custom SMTP, and a real email-to-app password-change smoke test are complete.
@@ -159,4 +160,4 @@ Ship `Rocio 1.0 — arbitrary plants end to end` on top of the beta first-care f
 - Make paid scans idempotent with one quota claim, bounded replay, provider recovery by `custom_id`, and best-effort provider cleanup.
 - Fail closed on future local or cloud schemas so an older build cannot overwrite fields it does not understand.
 
-Landing order is fixed: merge the beta-first-care base PR, then merge the stacked arbitrary-plant PR. After a production backup, linked dry run, and review, apply `20260721000100` → `20260722000100` → `20260723000100`, deploy the matching Edge Function, and run authenticated canaries plus the two-session smoke. Do not deploy backend changes from an unreviewed feature branch.
+PR #21 is the consolidated integration PR targeting `main`. Merge it only after the exact head passes review and all repository workflows; after green `main` CI, close #18–#20 as superseded. After a production backup, linked dry run, and review, apply `20260721000100` → `20260722000100` → `20260723000100`, deploy the matching Edge Function, and run authenticated canaries plus the two-session smoke. Do not deploy backend changes from an unreviewed feature branch.

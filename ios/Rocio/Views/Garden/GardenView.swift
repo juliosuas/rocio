@@ -650,7 +650,7 @@ private struct ManualPlantEntryView: View {
 
     @State private var commonName = ""
     @State private var scientificName = ""
-    @State private var wateringSelection = ManualWateringSelection.notSet
+    @State private var wateringSelection = PlantWateringSelection.notSet
 
     private var normalizedCommonName: String {
         commonName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -680,7 +680,7 @@ private struct ManualPlantEntryView: View {
                         L10n.text("garden.edit.watering.preference", fallback: "Watering preference"),
                         selection: $wateringSelection
                     ) {
-                        ForEach(ManualWateringSelection.allCases) { selection in
+                        ForEach(PlantWateringSelection.allCases) { selection in
                             Text(selection.label).tag(selection)
                         }
                     }
@@ -719,33 +719,6 @@ private struct ManualPlantEntryView: View {
                     .disabled(normalizedCommonName.isEmpty)
                 }
             }
-        }
-    }
-}
-
-private enum ManualWateringSelection: String, CaseIterable, Identifiable {
-    case notSet
-    case dry
-    case medium
-    case wet
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .notSet: L10n.text("watering.preference.not_set", fallback: "Not sure")
-        case .dry: L10n.text("watering.preference.dry.short", fallback: "Let soil dry")
-        case .medium: L10n.text("watering.preference.medium.short", fallback: "Keep moderately moist")
-        case .wet: L10n.text("watering.preference.wet.short", fallback: "Keep moist")
-        }
-    }
-
-    var preference: PlantWateringPreference? {
-        switch self {
-        case .notSet: nil
-        case .dry: .dry
-        case .medium: .medium
-        case .wet: .wet
         }
     }
 }

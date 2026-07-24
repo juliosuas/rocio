@@ -165,6 +165,242 @@ final class ScannerAnalysisCoordinatorTests: XCTestCase {
         XCTAssertEqual(candidate.identity.nameLocale, "en")
     }
 
+    func testCancellingReviewDoesNotMutateGardenOrRouteAwayAndKeepsScanForRetry() throws {
+        let identification = result(flowerID: "rosa")
+        let scanImage = image(width: 120, height: 120, color: .systemPink)
+        var presentation = ScannerPresentationState()
+        presentation.acceptPreparedImage(scanImage)
+        XCTAssertTrue(presentation.beginReview(
+            result: identification,
+            identity: identification.identity,
+            careProfile: identification.careProfile,
+            confidence: identification.confidence
+        ))
+
+        let store = GardenStore(plants: [])
+        let router = AppRouter()
+        router.selectedTab = .scanner
+
+        presentation.cancelReview()
+
+        XCTAssertNil(presentation.reviewDraft)
+        XCTAssertNotNil(presentation.selectedImage)
+        XCTAssertTrue(store.plants.isEmpty)
+        XCTAssertEqual(router.selectedTab, .scanner)
+    }
+
+    func testScanReviewKeepsProviderIdentitySeparateFromSpecimenNickname() {
+        let identity = PlantIdentity(
+            source: .plantID,
+            sourceID: "plant-id-monstera",
+            commonName: "Swiss cheese plant",
+            scientificName: "Monstera deliciosa",
+            rank: "species",
+            nameLocale: "en"
+        )
+        let fetchedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let draft = ScannedPlantReviewDraft(
+            identity: identity,
+            careProfile: PlantCareProfile(source: .plantID, fetchedAt: fetchedAt),
+            confidence: 91,
+            provider: .cloud
+        )
+        let store = GardenStore(plants: [])
+        let router = AppRouter()
+        router.selectedTab = .scanner
+
+        let added = ScannerFirstCareFlow.addToGarden(
+            draft: draft,
+            nickname: "Office Monstera",
+            wateringSelection: .medium,
+            gardenStore: store,
+            router: router,
+            at: fetchedAt
+        )
+
+        XCTAssertEqual(added?.nickname, "Office Monstera")
+        XCTAssertEqual(added?.identity, identity)
+        XCTAssertEqual(added?.careProfile.wateringPreference, .medium)
+        XCTAssertEqual(added?.careProfile.source, .plantID)
+        XCTAssertEqual(added?.careProfile.fetchedAt, fetchedAt)
+        XCTAssertEqual(store.plants.count, 1)
+        XCTAssertEqual(store.plants.first, added)
+        XCTAssertEqual(router.selectedTab, .garden)
+    }
+
+    func testUserConfirmedScanCareOverridesExactValuesWithoutInventingPrecision() {
+        let fetchedAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let draft = ScannedPlantReviewDraft(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-rose",
+                commonName: "Rose",
+                scientificName: "Rosa spp."
+            ),
+            careProfile: PlantCareProfile(
+                wateringIntervalDays: 4,
+                waterAmountMl: 180,
+                source: .bundled,
+                fetchedAt: fetchedAt
+            ),
+            confidence: 94,
+            provider: .cloud
+        )
+
+        let userConfirmed = draft.reviewedCareProfile(wateringSelection: .dry)
+        XCTAssertEqual(userConfirmed.wateringPreference, .dry)
+        XCTAssertNil(userConfirmed.wateringIntervalDays)
+        XCTAssertNil(userConfirmed.waterAmountMl)
+        XCTAssertEqual(userConfirmed.reminderIntervalDays, 14)
+        XCTAssertEqual(userConfirmed.source, .bundled)
+        XCTAssertEqual(userConfirmed.fetchedAt, fetchedAt)
+
+        let noUserPreference = draft.reviewedCareProfile(wateringSelection: .notSet)
+        XCTAssertNil(noUserPreference.wateringPreference)
+        XCTAssertEqual(noUserPreference.wateringIntervalDays, 4)
+        XCTAssertEqual(noUserPreference.waterAmountMl, 180)
+    }
+
+    func testEachScanReviewConfirmationAddsExactlyOneIndependentSpecimen() {
+        let draft = ScannedPlantReviewDraft(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-prayer-plant",
+                commonName: "Prayer plant",
+                scientificName: "Maranta leuconeura"
+            ),
+            careProfile: PlantCareProfile(source: .plantID),
+            confidence: 88,
+            provider: .cloud
+        )
+        let store = GardenStore(plants: [])
+        let router = AppRouter()
+
+        let first = ScannerFirstCareFlow.addToGarden(
+            draft: draft,
+            nickname: "Bedroom plant",
+            wateringSelection: .notSet,
+            gardenStore: store,
+            router: router
+        )
+        XCTAssertNotNil(first)
+        XCTAssertEqual(store.plants.count, 1)
+
+        router.selectedTab = .scanner
+        let second = ScannerFirstCareFlow.addToGarden(
+            draft: draft,
+            nickname: "Kitchen plant",
+            wateringSelection: .wet,
+            gardenStore: store,
+            router: router
+        )
+
+        XCTAssertNotNil(second)
+        XCTAssertEqual(store.plants.count, 2)
+        XCTAssertNotEqual(first?.id, second?.id)
+        XCTAssertEqual(store.plants.map(\.identity), [draft.identity, draft.identity])
+        XCTAssertEqual(store.plants.map(\.nickname), ["Bedroom plant", "Kitchen plant"])
+        XCTAssertEqual(router.selectedTab, .garden)
+    }
+
+    func testRejectedScanReviewDoesNotMutateGardenOrRouteAway() {
+        let draft = ScannedPlantReviewDraft(
+            identity: PlantIdentity(
+                source: .plantID,
+                sourceID: "plant-id-rejected",
+                commonName: "Rejected candidate"
+            ),
+            careProfile: PlantCareProfile(source: .plantID),
+            confidence: 80,
+            provider: .cloud
+        )
+        let store = GardenStore(plants: [])
+        store.cloudChangeHandler = { _ in false }
+        let router = AppRouter()
+        router.selectedTab = .scanner
+        let coordinator = ScannerAnalysisCoordinator()
+        var presentation = ScannerPresentationState(
+            selectedImage: image(width: 120, height: 120, color: .systemGreen),
+            reviewDraft: draft
+        )
+
+        let added = presentation.completeReview(
+            draft: draft,
+            nickname: "Must not save",
+            wateringSelection: .medium,
+            gardenStore: store,
+            router: router,
+            analysisCoordinator: coordinator
+        )
+
+        XCTAssertNil(added)
+        XCTAssertTrue(store.plants.isEmpty)
+        XCTAssertEqual(router.selectedTab, .scanner)
+        XCTAssertNotNil(store.mutationErrorMessage)
+        XCTAssertEqual(presentation.reviewDraft, draft)
+        XCTAssertNotNil(presentation.selectedImage)
+    }
+
+    func testSuccessfulReviewAddsOnceRoutesToGardenAndClearsScanPresentation() async throws {
+        let identification = result(flowerID: "tulipan")
+        let analysisCompleted = expectation(description: "Analysis result published")
+        let coordinator = ScannerAnalysisCoordinator()
+        coordinator.start {
+            analysisCompleted.fulfill()
+            return identification
+        }
+        await fulfillment(of: [analysisCompleted], timeout: 1)
+        for _ in 0..<10 where coordinator.result == nil {
+            await Task.yield()
+        }
+        XCTAssertEqual(coordinator.result, identification)
+
+        var presentation = ScannerPresentationState()
+        presentation.acceptPreparedImage(
+            image(width: 120, height: 120, color: .systemOrange)
+        )
+        XCTAssertTrue(presentation.beginReview(
+            result: identification,
+            identity: identification.identity,
+            careProfile: identification.careProfile,
+            confidence: identification.confidence
+        ))
+        let draft = try XCTUnwrap(presentation.reviewDraft)
+        let store = GardenStore(plants: [])
+        let router = AppRouter()
+        router.selectedTab = .scanner
+        let savedAt = Date(timeIntervalSince1970: 1_800_000_000)
+
+        let added = presentation.completeReview(
+            draft: draft,
+            nickname: "Window tulip",
+            wateringSelection: .notSet,
+            gardenStore: store,
+            router: router,
+            analysisCoordinator: coordinator,
+            at: savedAt
+        )
+
+        XCTAssertEqual(added?.nickname, "Window tulip")
+        XCTAssertEqual(store.plants.count, 1)
+        XCTAssertEqual(router.selectedTab, .garden)
+        XCTAssertNil(presentation.selectedImage)
+        XCTAssertNil(presentation.reviewDraft)
+        XCTAssertNil(coordinator.result)
+        XCTAssertFalse(coordinator.isProcessing)
+
+        XCTAssertNil(presentation.completeReview(
+            draft: draft,
+            nickname: "Duplicate submission",
+            wateringSelection: .wet,
+            gardenStore: store,
+            router: router,
+            analysisCoordinator: coordinator,
+            at: savedAt
+        ))
+        XCTAssertEqual(store.plants.count, 1)
+    }
+
     func testTopExternalSuggestionIsNotRepeatedAsAnAlternateSaveChoice() throws {
         let flower = try XCTUnwrap(FlowerCatalog.flower(id: "rosa"))
         let top = IdentificationResult.ExternalCandidate(
@@ -220,6 +456,18 @@ final class ScannerAnalysisCoordinatorTests: XCTestCase {
         )
 
         XCTAssertFalse(result.canSaveToGarden)
+        var presentation = ScannerPresentationState()
+        presentation.acceptPreparedImage(
+            image(width: 120, height: 120, color: .systemGray)
+        )
+        XCTAssertFalse(presentation.beginReview(
+            result: result,
+            identity: result.identity,
+            careProfile: result.careProfile,
+            confidence: result.confidence
+        ))
+        XCTAssertNil(presentation.reviewDraft)
+        XCTAssertNotNil(presentation.selectedImage)
     }
 
     private func result(flowerID: String) -> IdentificationResult {

@@ -4,11 +4,11 @@ Date: 2026-07-24
 
 ## Current Build Strategy
 
-Full Xcode 26.3 is selected locally. The integrated unsigned Release simulator build passed with the generic iOS Simulator destination on 2026-07-23, and 194/194 native tests passed on 2026-07-24 under both the unsigned-CI iPhone 17 Pro contract and the locally signed iPhone 17 Pro Max contract running iOS 26.3.1. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
+Full Xcode 26.3 is selected locally. The current scanner-review worktree passes the unsigned Release simulator build and both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Exact-PR-head CI confirmation remains pending. GitHub Actions remains the shared gate for PR review, and local Xcode is available for smoke testing, screenshots, and Xcode Organizer upload.
 
 The unsigned iOS archive workflow should also run on iOS PRs and pushes so archive regressions are caught before merge, while remaining manually runnable for release checks.
 
-An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, seeded garden, bundled photos, and the local scanner disclosure. Real-device camera/photo and notification permission/delivery testing is still required before external TestFlight or App Store submission.
+An iPhone 16e simulator smoke on 2026-07-20 verified Debug demo entry, catalog, seeded garden, bundled photos, and the local scanner disclosure. Real-device camera/photo, local and consented cloud analysis, review cancellation, a successful scan → review → Garden save, and notification permission/delivery testing are still required before external TestFlight or App Store submission.
 
 A Personal Team Debug build for `com.juliosuas.rocio`, team `67QTYANL3F`, installed and launched successfully on the connected iPhone after the developer profile was trusted. Its provisioning profile expires on 2026-07-28. This confirms the earlier launch block was the iOS signing/trust boundary rather than a Supabase crash. The project-level `DEVELOPMENT_TEAM` remains blank, and paid membership is needed only for distribution/TestFlight signing.
 
@@ -26,7 +26,7 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - Paid Apple Developer Program membership and distribution team active. This is currently **not met**; only a free Personal Team is available.
 - Bundle id `com.juliosuas.rocio` created or available for the distribution team; the local Personal Team Debug app already uses the correct identifier.
 - Distribution `DEVELOPMENT_TEAM` set in the Rocio target; it is currently blank.
-- The installed Personal Team Debug app launches after the developer profile is trusted, then camera/photo and notification permissions pass on the physical iPhone before external TestFlight.
+- The installed Personal Team Debug app launches after the developer profile is trusted, then camera/photo access, local and consented cloud analysis, review cancellation, a successful scan → review → Garden save, duplicate specimens, and notification permissions pass on the physical iPhone before external TestFlight.
 - Signed archive upload succeeds.
 - Privacy policy URL and support URL are live and entered in App Store Connect.
 - App Privacy answers match `APP_STORE_PRIVACY_ANSWERS.md`.
@@ -34,7 +34,7 @@ Rocio can move to TestFlight tomorrow only if these are true:
 - Custom SMTP is configured for external users, and a real reset email opens Rocio, exchanges the PKCE code, changes the password, and permits a fresh sign-in.
 - After backup and linked dry-run review, the deletion-preserving, arbitrary-plant, and idempotent-scan migrations are applied once in timestamp order, then the matching authenticated Edge Function/configuration is deployed and verified against the integrated release commit.
 - Production anonymous key is injected through release configuration; Plant.id secret exists only in Supabase.
-- Account creation, login, sync, analytics opt-out, photo consent, quota, sign out, and in-app account deletion pass on a device.
+- Account creation, login, sync, analytics opt-out, photo consent, quota, scanner review, failed-save behavior, successful Garden routing, duplicate specimens, sign out, and in-app account deletion pass on a device.
 - App Review demo account is active and included in Review Information.
 - Final app icon and screenshots are ready.
 - App Store Connect metadata draft is filled.
@@ -59,7 +59,7 @@ xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS
 
 Rocio is a bilingual English/Spanish plant-care app that follows the user's iOS language. A required account provides garden sync, scan quota/history, and in-app account deletion. The app schedules optional local reminders and uses an authenticated Supabase Edge Function for experimental Plant.id plant identification after explicit consent for each transferred photo.
 
-Camera and photo access are used only after a scanner action. For every photo, the user chooses on-device analysis or cloud transfer. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. Notification permission is requested only after an explicit tap in Garden or Settings.
+Camera and photo access are used only after a scanner action. For every photo, the user chooses on-device analysis or cloud transfer. Raw photos are not stored in Rocio's database. Identification falls back to a basic on-device visual match if cloud service is unavailable. A suggested result is reviewed before saving so the provider identity remains separate from the user's specimen nickname and optional watering preference. Notification permission is requested only after an explicit tap in Garden or Settings.
 
 Detailed App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md` and must be rechecked before App Store Connect submission.
 

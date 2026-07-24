@@ -275,6 +275,46 @@ enum PlantWateringPreference: String, Codable, CaseIterable, Sendable {
     }
 }
 
+enum PlantWateringSelection: String, CaseIterable, Identifiable, Sendable {
+    case notSet
+    case dry
+    case medium
+    case wet
+
+    var id: String { rawValue }
+
+    init(preference: PlantWateringPreference?) {
+        switch preference {
+        case .dry: self = .dry
+        case .medium: self = .medium
+        case .wet: self = .wet
+        case nil: self = .notSet
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .notSet:
+            L10n.text("watering.preference.not_set", fallback: "Not sure")
+        case .dry:
+            L10n.text("watering.preference.dry.short", fallback: "Let soil dry")
+        case .medium:
+            L10n.text("watering.preference.medium.short", fallback: "Keep moderately moist")
+        case .wet:
+            L10n.text("watering.preference.wet.short", fallback: "Keep moist")
+        }
+    }
+
+    var preference: PlantWateringPreference? {
+        switch self {
+        case .notSet: nil
+        case .dry: .dry
+        case .medium: .medium
+        case .wet: .wet
+        }
+    }
+}
+
 enum PlantCareSource: String, Codable, CaseIterable, Sendable {
     case bundled
     case plantID = "plant_id"

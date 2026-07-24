@@ -21,7 +21,7 @@ Rocío supports the care cycle that matters: identify or enter a plant, save the
 
 ## Real iOS build
 
-These are raw, privacy-safe screenshots from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. They are not mockups. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23 from the current arbitrary-plant branch and provides real evidence of that flow. These are development records, not final App Store art; the submission set will be re-captured from the exact Release archive.
+These are raw, privacy-safe screenshots from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. They are not mockups. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23 from the current arbitrary-plant branch and provides real evidence of that flow. The existing scanner image predates the new review sheet, which still requires a fresh capture before final App Store art. These are development records, not final App Store art; the submission set will be re-captured from the exact Release archive.
 
 <p align="center">
   <img src="docs/screenshots/ios/catalog.png" alt="Rocío native iOS catalog" width="180">
@@ -36,12 +36,12 @@ These are raw, privacy-safe screenshots from the running Rocío Debug build on a
 
 - **15 bundled editorial flower guides** with attributed photography, scientific names, difficulty, and care guidance.
 - **Arbitrary native plants** from Plant.id or manual entry, saved with durable source identity instead of being relabeled as the closest bundled flower.
-- **First plant to first care**: add a plant, return to My Garden, enable a reminder, and confirm watering.
+- **First plant to first care**: review a scanner suggestion before saving, keep provider identity separate from the specimen nickname, choose optional care, land in My Garden after a successful save, enable a reminder, and confirm watering.
 - **Crash-safe offline garden** with owner-bound, versioned primary and backup snapshots. Ownerless or mixed-ownership data fails closed, recoverable single-slot corruption is repaired from its valid peer, and unsafe replacement inputs are quarantined instead of being attached to a different account.
 - **Editable care** with optional dry/medium/wet watering preferences, optional schedules, and no invented milliliter precision for unknown plants.
 - **Generic rendering and duplicate specimens** so non-catalog plants appear across the product and two plants of the same species keep independent names and care state.
 - **Seven-day calendar** and local notifications requested only after an explicit user action; unscheduled plants stay unscheduled until the user chooses a preference.
-- **Experimental scanner with per-photo privacy**: analyze on the iPhone, or grant fresh consent before a reduced copy is sent to Plant.id/Kindwise through Supabase.
+- **Experimental scanner with per-photo privacy and review**: analyze on the iPhone, or grant fresh consent before a reduced copy is sent to Plant.id/Kindwise through Supabase. Results pass through a review step that shows the suggested identity, source, and confidence before the user names the specimen and optionally confirms a watering preference.
 - **PKCE password recovery** without bearer tokens in URLs, with the verifier stored in Keychain and protection against cross-scene races.
 - **Data controls** to export data, clear the garden, opt out of analytics, and permanently delete the account.
 - **English + Spanish**, App Intents, and native routes for the garden, scanner, and watering.
@@ -58,9 +58,9 @@ Its cloud configuration is intentionally blank. The published demo does not crea
 | Surface | Status | What it means |
 |---|---|---|
 | Web demo | Available | Stores data only in the current browser and uses the local matcher. |
-| iOS app 1.0 (build 1) | Feature candidate | The full 194/194 XCTest suite passes under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1; external device smoke remains. |
+| iOS app 1.0 (build 1) | Feature candidate | The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Exact-PR-head CI confirmation remains pending. |
 | Supabase | Local contract verified | Auth, RLS, ACLs, idempotent quota, replay, sync, deletion, and the four-migration PostgreSQL 16 upgrade path pass locally. The three incremental migrations and matching Edge update are not deployed. |
-| Physical iPhone | Launch verified | Opens with a Personal Team; camera, photos, notifications, and the authenticated scanner still need end-to-end testing. |
+| Physical iPhone | Launch verified | Opens with a Personal Team; camera, photos, notifications, and the authenticated scan → review → Garden handoff still need end-to-end testing. |
 | TestFlight / App Store | Externally blocked | Requires paid Apple Developer membership, `DEVELOPMENT_TEAM`, distribution signing, and App Store Connect. |
 
 ## Known limitations
@@ -70,7 +70,7 @@ Its cloud configuration is intentionally blank. The published demo does not crea
 - Disease and treatment content in the web demo still requires botanical review before it can be presented as validated guidance.
 - The ordered four-migration PostgreSQL 16 upgrade harness passes. The deletion-preserving, arbitrary-plant, and idempotent-scan migrations plus the matching Edge Function update remain undeployed.
 - The PKCE client is implemented. A stable HTTPS Site URL, redirect allowlist, custom SMTP, and a real email → app → new-password test are still required.
-- Authenticated deployment canaries, production smoke tests with two sessions, and complete physical-device tests for camera, photos, consent, offline behavior, and notification delivery remain outstanding.
+- Authenticated deployment canaries, production smoke tests with two sessions, and complete physical-device tests for camera, photos, consent, local/cloud analysis, the scan → review → Garden handoff, offline behavior, and notification delivery remain outstanding.
 - The icon passes automated checks; final screenshots and App Store visual review are still pending.
 
 ## Architecture
@@ -145,7 +145,7 @@ ROCIO_SECURITY_DATABASE_URL='<disposable-postgres-16>' \
 
 Current local evidence from July 24, 2026:
 
-- **194/194 XCTest cases** under both unsigned-CI and locally signed simulator contracts on iOS 26.3.1 for the current arbitrary-plant implementation.
+- **XCTest: 200/200 cases under both the unsigned CI-equivalent and locally signed simulator contracts** on iPhone 17 Pro with iOS 26.3.1 for the current scanner-review worktree. Exact-PR-head CI confirmation remains pending.
 - **Edge runtime: 28/28** executable handler tests, including idempotent recovery and failure paths.
 - **Release gate: 12/12** on the current feature-candidate state.
 - **Static cloud/security: 50/50** on the current implementation.
@@ -180,7 +180,7 @@ support.html          Public support center
 
 ## Path to distribution
 
-1. Review and merge the stacked pull request only after its release gates and CI are green.
+1. Review and merge consolidated PR #21 only after its exact-head release gates and CI are green.
 2. Review `supabase db push --linked --dry-run`, then apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order before deploying the matching Edge Function.
 3. Configure the HTTPS Site URL, exact redirect allowlist, and SMTP; test email → PKCE → new password → login.
 4. Complete real-device and two-session smoke tests for scanning, manual entry, offline persistence, sync, deletion, camera, photos, and notifications.

@@ -1,6 +1,6 @@
 # Rocio App Store Visual Release Checklist
 
-Date: 2026-07-05
+Date: 2026-07-24
 
 Use this before TestFlight screenshots and before App Review submission.
 
@@ -11,8 +11,10 @@ Capture five iPhone screenshots from the native app:
 1. Catalog: filters visible, real flower photos, one flower already marked in the garden.
 2. Garden: summary card, at least two saved flowers, one watering action visible.
 3. Calendar: weekly watering schedule with saved plants.
-4. Scanner: selected flower image, confidence band, candidates, experimental copy.
+4. Scanner: selected flower image, confidence band, candidates, and experimental copy, or the Review plant sheet with identity/source, confidence, specimen name, optional care, and Save to Garden.
 5. Settings: reminders, local privacy copy, export data, delete local data.
+
+Whichever scanner state is not selected for the five-image App Store set must still be retained as release-QA evidence. Record the result screen and the Review plant sheet from the exact Release candidate, followed by Garden after a successful save.
 
 Current real-build documentation evidence, captured from the running iPhone 17 simulator on iOS 26.3 on 2026-07-22:
 
@@ -22,7 +24,7 @@ Current real-build documentation evidence, captured from the running iPhone 17 s
 - `docs/screenshots/ios/scanner.png`
 - `docs/screenshots/ios/settings.png`
 
-These are raw app screenshots, not mockups. Re-capture the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
+These are raw app screenshots, not mockups. The current scanner screenshot predates the Review plant sheet. Re-capture both scanner states and the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
 
 ## Visual Quality Gate
 
