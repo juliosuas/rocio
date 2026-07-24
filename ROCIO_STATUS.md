@@ -37,7 +37,7 @@ Current evidence for the arbitrary-plant branch:
 - **Strict local classifier passes 12/12**.
 - **Unsigned App Store audit passes 20/20** with `unsignedReady=true`.
 - **Unsigned Release build passes** with signing disabled.
-- **Six real simulator screenshots** are in `docs/screenshots/ios/` and are not mockups. Five document the bundled catalog, garden, calendar, scanner, and settings surfaces; the July 23 manual Swiss cheese plant capture is real Debug-build evidence of the newer arbitrary-plant flow. None is final App Store art.
+- **Seven real simulator screenshots** are in `docs/screenshots/ios/` and are not mockups. Five document the bundled catalog, garden, calendar, scanner, and settings surfaces; the July 23 manual Swiss cheese plant capture covers arbitrary entry; and the July 24 Review plant sheet from feature commit `0a65394` covers the scanner review gate. None is final App Store art.
 
 `signedReady=false` remains the correct App Store result until a paid distribution team is configured.
 

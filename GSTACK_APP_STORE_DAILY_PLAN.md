@@ -102,7 +102,7 @@ Evidence recorded from the current work:
 - **Strict local classifier passes 12/12**.
 - **Unsigned App Store audit passes 20/20** with `unsignedReady=true`.
 - **Unsigned Release build passes** with signing disabled.
-- **Six real iOS screenshots** are featured in `docs/screenshots/ios/`. Five show the bundled catalog, garden, calendar, scanner, and settings from a running Debug build; the July 23 manual Swiss cheese plant capture is real Debug-build evidence of the newer arbitrary-plant flow. None is final App Store art.
+- **Seven real iOS screenshots** are featured in `docs/screenshots/ios/`. Five show the bundled catalog, garden, calendar, scanner, and settings from a running Debug build; the July 23 manual Swiss cheese plant capture covers arbitrary entry; and the July 24 Review plant sheet from feature commit `0a65394` covers the scanner review gate. None is final App Store art.
 
 ## Fastest Remaining Execution Path
 

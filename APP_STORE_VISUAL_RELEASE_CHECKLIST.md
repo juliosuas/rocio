@@ -16,14 +16,18 @@ Capture five iPhone screenshots from the native app:
 
 Whichever scanner state is not selected for the five-image App Store set must still be retained as release-QA evidence. Record the result screen and the Review plant sheet from the exact Release candidate, followed by Garden after a successful save.
 
-Current real-build documentation evidence, captured from the running iPhone 17 simulator on iOS 26.3 on 2026-07-22:
+Current real-build documentation evidence:
 
-- `docs/screenshots/ios/catalog.png`
-- `docs/screenshots/ios/garden.png`
-- `docs/screenshots/ios/calendar.png`
-- `docs/screenshots/ios/scanner.png`
-- `docs/screenshots/ios/scanner-review.png`
-- `docs/screenshots/ios/settings.png`
+- Captured from the running iPhone 17 simulator on iOS 26.3.1 on 2026-07-22:
+  - `docs/screenshots/ios/catalog.png`
+  - `docs/screenshots/ios/garden.png`
+  - `docs/screenshots/ios/calendar.png`
+  - `docs/screenshots/ios/scanner.png`
+  - `docs/screenshots/ios/settings.png`
+- Captured from the arbitrary-plant Debug branch on 2026-07-23:
+  - `docs/screenshots/ios/manual-plant.png`
+- Captured from feature commit `0a65394` on 2026-07-24:
+  - `docs/screenshots/ios/scanner-review.png`
 
 These are raw app screenshots, not mockups. The scanner result image predates the Review plant sheet; the separate review-sheet evidence was captured from feature head `0a65394` on 2026-07-24. Re-capture both scanner states and the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
 
