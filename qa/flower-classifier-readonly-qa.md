@@ -101,8 +101,8 @@ Photo asset audit:
 Commercial claim audit:
 
 - `node qa/commercial-claim-audit.mjs` exits `0`.
-- Flower detail disease treatments must render behind `PENDING verificación botánica`.
-- Doctor symptom solutions must render behind `PENDING verificación botánica`.
+- Flower detail disease treatments must render behind `PENDING botanical review`.
+- Doctor symptom solutions must render behind `PENDING botanical review`.
 - The scanner must keep local matching copy honest when Plant.id/Supabase is unavailable.
 - README recognition copy must not present Supabase/Plant.id as currently active.
 - The browser build must not include Plant.id secrets.
@@ -113,7 +113,7 @@ Botanical content audit:
 - 15/15 catalog flowers have at least two complete disease rows.
 - Current catalog disease rows: 36.
 - Current Plant Doctor symptom rows: 5 symptom groups with 23 complete causes.
-- Flower disease and Doctor symptom solutions remain rendered behind `PENDING verificación botánica` plus professional/orientation caveats.
+- Flower disease and Doctor symptom solutions remain rendered behind `PENDING botanical review` plus professional/orientation caveats.
 
 App Store static readiness audit:
 

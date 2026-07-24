@@ -3,6 +3,7 @@ import SwiftUI
 struct FlowerDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var gardenStore: GardenStore
+    @EnvironmentObject private var router: AppRouter
     let flower: Flower
 
     private var inGarden: Bool {
@@ -87,23 +88,41 @@ struct FlowerDetailView: View {
             }
             .safeAreaInset(edge: .bottom) {
                 Button {
-                    gardenStore.add(flower)
-                    dismiss()
+                    FirstCareFlow.addToGarden(
+                        flower,
+                        gardenStore: gardenStore,
+                        router: router,
+                        dismiss: dismiss.callAsFunction
+                    )
                 } label: {
                     Label(
                         inGarden
-                            ? L10n.text("detail.in.garden", fallback: "Already in My Garden")
+                            ? L10n.text("detail.add.another", fallback: "Add another to My Garden")
                             : L10n.text("detail.add.garden", fallback: "Add to My Garden"),
-                        systemImage: inGarden ? "checkmark" : "plus"
+                        systemImage: "plus"
                     )
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(RocioPrimaryButtonStyle())
-                .disabled(inGarden)
+                .disabled(!gardenStore.canAcceptLocalChanges)
                 .padding()
                 .background(.bar)
             }
         }
+    }
+}
+
+@MainActor
+enum FirstCareFlow {
+    static func addToGarden(
+        _ flower: Flower,
+        gardenStore: GardenStore,
+        router: AppRouter,
+        dismiss: () -> Void
+    ) {
+        guard gardenStore.add(flower) else { return }
+        dismiss()
+        router.selectedTab = .garden
     }
 }
 

@@ -5,6 +5,9 @@ struct CareCalendarView: View {
 
     var body: some View {
         let schedule = gardenStore.wateringSchedule()
+        let unscheduledPlants = gardenStore.plants.filter {
+            $0.resolvedWateringIntervalDays == nil
+        }
 
         NavigationStack {
             ScrollView {
@@ -20,6 +23,18 @@ struct CareCalendarView: View {
                             plants: schedule.overduePlants,
                             gardenStore: gardenStore,
                             badgeTint: .rocioRose
+                        )
+                    }
+
+                    if !unscheduledPlants.isEmpty {
+                        CalendarDaySection(
+                            title: L10n.text(
+                                "calendar.unscheduled",
+                                fallback: "Care schedule not set"
+                            ),
+                            plants: unscheduledPlants,
+                            gardenStore: gardenStore,
+                            badgeTint: .rocioAmber
                         )
                     }
 
@@ -105,33 +120,48 @@ private struct CalendarDaySection: View {
                     .padding(.vertical, 7)
             } else {
                 ForEach(plants) { plant in
-                    if let flower = gardenStore.flower(for: plant) {
-                        HStack(spacing: 12) {
-                            FlowerImage(flower: flower, size: 52)
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text(plant.nickname)
-                                    .font(.headline)
-                                Text(L10n.format("calendar.water.amount", fallback: "%d ml of water", flower.waterMl))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Button {
-                                gardenStore.water(plant)
-                            } label: {
-                                Image(systemName: "drop.fill")
-                                    .frame(width: 38, height: 38)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .tint(Color.rocioTeal)
-                            .accessibilityLabel(L10n.text("action.water", fallback: "Water"))
+                    HStack(spacing: 12) {
+                        GardenPlantArtwork(flower: gardenStore.flower(for: plant), size: 52)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(plant.displayName)
+                                .font(.headline)
+                            Text(wateringDetail(for: plant))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
-                        .padding(12)
-                        .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
+                        Spacer()
+                        Button {
+                            gardenStore.water(plant)
+                        } label: {
+                            Image(systemName: "drop.fill")
+                                .frame(width: 38, height: 38)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.rocioTeal)
+                        .accessibilityLabel(L10n.text("action.water", fallback: "Water"))
                     }
+                    .padding(12)
+                    .background(Color.rocioSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Color.rocioLine))
                 }
             }
+        }
+    }
+
+    private func wateringDetail(for plant: GardenPlant) -> String {
+        if let amount = plant.careProfile.waterAmountMl {
+            return L10n.format("calendar.water.amount", fallback: "%d ml of water", amount)
+        }
+
+        switch plant.careProfile.wateringPreference {
+        case .dry:
+            return L10n.text("calendar.preference.dry", fallback: "Prefers drier soil")
+        case .medium:
+            return L10n.text("calendar.preference.medium", fallback: "Prefers moderately moist soil")
+        case .wet:
+            return L10n.text("calendar.preference.wet", fallback: "Prefers moist soil")
+        case nil:
+            return L10n.text("calendar.water.not_set", fallback: "Water amount not set")
         }
     }
 }

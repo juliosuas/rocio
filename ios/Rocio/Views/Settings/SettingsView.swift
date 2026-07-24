@@ -7,6 +7,8 @@ struct SettingsView: View {
     @State private var notificationStatus = L10n.text("settings.notifications.not.requested", fallback: "Not requested")
     @State private var showingResetConfirmation = false
     @State private var showingAccountDeletion = false
+    @State private var dataResetStatus: GardenDataResetStatus?
+    @State private var isResettingData = false
 
     private let notificationScheduler = WateringNotificationScheduler()
     private let localDataResetter = LocalDataResetter()
@@ -76,6 +78,23 @@ struct SettingsView: View {
                     Button(L10n.text("settings.delete", fallback: "Delete local data"), role: .destructive) {
                         showingResetConfirmation = true
                     }
+                    .disabled(isResettingData)
+                    if let dataResetStatus {
+                        Label(dataResetStatus.message, systemImage: dataResetStatus.systemImage)
+                            .font(.footnote)
+                            .foregroundStyle(dataResetStatus.tint)
+                        if dataResetStatus == .cloudPending {
+                            Button {
+                                Task { await retryPendingGardenDeletion() }
+                            } label: {
+                                Label(
+                                    L10n.text("settings.delete.retry", fallback: "Retry cloud deletion"),
+                                    systemImage: "arrow.clockwise"
+                                )
+                            }
+                            .disabled(isResettingData)
+                        }
+                    }
                 }
 
                 Section(L10n.text("settings.about", fallback: "About")) {
@@ -92,19 +111,29 @@ struct SettingsView: View {
             .background(Color.rocioCanvas)
             .tint(Color.rocioLeafDeep)
             .navigationTitle(L10n.text("settings.title", fallback: "Settings"))
+            .onAppear {
+                if dataResetStatus == nil, sessionStore.hasPendingGardenReset {
+                    dataResetStatus = .cloudPending
+                }
+            }
             .onChange(of: analyticsEnabled) { _, enabled in
                 Task { await sessionStore.setAnalyticsEnabled(enabled) }
             }
+            .onChange(of: sessionStore.gardenSyncStatus) { _, status in
+                dataResetStatus = dataResetStatus?.reconciled(with: status)
+            }
             .confirmationDialog(L10n.text("settings.delete", fallback: "Delete local data"), isPresented: $showingResetConfirmation, titleVisibility: .visible) {
                 Button(L10n.text("settings.delete.confirm", fallback: "Delete garden"), role: .destructive) {
-                    localDataResetter.reset(gardenStore: gardenStore)
-                    notificationStatus = L10n.text("settings.delete.done", fallback: "Data and reminders deleted")
+                    Task { await resetGardenData() }
                 }
                 Button(L10n.text("action.cancel", fallback: "Cancel"), role: .cancel) {}
             } message: {
                 Text(sessionStore.isDemoMode
                      ? L10n.text("demo.delete.message", fallback: "This clears the in-memory demo garden and cancels pending reminders.")
-                     : L10n.text("settings.delete.message", fallback: "This removes your garden from this device and Rocio Cloud, and cancels pending reminders."))
+                     : L10n.text(
+                        "settings.delete.message",
+                        fallback: "This immediately clears your garden and reminders from this device. Rocio will then request deletion from the cloud."
+                     ))
             }
             .confirmationDialog(L10n.text("settings.account.delete", fallback: "Delete account"), isPresented: $showingAccountDeletion, titleVisibility: .visible) {
                 Button(L10n.text("settings.account.delete.confirm", fallback: "Permanently delete account"), role: .destructive) {
@@ -132,6 +161,34 @@ struct SettingsView: View {
         GardenExport.payload(plants: gardenStore.plants)
     }
 
+    @MainActor
+    private func resetGardenData() async {
+        guard !isResettingData else { return }
+        isResettingData = true
+        defer { isResettingData = false }
+
+        dataResetStatus = nil
+        if sessionStore.isDemoMode {
+            dataResetStatus = await localDataResetter.reset(gardenStore: gardenStore)
+            return
+        }
+
+        dataResetStatus = await localDataResetter.reset(
+            gardenStore: gardenStore,
+            waitForCloudConfirmation: { await sessionStore.waitForGardenSync() }
+        )
+    }
+
+    @MainActor
+    private func retryPendingGardenDeletion() async {
+        guard !isResettingData, dataResetStatus == .cloudPending else { return }
+        isResettingData = true
+        defer { isResettingData = false }
+
+        await sessionStore.refreshGarden(gardenStore: gardenStore)
+        dataResetStatus = dataResetStatus?.reconciled(with: sessionStore.gardenSyncStatus)
+    }
+
     @ViewBuilder
     private var signedInAccountRows: some View {
         if let email = sessionStore.session?.user.email {
@@ -151,6 +208,63 @@ struct SettingsView: View {
     }
 }
 
+enum GardenDataResetStatus: Equatable {
+    case localOnly
+    case cloudConfirmed
+    case cloudPending
+    case localPurgeFailed
+    case rejected
+
+    var message: String {
+        switch self {
+        case .localOnly:
+            L10n.text("settings.delete.done.local", fallback: "Garden and reminders deleted from this device.")
+        case .cloudConfirmed:
+            L10n.text(
+                "settings.delete.done.cloud",
+                fallback: "Garden deleted from this device and Rocio Cloud; local reminders canceled."
+            )
+        case .cloudPending:
+            L10n.text(
+                "settings.delete.done.pending",
+                fallback: "Deleted from this device; cloud deletion is pending. Reconnect, then retry."
+            )
+        case .localPurgeFailed:
+            L10n.text(
+                "settings.delete.local_purge_failed",
+                fallback: "Cloud deletion was accepted and reminders were canceled, but some local garden data could not be removed. Restart Rocio and use Delete local data again."
+            )
+        case .rejected:
+            L10n.text(
+                "settings.delete.rejected",
+                fallback: "Nothing was deleted. Rocio could not safely save the deletion request; retry after cloud sync recovers."
+            )
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .localOnly, .cloudConfirmed: "checkmark.circle.fill"
+        case .cloudPending: "icloud.slash"
+        case .localPurgeFailed, .rejected: "exclamationmark.triangle.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .localOnly, .cloudConfirmed: .rocioTeal
+        case .cloudPending, .localPurgeFailed, .rejected: .rocioAmber
+        }
+    }
+
+    func reconciled(with cloudStatus: GardenCloudSyncStatus) -> GardenDataResetStatus {
+        if self == .cloudPending, cloudStatus == .synced {
+            return .cloudConfirmed
+        }
+        return self
+    }
+}
+
 struct LocalDataResetter {
     private let cancelPendingNotifications: () -> Void
 
@@ -163,8 +277,20 @@ struct LocalDataResetter {
     }
 
     @MainActor
-    func reset(gardenStore: GardenStore) {
-        gardenStore.reset()
+    func reset(
+        gardenStore: GardenStore,
+        waitForCloudConfirmation: (() async -> Bool)? = nil
+    ) async -> GardenDataResetStatus {
+        let resetResult = gardenStore.reset()
+        guard resetResult != .rejected else { return .rejected }
         cancelPendingNotifications()
+        if resetResult == .acceptedLocalPurgeFailed {
+            if let waitForCloudConfirmation {
+                _ = await waitForCloudConfirmation()
+            }
+            return .localPurgeFailed
+        }
+        guard let waitForCloudConfirmation else { return .localOnly }
+        return await waitForCloudConfirmation() ? .cloudConfirmed : .cloudPending
     }
 }

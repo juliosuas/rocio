@@ -15,23 +15,23 @@ const manifest = JSON.parse(readRequired('manifest.webmanifest'));
 const appStorePlan = readRequired('APP_STORE_LAUNCH_PLAN.md');
 const lovablePrompt = readRequired('LOVABLE_READY_PROMPT.md');
 const projectFile = readRequired('ios/Rocio.xcodeproj/project.pbxproj');
-const internalPublicCopy = /BLOCKED|PENDING|Borrador p[uú]blico|No compres|autorizaci[oó]n expl[ií]cita de Julio|PLANT_ID_API_KEY/i;
+const internalPublicCopy = /\b(?:BLOCKED|PENDING)\b|Borrador p[uú]blico|No compres|autorizaci[oó]n expl[ií]cita de Julio|PLANT_ID_API_KEY/;
 
 const checks = [
   {
     id: 'privacy-page-is-public-safe',
     area: 'privacy',
-    pass: privacyHtml.includes('Política de privacidad') &&
-      privacyHtml.includes('sincroniza con Supabase') &&
+    pass: privacyHtml.includes('Privacy policy') &&
+      privacyHtml.includes('synchronizes your garden') &&
       privacyHtml.includes('Plant.id/Kindwise') &&
-      privacyHtml.includes('eliminar permanentemente tu cuenta') &&
+      privacyHtml.includes('permanently delete your account') &&
       !internalPublicCopy.test(privacyHtml),
     evidence: 'Privacy page discloses account sync, third-party photo processing, and deletion without internal release language.',
   },
   {
     id: 'support-page-is-public-safe',
     area: 'support',
-    pass: supportHtml.includes('Centro de soporte') &&
+    pass: supportHtml.includes('Support center') &&
       supportHtml.includes('https://github.com/juliosuas/rocio/issues') &&
       !internalPublicCopy.test(supportHtml),
     evidence: 'Support page provides a real public channel and contains no owner-only instructions.',

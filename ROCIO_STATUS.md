@@ -1,52 +1,83 @@
-# Rocío - Status Report
+# Rocío 1.0: Current Status
 
-## What Works (Real, Functional)
+Last updated: July 24, 2026
 
-- **Flower Catalog** — 15 flowers with botanical care data and local app-owned image assets (Rosa, Tulipán, Orquídea, Girasol, Lavanda, Gardenia, Jazmín, Hortensia, Lirio, Margarita, Clavel, Violeta, Geranio, Petunia, Cempasúchil).
-- **Mi Jardín** — Add/remove plants, track watering, set status, write notes. Persisted in localStorage and sorted by urgency.
-- **Watering Tracker** — Tap to water with animation, last-watered tracking, urgency dots, streak, and stats dashboard.
-- **Weekly Calendar** — Shows which plants need water by day; tasks have water buttons directly inside the calendar.
-- **Moon Phase Calendar** — Real Conway-style moon phase algorithm with gardening recommendations.
-- **Seasonal Tips** — 36 tips across all 12 months, culturally relevant for Mexico.
-- **Plant Doctor** — Symptom categories, pest profiles, home remedies, and treatments, now labeled as PENDING botanical verification before App Store/commercial claims.
-- **Composting Guide** — Green/brown guide, DIY fertilizers, vermicomposting.
-- **Watering Calculator** — Adjusts water amount by pot size, location, climate, and season.
-- **Dark Mode** — Full dark theme with persisted preference.
-- **Local Plant Identifier** — Camera/file-upload flow now uses the local flower matcher by default. Rocío resizes/compresses the flower image, compares it against the local flower catalog, shows uncertainty/top candidates, and avoids depending on the old Supabase project while it is unavailable.
-- **Scan History** — Saves recent scans locally.
-- **Local Notifications** — Requests notification permission when the first plant is added and can notify due/overdue watering reminders while the app is open.
-- **Share** — Native share API or clipboard fallback for plant info cards.
-- **Onboarding** — 3-step welcome flow for first-time visitors.
-- **Splash Screen** — Animated launch screen once per session.
+Implementation branch: `fsociaty/rocio-arbitrary-plants`
 
-## What Is Still Limited
+Verification target: the exact PR head after the scanner-review increment
 
-- **Plant.id needs a new/healthy Supabase deploy** — Real recognition requires restoring or replacing the old `rocio` Supabase project, deploying `identify-flower`, setting `PLANT_ID_API_KEY` as a Supabase Edge Function secret, and then re-enabling the public URL/key in `index.html`.
-- **Local matcher is fallback only** — It samples image colors and compares against hardcoded flower profiles when Plant.id/Supabase is unavailable. It is clearly labeled as uncertain and never presented as market-grade recognition.
-- **Only 15 catalog flowers are supported locally** — Unknown Plant.id species can be detected by the API but may not map to a local care card yet.
-- **Native cloud deployment pending** — The SwiftUI app implements required accounts, Keychain sessions, account-scoped Supabase garden sync, analytics opt-out, quotas, and account deletion. The web demo remains localStorage-only. Production still requires reactivating Supabase and deploying the migration/function.
-- **No Web Push Server** — Current notification support is local/app-open. True scheduled push reminders require backend push subscriptions.
-- **No Weather Integration** — Watering calculator still uses manual climate input.
-- **Disease/treatment evidence is not source-audited yet** — Existing symptom and treatment guidance is visible only as PENDING verification and must be checked against reliable horticultural sources before being sold as diagnosis or treatment advice.
-- **Photo assets pass the local App Store photo gate** — 15/15 catalog JPGs exist, all have attribution rows, none have pending license/source audit markers, all meet the local 800px minimum-dimension threshold, and every JPG is under the 1 MB payload cap. Keep attribution visible and re-run `node qa/photo-asset-audit.mjs --app-store-ready` before using screenshots or metadata.
-- **Commercial/App Store claims are guarded but not verified** — `qa/commercial-claim-audit.mjs` checks that disease/treatment content stays labeled as PENDING botanical verification, scanner and README copy stay honest about local matching, and no Plant.id secret is present in the browser build.
-- **Botanical content coverage is guarded, not medically verified** — `qa/botanical-content-audit.mjs` verifies that every catalog flower has complete disease rows and every Plant Doctor symptom cause has complete guidance while still rendering treatment text behind PENDING verification and caveats.
-- **App Store/Lovable static readiness is guarded locally** — `qa/appstore-static-readiness-audit.mjs` verifies local privacy/support drafts, iOS/PWA metadata, manifest identity, App Store owner-action blocks, and Lovable no-publish/no-secret constraints while still reporting `appStoreSubmissionReady: false`.
+Rocío is a locally verified iOS feature candidate, not a production release. The native arbitrary-plant implementation is complete enough for integration testing, but its matching Supabase migrations and Edge Function update have not been deployed. Rocío is not available through TestFlight or the App Store.
 
-## Top Next Steps to Make This Commercial
+## Native iOS Implementation
 
-### 1. Backend Push Notifications
+The native runtime is no longer limited to the bundled catalog:
 
-Add Web Push subscriptions plus a daily job that sends watering reminders even when Rocío has not opened the app.
+- **15 bundled editorial guides** remain available with attributed photography and curated care copy.
+- **Plant.id results retain their own identity** including source, stable provider identifier when supplied, common and scientific names, rank, locale, and capture freshness. Taxonomy and confidence are normalized in the scan response but are not yet stored as long-term garden fields.
+- **Manual plant entry** provides an offline fallback when a provider result is unavailable or the user does not want to upload a photo.
+- **Durable saved plants** keep a versioned identity and care snapshot instead of depending on a `FlowerCatalog` lookup.
+- **Optional user-confirmed care** supports dry, medium, or wet watering preferences and optional reminder schedules. Unknown plants do not receive invented milliliter or interval precision.
+- **Offline persistence** uses owner-bound, versioned primary and backup snapshots. Ownerless or mixed-ownership data fails closed, recoverable single-slot corruption is repaired from its valid peer, and unsafe replacement inputs are quarantined instead of being claimed by another account.
+- **Generic rendering** keeps non-catalog plants visible in Garden, Calendar, notifications, App Intents, export, watering, and deletion flows.
+- **Duplicate specimens** are supported. Two plants of the same species can keep independent nicknames, schedules, and watering state.
+- **Account synchronization contract** carries arbitrary identity and care fields through the same account isolation, RLS, delete-wins, reset, and purge boundaries used by bundled plants.
+- **Per-photo privacy** still offers on-device matching or fresh consent before a reduced image is sent through the authenticated Supabase proxy.
+- **Review-before-save scanner handoff** keeps the provider identity immutable, shows source and confidence, lets the user name the specimen and optionally confirm watering care, and routes to Garden only after persistence succeeds. Repeated confirmations create independent specimens.
+- **Idempotent paid scans** use one stable request UUID, atomically claim quota once, recover ambiguous Plant.id work through `custom_id`, and replay a bounded normalized result for seven days without storing raw photos or provider tokens.
 
-### 2. Expand Plant.id Result Coverage
+## Verification Evidence
 
-The Supabase proxy is now the intended architecture. Next: add generic care guidance for Plant.id species that are outside the 15-flower local catalog.
+Current evidence for the arbitrary-plant branch:
 
-### 3. Family Sharing
+- **XCTest passes 200/200 under both the unsigned CI-equivalent and locally signed simulator contracts** on iPhone 17 Pro with iOS 26.3.1 for the current scanner-review worktree. Exact-PR-head CI confirmation remains pending.
+- **Edge runtime tests pass 28/28**, including timeout, body-abort, idempotent recovery, replay, quota, deletion, and malformed-provider paths.
+- **Static cloud/security audit passes 50/50**.
+- **PostgreSQL 16 four-migration harness passes**, including ordered upgrade, RLS, ACLs, idempotent quota/replay lifecycle, tombstones, reset, purge, and rollback.
+- **Release gate passes 12/12**.
+- **Strict local classifier passes 12/12**.
+- **Unsigned App Store audit passes 20/20** with `unsignedReady=true`.
+- **Unsigned Release build passes** with signing disabled.
+- **Seven real simulator screenshots** are in `docs/screenshots/ios/` and are not mockups. Five document the bundled catalog, garden, calendar, scanner, and settings surfaces; the July 23 manual Swiss cheese plant capture covers arbitrary entry; and the July 24 Review plant sheet from feature commit `0a65394` covers the scanner review gate. None is final App Store art.
 
-Extend the implemented account sync with explicit shared-garden invitations and roles.
+`signedReady=false` remains the correct App Store result until a paid distribution team is configured.
+
+## Deployment and Release Work Remaining
+
+These items prevent a production-readiness claim:
+
+1. Review and merge consolidated PR #21 with Edge runtime tests and every repository gate green on the exact head.
+2. Review the final migration dry run, then apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order before deploying the matching Edge Function update.
+3. Complete a two-session authenticated smoke test covering add, edit, water, relaunch, sync, delete-wins, reset, purge, and account switching.
+4. Complete real-device tests for camera, photo picker, per-photo consent, local and cloud analysis, review cancellation, successful scan → review → Garden save, offline behavior, notification permission, scheduling, and delivery.
+5. Configure the stable HTTPS Site URL, exact Auth redirect allowlist, custom SMTP, and the complete email → app → new-password recovery path.
+6. Activate the paid Apple Developer Program, configure `DEVELOPMENT_TEAM`, create a distribution-signed archive, and upload it to TestFlight.
+7. Capture final English App Store screenshots from that exact Release archive and repeat a focused Spanish localization smoke.
+
+Production migration and Edge deployment are owner actions. They must not be run from an unreviewed feature branch.
+
+## Separate Web/PWA Demo
+
+The public `index.html` experience remains a zero-dependency local-data demo. It is not the native application and it does not exercise the new arbitrary-plant cloud contract.
+
+It currently provides:
+
+- a fixed 15-flower editorial catalog and local image matcher;
+- a browser-local garden, watering records, weekly and lunar calendars;
+- 36 seasonal tips, Plant Doctor, composting, and a watering calculator;
+- dark mode, onboarding, scan history, sharing, and browser-limited reminders;
+- export and deletion of data stored in the current browser.
+
+Its cloud configuration is intentionally blank. The web demo does not create accounts, synchronize with Supabase, call Plant.id, or install an iOS binary.
+
+## Product Boundaries
+
+- Identification is probabilistic and care guidance is assistive. Rocío does not promise perfect recognition or professional botanical diagnosis.
+- The 15 bundled guides are the only editorial care records and local matcher targets. Arbitrary native plants use saved identity, generic presentation, and user-confirmed care.
+- Disease and treatment content remains marked pending botanical verification and must not be presented as validated medical, toxicity, edibility, or treatment advice.
+- External plant images, remote encyclopedia content, family sharing, weather integration, StoreKit, and a Web Push server remain post-release extensions.
+
+The detailed implementation ledger and fastest remaining execution order are in [`GSTACK_APP_STORE_DAILY_PLAN.md`](GSTACK_APP_STORE_DAILY_PLAN.md).
 
 ---
 
-*Built with love for Rocío Calderón. A single index.html, zero dependencies, local-first plant identification, and a clear path from charming MVP to real plant-care product.*
+*Built with love for Rocío Calderón. The native SwiftUI app is the App Store product; the web demo remains a separate local-data preview.*

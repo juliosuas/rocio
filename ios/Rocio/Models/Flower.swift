@@ -1,6 +1,6 @@
 import Foundation
 
-struct Flower: Identifiable, Codable, Equatable {
+struct Flower: Identifiable, Codable, Equatable, Sendable {
     let id: String
     let emoji: String
     let imageName: String
@@ -81,7 +81,7 @@ struct Flower: Identifiable, Codable, Equatable {
     }
 }
 
-enum Sunlight: String, Codable, CaseIterable {
+enum Sunlight: String, Codable, CaseIterable, Sendable {
     case fullSun
     case partial
     case shade
@@ -95,7 +95,7 @@ enum Sunlight: String, Codable, CaseIterable {
     }
 }
 
-enum ToxicLevel: String, Codable {
+enum ToxicLevel: String, Codable, Sendable {
     case safe
     case caution
     case toxic
@@ -109,7 +109,7 @@ enum ToxicLevel: String, Codable {
     }
 }
 
-struct FlowerColorProfile: Codable, Equatable {
+struct FlowerColorProfile: Codable, Equatable, Sendable {
     let hueRanges: [ClosedRange<Double>]
     let saturation: ClosedRange<Double>
     let brightness: ClosedRange<Double>

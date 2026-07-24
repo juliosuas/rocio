@@ -1,50 +1,133 @@
-# Rocio iOS
+# Rocío iOS 1.0
 
-This is the native iOS track for Rocio. It is a SwiftUI app, not a thin WebView wrapper.
+Rocío's native SwiftUI client. It is not a WebView or a wrapper around the web demo.
 
-## What Is In This Cut
+## Release status
 
-- Native SwiftUI shell with Catalog, Garden, Calendar, Scanner, and Settings tabs.
-- Local flower catalog copied from the MVP.
-- Local garden persistence with `UserDefaults`.
-- Native local notification scheduling for watering reminders.
-- Native camera/photo scanner flow with an honest local color-based identifier.
-- App Intents for opening the garden, opening the scanner, and logging watering for saved plants.
-- Privacy manifest and camera/photo usage descriptions.
-- Shared Xcode scheme and GitHub Actions iOS build workflow.
+- `MARKETING_VERSION = 1.0`
+- `CURRENT_PROJECT_VERSION = 1`
+- Deployment target: iOS 17.0 with Swift 5.
+- The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Exact-PR-head CI confirmation remains pending.
+- Debug and unsigned Release compile with Xcode 26.3.
+- A Personal Team development build launches on a physical iPhone.
+- TestFlight remains blocked by paid membership, `DEVELOPMENT_TEAM`, distribution signing, and outstanding external smoke tests.
 
-## Local Build
+## Native surface
 
-Requires full Xcode, not only Command Line Tools.
+- Catalog, Garden, Calendar, Scanner, and Settings in SwiftUI.
+- Bilingual catalog of exactly 15 editorial flower guides with attributed local photography, plus arbitrary Plant.id results and manual plants that retain their own identity.
+- Supabase account, Keychain session, and per-user garden sync with owner-bound, versioned primary/backup snapshots, fail-closed owner checks, repair from a valid redundant copy, quarantine for unsafe replacements, and a durable mutation outbox.
+- Complete first-care flow: add a plant, return to the garden, enable a reminder, and confirm watering.
+- Local-notification permission requested only after an explicit tap.
+- Experimental scanner with off-main-thread image reduction, consent for every photo, an on-device option, an honest fallback, and a review-before-save handoff that preserves provider identity separately from the specimen nickname.
+- PKCE password recovery with the verifier in Keychain, bearer-free URLs, and cross-scene race handling.
+- App Intents to open the garden, open the scanner, and record watering.
+- Export, local reset, cloud deletion, analytics opt-out, sign-out, and permanent account deletion.
+- Demo mode isolated under `#if DEBUG`; it does not exist in Release.
+
+## Requirements
+
+- Full Xcode 26.3 installation.
+- A compatible iOS Simulator runtime.
+- A macOS version supported by Xcode 26.3.
+- For cloud behavior: the project's public Supabase URL and publishable key.
+
+Select Xcode:
 
 ```sh
 sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild -version
 ```
 
-Run tests:
+## Public Supabase configuration on each Mac
 
 ```sh
-xcodebuild -project ios/Rocio.xcodeproj -scheme Rocio -destination 'platform=iOS Simulator,name=iPhone 16' test
+cp ios/Config/Local.xcconfig.example ios/Config/Local.xcconfig
 ```
 
-## Debug Demo Without Supabase
+Add only the Supabase `sb_publishable_...` key to `Local.xcconfig`. The file is ignored by Git and supplies both Debug and Release.
 
-When a Debug build has no Supabase public configuration, launch the app and tap **Explore local demo**. The demo:
+Never add these values to the client:
 
-- seeds three in-memory plants so Garden and Calendar are immediately testable;
-- keeps garden edits out of persistent account data;
-- uses only the on-device scanner and never uploads a photo;
-- skips cloud analytics and synchronization;
-- restores the garden that existed before the demo when you exit from Settings.
+- `sb_secret_...`
+- A JWT with the `service_role` role
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `PLANT_ID_API_KEY`
 
-The demo entry point and session state are wrapped in `#if DEBUG` and are absent from Release builds.
+A Debug build without the key shows **Explore local demo**. A signed Release build fails early when public configuration is missing, preventing an incomplete cloud build from being uploaded.
+
+## Build
+
+From the repository root:
+
+```sh
+xcodebuild \
+  -project ios/Rocio.xcodeproj \
+  -scheme Rocio \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  build
+```
+
+Unsigned Release:
+
+```sh
+xcodebuild \
+  -project ios/Rocio.xcodeproj \
+  -scheme Rocio \
+  -configuration Release \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+## Tests
+
+```sh
+xcodebuild \
+  -project ios/Rocio.xcodeproj \
+  -scheme Rocio \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  test
+```
+
+The suite covers authentication, PKCE, refresh-token rotation, account isolation, arbitrary Plant.id and manual plants, exact catalog-care matches, versioned snapshot recovery, durable outbox acceptance, idempotent scan retries, sync/epoch/tombstones, first care, notifications, scanner behavior, scanner review-to-Garden routing, conservative care overrides, duplicate scan specimens, failed-save behavior, image reduction, routing, and persistence.
+
+Run the additional gates from the repository root:
+
+```sh
+node qa/release-gate.mjs
+node qa/cloud-ai-security-audit.mjs
+node qa/ios-app-store-readiness-audit.mjs
+```
+
+## Offline and failure behavior
+
+- A valid session and the local garden appear without waiting for the cloud handshake.
+- Pending changes are retained and retried; the UI does not claim successful sync before remote confirmation.
+- Sign-out, account changes, and recovery invalidate earlier tasks before they can publish stale state.
+- Deleted plants use tombstones so they do not reappear from another device.
+- If Plant.id or Supabase fails, the scanner returns to the local matcher and keeps uncertainty visible.
+
+## Debug demo without Supabase
+
+Tap **Explore local demo**. Demo mode:
+
+- creates three temporary plants;
+- lets you explore Garden, Calendar, and Scanner;
+- never uploads photos or runs cloud analytics;
+- never writes over an account's garden; and
+- restores the previous data when you exit through Settings.
 
 ## Before TestFlight
 
-- Set `DEVELOPMENT_TEAM` in the Rocio target.
-- Confirm bundle id `com.juliosuas.rocio` in Apple Developer/App Store Connect.
-- Replace the provisional icon with final App Store artwork.
-- Capture iPhone screenshots from a real simulator/device.
-- Publish privacy policy and support URL.
-- Archive from Xcode Organizer and upload to App Store Connect.
+1. Activate the Apple Developer Program and configure `DEVELOPMENT_TEAM`.
+2. Confirm bundle ID `com.juliosuas.rocio` in Apple Developer and App Store Connect.
+3. Verify that the signed Release build contains the correct publishable key.
+4. Run `supabase db push --linked --dry-run` and review the expected pending migrations.
+5. Apply `20260721000100_preserve_garden_deletions.sql`, then `20260722000100_support_arbitrary_plants.sql`, then `20260723000100_idempotent_scan_requests.sql`, and only then deploy the matching `identify-flower` Edge Function. All three incremental migrations and the Edge update remain undeployed.
+6. Allowlist `com.juliosuas.rocio://auth/recovery`, then configure the HTTPS Site URL and SMTP.
+7. Test real email recovery and synchronization with two sessions.
+8. Test camera, photo picker, and notification delivery on a physical iPhone.
+9. Archive through Xcode Organizer, upload to TestFlight, and capture final screenshots.
+
+See [`../APP_STORE_RELEASE_CHECKLIST.md`](../APP_STORE_RELEASE_CHECKLIST.md) for the complete gate and [`../DESIGN.md`](../DESIGN.md) for visual rules.

@@ -51,6 +51,7 @@
 		01000000000000000000002A /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002C /* Localization.swift */; };
 		01000000000000000000002B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002D /* Localizable.xcstrings */; };
 		01000000000000000000002C /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002E /* AppShortcuts.xcstrings */; };
+		010000000000000000000034 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000044 /* InfoPlist.xcstrings */; };
 		01000000000000000000002D /* BackendConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02000000000000000000002F /* BackendConfiguration.swift */; };
 		01000000000000000000002E /* KeychainSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000030 /* KeychainSessionStore.swift */; };
 		01000000000000000000002F /* RocioBackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020000000000000000000031 /* RocioBackendClient.swift */; };
@@ -124,6 +125,11 @@
 		020000000000000000000033 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		020000000000000000000034 /* CloudFoundationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudFoundationTests.swift; sourceTree = "<group>"; };
 		020000000000000000000035 /* ScannerAnalysisCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerAnalysisCoordinatorTests.swift; sourceTree = "<group>"; };
+		020000000000000000000040 /* Rocio.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Rocio.xcconfig; sourceTree = "<group>"; };
+		020000000000000000000041 /* Local.xcconfig.example */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Local.xcconfig.example; sourceTree = "<group>"; };
+		020000000000000000000042 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		020000000000000000000043 /* validate-supabase-client-key.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "validate-supabase-client-key.sh"; sourceTree = "<group>"; };
+		020000000000000000000044 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -147,6 +153,8 @@
 		070000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
+				070000000000000000000020 /* Config */,
+				070000000000000000000021 /* Scripts */,
 				070000000000000000000002 /* Rocio */,
 				07000000000000000000000F /* RocioTests */,
 				070000000000000000000010 /* Products */,
@@ -168,6 +176,23 @@
 				07000000000000000000000D /* Resources */,
 			);
 			path = Rocio;
+			sourceTree = "<group>";
+		};
+		070000000000000000000020 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				020000000000000000000040 /* Rocio.xcconfig */,
+				020000000000000000000041 /* Local.xcconfig.example */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		070000000000000000000021 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				020000000000000000000043 /* validate-supabase-client-key.sh */,
+			);
+			path = Scripts;
 			sourceTree = "<group>";
 		};
 		070000000000000000000003 /* Models */ = {isa = PBXGroup; children = (020000000000000000000003 /* Flower.swift */, 020000000000000000000004 /* GardenPlant.swift */); path = Models; sourceTree = "<group>"; };
@@ -197,10 +222,12 @@
 		07000000000000000000000D /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				020000000000000000000042 /* Info.plist */,
 				020000000000000000000016 /* Assets.xcassets */,
 				020000000000000000000017 /* PrivacyInfo.xcprivacy */,
 				02000000000000000000002D /* Localizable.xcstrings */,
 				02000000000000000000002E /* AppShortcuts.xcstrings */,
+				020000000000000000000044 /* InfoPlist.xcstrings */,
 				070000000000000000000012 /* Flowers */,
 			);
 			path = Resources;
@@ -239,6 +266,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 090000000000000000000003 /* Build configuration list for PBXNativeTarget "Rocio" */;
 			buildPhases = (
+				0C0000000000000000000040 /* Validate Supabase Client Key */,
 				080000000000000000000001 /* Sources */,
 				060000000000000000000001 /* Frameworks */,
 				080000000000000000000002 /* Resources */,
@@ -318,6 +346,7 @@
 				010000000000000000000017 /* PrivacyInfo.xcprivacy in Resources */,
 				01000000000000000000002B /* Localizable.xcstrings in Resources */,
 				01000000000000000000002C /* AppShortcuts.xcstrings in Resources */,
+				010000000000000000000034 /* InfoPlist.xcstrings in Resources */,
 				010000000000000000000018 /* cempasuchil.jpg in Resources */,
 				010000000000000000000019 /* clavel.jpg in Resources */,
 				01000000000000000000001A /* gardenia.jpg in Resources */,
@@ -344,6 +373,30 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0C0000000000000000000040 /* Validate Supabase Client Key */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/Scripts/validate-supabase-client-key.sh",
+			);
+			name = "Validate Supabase Client Key";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/sh \"${SRCROOT}/Scripts/validate-supabase-client-key.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		080000000000000000000001 /* Sources */ = {
@@ -520,6 +573,7 @@
 		};
 		0B0000000000000000000003 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 020000000000000000000040 /* Rocio.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -528,22 +582,12 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rocio;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Rocio usa la camara para tomar fotos de flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Rocio usa las fotos que eliges para identificar flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.";
-				INFOPLIST_KEY_ROCIOSupabaseAnonKey = "$(ROCIO_SUPABASE_ANON_KEY)";
-				INFOPLIST_KEY_ROCIOSupabaseURL = "$(ROCIO_SUPABASE_URL)";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rocio/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.juliosuas.rocio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				ROCIO_SUPABASE_ANON_KEY = "";
 				ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -553,6 +597,7 @@
 		};
 		0B0000000000000000000004 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 020000000000000000000040 /* Rocio.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
@@ -561,22 +606,12 @@
 				DEVELOPMENT_ASSET_PATHS = "";
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = Rocio;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Rocio usa la camara para tomar fotos de flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Rocio usa las fotos que eliges para identificar flores. Con tu permiso, envia una copia comprimida a Plant.id mediante Rocio Cloud.";
-				INFOPLIST_KEY_ROCIOSupabaseAnonKey = "$(ROCIO_SUPABASE_ANON_KEY)";
-				INFOPLIST_KEY_ROCIOSupabaseURL = "$(ROCIO_SUPABASE_URL)";
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Rocio/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.juliosuas.rocio;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				ROCIO_SUPABASE_ANON_KEY = "";
 				ROCIO_SUPABASE_URL = "https://gnumzynfewmurvykopxq.supabase.co";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;

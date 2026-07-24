@@ -4,7 +4,7 @@ Date: 2026-07-04
 
 ## Positioning
 
-Rocio: gentle flower care, without the fuss. / Cuida tus flores sin complicarte.
+Rocio: gentle flower care, without the fuss.
 
 Rocio is not trying to out-claim large AI plant apps. The v1 angle is trust: bilingual English/Spanish, flower-focused, practical, synchronized across devices, and honest about uncertainty.
 
@@ -23,22 +23,22 @@ Benchmark: Planta is the primary commercial reference because it monetizes care 
 ## Launch Audience
 
 - English- and Spanish-speaking people caring for flowers at home, with initial cultural context for Mexico/LatAm.
-- Beginners who want simple riego/cuidado guidance.
+- Beginners who want simple watering and care guidance.
 - Users skeptical of aggressive AI paywalls.
 - Friends/family/TestFlight testers first, then App Store.
 
 ## Video Ideas
 
-1. Como no matar tu lavanda.
-2. Cada cuanto regar una rosa en maceta.
-3. Flores para balcon con mucho sol.
-4. Flores para sombra.
-5. Scanner honesto: candidatos, no magia.
-6. Crea tu jardin en Rocio en 30 segundos.
-7. Tu jardín sincronizado y recordatorios de riego.
-8. Que hacer si tu geranio se ve triste.
-9. Flores seguras y toxicas para mascotas.
-10. Cómo Rocio pide permiso antes de usar Plant.id.
+1. How to keep your lavender alive.
+2. How often to water a potted rose.
+3. Flowers for a sunny balcony.
+4. Flowers for shade.
+5. An honest scanner: candidates, not magic.
+6. Create your Rocio garden in 30 seconds.
+7. Your synchronized garden and watering reminders.
+8. What to do when your geranium looks unhappy.
+9. Pet-safe and pet-toxic flowers.
+10. How Rocio asks before using Plant.id.
 
 ## First 30 Days
 
@@ -65,8 +65,8 @@ No external payment links inside the app unless a future legal/storefront strate
 
 ## Screenshot Story
 
-1. "Elige tus flores": filtered catalog with real photos.
-2. "Tu jardín sincronizado": garden summary and watering action.
-3. "Riega a tiempo": care calendar.
-4. "Scanner honesto": candidates and confidence band.
-5. "Tus datos son tuyos": export, analytics opt-out, and account deletion in Settings.
+1. "Choose your plants": filtered catalog with real photos.
+2. "Your synchronized garden": garden summary and watering action.
+3. "Water on time": care calendar.
+4. "An honest scanner": candidates and confidence band.
+5. "Your data is yours": export, analytics opt-out, and account deletion in Settings.

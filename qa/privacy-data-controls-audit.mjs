@@ -15,10 +15,14 @@ const checks = [
   ['clear local data flow exists', indexHtml.includes('function clearLocalUserData()')],
   ['garden key is centralized', indexHtml.includes("const ROCIO_GARDEN_KEY = 'rocio_garden'")],
   ['scan history key is centralized', indexHtml.includes("const ROCIO_SCAN_HISTORY_KEY = 'rocio_scan_history'")],
+  ['demo seeding is one-time', indexHtml.includes("const ROCIO_DEMO_SEEDED_KEY = 'rocio_demo_seeded_v1'") && indexHtml.includes("if (garden.length > 0) {")],
   ['legacy notification key is cleared with user data', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LEGACY_KEY)')],
   ['local-day notification key is cleared with user data', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_LAST_NOTIFICATION_LOCAL_DAY_KEY)')],
   ['garden data is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_GARDEN_KEY)')],
   ['scan history data is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_SCAN_HISTORY_KEY)')],
+  ['theme preference is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_THEME_KEY)')],
+  ['onboarding preference is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_ONBOARDED_KEY)')],
+  ['legacy flower cache is removed explicitly', indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHE_KEY)') && indexHtml.includes('safeStorageRemove(rocioLocalStorage, ROCIO_FLOWERS_CACHED_AT_KEY)')],
   ['launch plan tracks export/delete controls', /export a local JSON copy and delete garden data plus scan history/i.test(launchPlan)]
 ];
 

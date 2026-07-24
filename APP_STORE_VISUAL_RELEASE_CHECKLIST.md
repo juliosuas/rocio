@@ -1,6 +1,6 @@
 # Rocio App Store Visual Release Checklist
 
-Date: 2026-07-05
+Date: 2026-07-24
 
 Use this before TestFlight screenshots and before App Review submission.
 
@@ -8,11 +8,28 @@ Use this before TestFlight screenshots and before App Review submission.
 
 Capture five iPhone screenshots from the native app:
 
-1. Catalogo: filters visible, real flower photos, one flower already marked in garden.
-2. Mi Jardin: summary card, at least two saved flowers, one watering action visible.
-3. Calendario: weekly watering schedule with saved plants.
-4. Scanner: selected flower image, confidence band, candidates, experimental copy.
-5. Ajustes: reminders, local privacy copy, export data, delete local data.
+1. Catalog: filters visible, real flower photos, one flower already marked in the garden.
+2. Garden: summary card, at least two saved flowers, one watering action visible.
+3. Calendar: weekly watering schedule with saved plants.
+4. Scanner: selected flower image, confidence band, candidates, and experimental copy, or the Review plant sheet with identity/source, confidence, specimen name, optional care, and Save to Garden.
+5. Settings: reminders, local privacy copy, export data, delete local data.
+
+Whichever scanner state is not selected for the five-image App Store set must still be retained as release-QA evidence. Record the result screen and the Review plant sheet from the exact Release candidate, followed by Garden after a successful save.
+
+Current real-build documentation evidence:
+
+- Captured from the running iPhone 17 simulator on iOS 26.3.1 on 2026-07-22:
+  - `docs/screenshots/ios/catalog.png`
+  - `docs/screenshots/ios/garden.png`
+  - `docs/screenshots/ios/calendar.png`
+  - `docs/screenshots/ios/scanner.png`
+  - `docs/screenshots/ios/settings.png`
+- Captured from the arbitrary-plant Debug branch on 2026-07-23:
+  - `docs/screenshots/ios/manual-plant.png`
+- Captured from feature commit `0a65394` on 2026-07-24:
+  - `docs/screenshots/ios/scanner-review.png`
+
+These are raw app screenshots, not mockups. The scanner result image predates the Review plant sheet; the separate review-sheet evidence was captured from feature head `0a65394` on 2026-07-24. Re-capture both scanner states and the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
 
 ## Visual Quality Gate
 
@@ -33,5 +50,5 @@ Capture five iPhone screenshots from the native app:
 ## Copy Gate
 
 - Capture the primary App Store screenshot set in English, then verify the Spanish localized set for the same layouts.
-- Avoid "AI precisa", "diagnostico", "garantizado", or "identificacion perfecta".
-- Prefer "candidatos", "scanner experimental", "jardín sincronizado", "cuenta segura", and "recordatorios locales".
+- Avoid "precise AI", "diagnosis", "guaranteed", or "perfect identification".
+- Prefer "candidates", "experimental scanner", "synchronized garden", "secure account", and "local reminders".

@@ -1,11 +1,11 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Identify a flower in ${applicationName}": {
+    "Identify a plant in ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Identify a flower in ${applicationName}" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Identificar una flor en ${applicationName}" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Identify a plant in ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Identificar una planta en ${applicationName}" } }
       }
     },
     "Log watering in ${applicationName}": {
@@ -22,11 +22,11 @@
         "es": { "stringUnit": { "state": "translated", "value": "Abrir mi jardín en ${applicationName}" } }
       }
     },
-    "Scan a flower with ${applicationName}": {
+    "Scan a plant with ${applicationName}": {
       "extractionState": "manual",
       "localizations": {
-        "en": { "stringUnit": { "state": "translated", "value": "Scan a flower with ${applicationName}" } },
-        "es": { "stringUnit": { "state": "translated", "value": "Escanear una flor con ${applicationName}" } }
+        "en": { "stringUnit": { "state": "translated", "value": "Scan a plant with ${applicationName}" } },
+        "es": { "stringUnit": { "state": "translated", "value": "Escanear una planta con ${applicationName}" } }
       }
     },
     "Show my garden in ${applicationName}": {

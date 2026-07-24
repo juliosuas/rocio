@@ -2,3 +2,6 @@
 .DS_Store
 
 supabase/.temp/
+
+# Per-Mac public Supabase configuration. Never commit this file.
+ios/Config/Local.xcconfig

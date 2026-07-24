@@ -7,12 +7,24 @@ struct GardenPlantEntity: AppEntity {
 
     let id: String
     let name: String
-    let flowerName: String
+    let plantName: String
+
+    init(plant: GardenPlant) {
+        id = plant.id.uuidString
+        name = plant.displayName
+        plantName = plant.identity.scientificName ?? plant.identity.commonName
+    }
+
+    init(id: String, name: String, plantName: String) {
+        self.id = id
+        self.name = name
+        self.plantName = plantName
+    }
 
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(
             title: "\(name)",
-            subtitle: "\(flowerName)",
+            subtitle: "\(plantName)",
             image: .init(systemName: "leaf")
         )
     }
@@ -28,10 +40,8 @@ struct GardenPlantQuery: EntityQuery {
     }
 
     private func allEntities() -> [GardenPlantEntity] {
-        GardenPersistence.loadPlants().compactMap { plant in
-            guard let flower = FlowerCatalog.flower(id: plant.flowerId) else { return nil }
-            return GardenPlantEntity(id: plant.id.uuidString, name: plant.nickname, flowerName: flower.name)
-        }
+        GardenPersistence.loadPlantsForAuthenticatedSession()
+            .map(GardenPlantEntity.init(plant:))
     }
 }
 
@@ -47,7 +57,7 @@ struct OpenGardenIntent: AppIntent {
 }
 
 struct OpenScannerIntent: AppIntent {
-    static let title: LocalizedStringResource = "Scan a flower"
+    static let title: LocalizedStringResource = "Scan a plant"
     static let description = IntentDescription("Open Rocio's scanner to take or choose a photo.")
     static let openAppWhenRun = true
 
@@ -66,17 +76,38 @@ struct LogWateringIntent: AppIntent {
     var plant: GardenPlantEntity
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        var plants = GardenPersistence.loadPlants()
-        guard let uuid = UUID(uuidString: plant.id),
-              let index = plants.firstIndex(where: { $0.id == uuid }) else {
+        try await perform(sessionLoader: KeychainSessionStore.load)
+    }
+
+    func perform(
+        sessionLoader: () -> AuthSession?
+    ) async throws -> some IntentResult & ProvidesDialog {
+        guard let uuid = UUID(uuidString: plant.id) else {
             return .result(dialog: "I could not find that plant in My Garden.")
         }
-        plants[index].lastWateredAt = Date()
-        if plants[index].status == .needsWater {
-            plants[index].status = .healthy
+        let now = Date()
+        let result = GardenPersistence.updatePlantForAuthenticatedSession(
+            id: uuid,
+            sessionLoader: sessionLoader
+        ) { savedPlant in
+            savedPlant.lastWateredAt = now
+            savedPlant.updatedAt = now
+            if savedPlant.status == .needsWater {
+                savedPlant.status = .healthy
+            }
         }
-        GardenPersistence.savePlants(plants)
-        return .result(dialog: "Done. I logged watering for \(plants[index].nickname).")
+        switch result {
+        case let .updated(updatedPlant):
+            return .result(
+                dialog: "Done. I logged watering for \(updatedPlant.nickname)."
+            )
+        case .notFound:
+            return .result(dialog: "I could not find that plant in My Garden.")
+        case .persistenceFailure:
+            return .result(
+                dialog: "I could not save that watering update. Open Rocio and try again."
+            )
+        }
     }
 }
 
@@ -105,10 +136,10 @@ struct RocioShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: OpenScannerIntent(),
             phrases: [
-                "Scan a flower with \(.applicationName)",
-                "Identify a flower in \(.applicationName)"
+                "Scan a plant with \(.applicationName)",
+                "Identify a plant in \(.applicationName)"
             ],
-            shortTitle: "Scan flower",
+            shortTitle: "Scan plant",
             systemImageName: "camera.viewfinder"
         )
     }

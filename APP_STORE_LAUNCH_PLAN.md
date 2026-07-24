@@ -1,22 +1,23 @@
 # Rocio App Store Launch Plan
 
-Date: 2026-07-20
+Date: 2026-07-24
 
 This plan starts from the current `juliosuas/rocio` product: a bilingual native SwiftUI app supported by a PWA demo and public marketing site.
 
 ## Brutally Honest Status
 
-Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with a local cache, local notifications, App Intents, an honest hybrid scanner, privacy controls, CI, a locally verified unsigned simulator build, passing local simulator unit tests, and an isolated Debug-only local demo. The remaining release path is backend deployment, production credentials, real-device permission smoke, signing, screenshots, TestFlight, and App Store Connect.
+Rocio has a native SwiftUI iOS feature candidate with EN/ES localization, authenticated Supabase accounts, account-scoped garden sync with versioned local recovery, local notifications, App Intents, an honest hybrid scanner, manual and Plant.id arbitrary-plant identity, privacy controls, CI, locally verified unsigned Debug and Release simulator builds, and an isolated Debug-only local demo. The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1; exact-PR-head CI confirmation remains pending. A Personal Team Debug build for `com.juliosuas.rocio` also installed and launched successfully on the connected iPhone after the development profile was trusted. The current client, three incremental migrations, and matching Edge Function are locally verified but not yet landed and deployed. The remaining release path is reviewing and merging consolidated PR #21, applying the three migrations in order after backup and dry-run review, deploying the matching Edge code, configuring and smoke-testing password recovery, completing authenticated two-session and real-device permission smoke, paid distribution signing, final screenshots, TestFlight, and App Store Connect.
 
 ## Critical Blockers
 
 1. Real-device permission smoke is not locally verified on this machine.
-   - Full Xcode 26.3 is selected; the unsigned simulator build and iPhone 17 simulator tests passed locally on 2026-07-20.
+   - Full Xcode 26.3 is selected; unsigned Debug and Release builds passed locally, and the current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1. Confirm the same evidence from the exact PR head.
    - An iPhone 16e simulator smoke verified Debug demo entry, catalog, seeded garden, bundled photos, and local scanner disclosure on 2026-07-20.
-   - Camera capture, photo picker, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
+   - Camera capture, photo picker, local and consented cloud analysis, review cancellation, a successful scan → review → Garden save, notification permission, and notification delivery still require real-device testing before TestFlight or external review.
 
-2. Signing and App Store Connect are not configured.
-   - Set Apple Developer Team, confirm bundle id `com.juliosuas.rocio`, create the App Store Connect app record, and produce an archive.
+2. Development signing works locally; distribution signing and App Store Connect are not configured.
+   - A Personal Team Debug build for bundle id `com.juliosuas.rocio` and team `67QTYANL3F` installed and launched successfully after the developer profile was trusted in Settings. Its provisioning profile expires on 2026-07-28.
+   - The project-level `DEVELOPMENT_TEAM` remains blank. Paid Apple Developer Program membership, a distribution team, the App Store Connect app record, and a signed distribution archive are required only when TestFlight is the immediate next step.
 
 3. Privacy materials need final App Store Connect entry, not first publication.
    - App Privacy answers are drafted in `APP_STORE_PRIVACY_ANSWERS.md`.
@@ -30,19 +31,19 @@ Rocio has a native SwiftUI iOS product with EN/ES localization, authenticated Su
    - Scanner UX must keep uncertainty visible.
    - Review notes must explain that identification is assistive, not guaranteed.
 
-5. Reminder reliability needs device testing.
-   - Native local notifications exist, but permission flow and scheduled delivery must be tested on a real simulator/device before TestFlight.
+5. Reminder reliability needs physical-device testing.
+   - Native local notifications exist, but permission flow and scheduled delivery must be tested on a physical iPhone before TestFlight.
 
-6. Cloud deployment is not complete.
-   - The native app caches garden data in `UserDefaults` and syncs authenticated account data through Supabase.
-   - Deploy the migration and Edge Function, set the public Supabase release key, configure `PLANT_ID_API_KEY`, and verify RLS, quotas, sync, analytics opt-out, and account deletion against production.
+6. Cloud deployment is partially complete.
+   - The read-only production diagnostic on 2026-07-21 confirmed only the foundation migration, six RLS-protected tables, public client configuration, and `identify-flower` v5. Treat that as dated evidence and revalidate the exact remote state before deployment.
+   - After consolidated client PR #21 lands and a database backup plus dry run are reviewed, apply `20260721000100_preserve_garden_deletions.sql`, `20260722000100_support_arbitrary_plants.sql`, and `20260723000100_idempotent_scan_requests.sql` in that order, then deploy the matching Edge Function and verify account isolation, delete-wins/reset convergence, quota/replay, analytics opt-out, and account deletion.
 
 7. Assets need final visual release review.
    - Photo attributions and automated asset checks pass.
    - The opaque production icon is generated and the App Store marketing icon is exact 1024x1024; screenshots and a native simulator video remain.
 
-8. QA is still too narrow.
-   - Existing classifier harness is good. iOS CI exists for build, local simulator unit tests pass, and a trusted simulator smoke covers core Debug demo screens; real-device permission smoke is still required before submission.
+8. QA must finish on hardware and production cloud state.
+   - Classifier, release, App Store, security, and unsigned Release build evidence passed on the feature candidate as of 2026-07-24. The current scanner-review worktree passes both the full unsigned CI-equivalent and locally signed XCTest suites 200/200 on iPhone 17 Pro with iOS 26.3.1; rerun every gate from the exact PR head, then complete real-device permissions and authenticated two-session production sync before submission.
 
 ## Garry Tan Tooling Context
 
@@ -142,12 +143,21 @@ Acceptance criteria:
 - Marketing copy avoids overclaiming identification accuracy.
 - Release checklist is complete.
 
-## Current Smallest Shippable PR
+## Current Feature Candidate
 
-Harden native session and cloud queue reliability:
+Ship `Rocio 1.0 — arbitrary plants end to end` on top of the beta first-care foundation. All three incremental migrations and the matching Edge update remain unapplied in production:
 
-- Cancel and release the active queue task before sign-out, account deletion, or Debug demo entry.
-- Ignore stale completion callbacks from cancelled tasks after a replacement task starts.
-- Keep failed changes pending without an immediate retry loop that can hammer the backend.
-- Cover the queue task generation state with focused unit tests.
-- Remove the Swift concurrency warning from the backend date decoder.
+- Upload a first plant created during the authenticated epoch handshake without requiring a second edit.
+- Move directly to My Garden after adding a plant and show cloud sync state beside the action that created it.
+- Offer watering reminders in context, while requesting iOS permission only after an explicit tap.
+- Confirm the first watering immediately in the garden UI.
+- Ask for cloud-photo consent for every scan, preserve an on-device-only choice, and downsample large photos before retaining or analyzing them.
+- Require scanner results to pass through an explicit review step; preserve provider identity separately from the specimen nickname, remove false interval and milliliter precision when the user confirms a preference, and route to Garden only after a successful save.
+- Require confirmation before the irreversible removal of one plant.
+- Report garden deletion as cloud-confirmed only after the reset RPC and authoritative reconciliation succeed; otherwise keep a visible pending state.
+- Include the locally integrated PKCE password-recovery client, while keeping it externally blocked until the callback allowlist, stable HTTPS Site URL, custom SMTP, and a real email-to-app password-change smoke test are complete.
+- Preserve arbitrary Plant.id and manual identity without inventing exact care, and keep those plants usable across Garden, Calendar, notifications, App Intents, export, sync, deletion, and recovery.
+- Make paid scans idempotent with one quota claim, bounded replay, provider recovery by `custom_id`, and best-effort provider cleanup.
+- Fail closed on future local or cloud schemas so an older build cannot overwrite fields it does not understand.
+
+PR #21 is the consolidated integration PR targeting `main`. Merge it only after the exact head passes review and all repository workflows; after green `main` CI, close #18–#20 as superseded. After a production backup, linked dry run, and review, apply `20260721000100` → `20260722000100` → `20260723000100`, deploy the matching Edge Function, and run authenticated canaries plus the two-session smoke. Do not deploy backend changes from an unreviewed feature branch.
