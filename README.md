@@ -21,13 +21,14 @@ Rocío supports the care cycle that matters: identify or enter a plant, save the
 
 ## Real iOS build
 
-These are raw, privacy-safe screenshots from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. They are not mockups. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23 from the current arbitrary-plant branch and provides real evidence of that flow. The existing scanner image predates the new review sheet, which still requires a fresh capture before final App Store art. These are development records, not final App Store art; the submission set will be re-captured from the exact Release archive.
+These are raw, privacy-safe screenshots from the running Rocío Debug build on an iPhone 17 simulator with iOS 26.3.1. They are not mockups. The catalog, garden, calendar, scanner, and settings screens were captured on July 22, 2026; the manual Swiss cheese plant screen was captured on July 23; and the scanner review sheet was captured on July 24 from the exact `0a65394` feature head. These are development records, not final App Store art; the submission set will be re-captured from the exact Release archive.
 
 <p align="center">
   <img src="docs/screenshots/ios/catalog.png" alt="Rocío native iOS catalog" width="180">
   <img src="docs/screenshots/ios/garden.png" alt="Rocío native iOS garden" width="180">
   <img src="docs/screenshots/ios/calendar.png" alt="Rocío native iOS watering calendar" width="180">
   <img src="docs/screenshots/ios/scanner.png" alt="Rocío native iOS experimental scanner" width="180">
+  <img src="docs/screenshots/ios/scanner-review.png" alt="Rocío native iOS scanner review sheet separating suggested identity, specimen name, and optional care" width="180">
   <img src="docs/screenshots/ios/manual-plant.png" alt="Rocío native iOS manual Swiss cheese plant with moderate watering preference" width="180">
   <img src="docs/screenshots/ios/settings.png" alt="Rocío native iOS settings and privacy controls" width="180">
 </p>

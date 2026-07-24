@@ -22,9 +22,10 @@ Current real-build documentation evidence, captured from the running iPhone 17 s
 - `docs/screenshots/ios/garden.png`
 - `docs/screenshots/ios/calendar.png`
 - `docs/screenshots/ios/scanner.png`
+- `docs/screenshots/ios/scanner-review.png`
 - `docs/screenshots/ios/settings.png`
 
-These are raw app screenshots, not mockups. The current scanner screenshot predates the Review plant sheet. Re-capture both scanner states and the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
+These are raw app screenshots, not mockups. The scanner result image predates the Review plant sheet; the separate review-sheet evidence was captured from feature head `0a65394` on 2026-07-24. Re-capture both scanner states and the final App Store set from the exact Release archive after the arbitrary-plant vertical is complete.
 
 ## Visual Quality Gate
 
